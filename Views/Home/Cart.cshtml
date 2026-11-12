@@ -1,0 +1,106 @@
+@{
+    ViewData["Title"] = "รายการสั่งอาหาร";
+}
+
+<style>
+    .cart-item-card {
+        background-color: white;
+        border: 1px solid #f2e6d9;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .summary-card {
+        background-color: white;
+        border: 1px solid #f2e6d9;
+        border-radius: 16px;
+        padding: 30px;
+    }
+    .text-brand { color: #bd3124; }
+    .btn-confirm-order {
+        background-color: #bd3124;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px;
+        width: 100%;
+        font-weight: bold;
+        transition: 0.2s;
+    }
+    .btn-confirm-order:hover {
+        background-color: #9c271c;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        color: #555;
+        font-size: 0.95rem;
+    }
+</style>
+
+<div class="container mt-5 pb-5">
+    <h2 class="fw-bold mb-4">รายการสั่งอาหาร</h2>
+
+    <div class="row g-4">
+        <!-- ฝั่งซ้าย: รายการอาหาร -->
+        <div class="col-md-8">
+            
+            <!-- รายการที่ 1 -->
+            <div class="cart-item-card shadow-sm">
+                <div>
+                    <h6 class="fw-bold mb-1">ส้มตำไทย</h6>
+                    <p class="text-muted small mb-0">฿60 × 1</p>
+                </div>
+                <div class="fw-bold text-brand fs-5">฿60</div>
+            </div>
+
+            <!-- รายการที่ 2 -->
+            <div class="cart-item-card shadow-sm">
+                <div>
+                    <h6 class="fw-bold mb-1">ลาบหมู</h6>
+                    <p class="text-muted small mb-0">฿90 × 1</p>
+                </div>
+                <div class="fw-bold text-brand fs-5">฿90</div>
+            </div>
+
+            <!-- รายการที่ 3 -->
+            <div class="cart-item-card shadow-sm">
+                <div>
+                    <h6 class="fw-bold mb-1">คอหมูย่าง</h6>
+                    <p class="text-muted small mb-0">฿120 × 2</p>
+                </div>
+                <div class="fw-bold text-brand fs-5">฿240</div>
+            </div>
+
+        </div>
+
+        <!-- ฝั่งขวา: สรุปคำสั่งซื้อ -->
+        <div class="col-md-4">
+            <div class="summary-card shadow-sm">
+                <h5 class="fw-bold mb-4">สรุปคำสั่งซื้อ</h5>
+                
+                <div class="summary-row">
+                    <span>ค่าอาหาร</span>
+                    <span class="fw-bold text-dark">฿390</span>
+                </div>
+                <div class="summary-row mb-4">
+                    <span>ค่าบริการ</span>
+                    <span class="fw-bold text-dark">฿0</span>
+                </div>
+                
+                <hr class="mb-4">
+                
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="fw-bold fs-5">รวมทั้งหมด</span>
+                    <span class="fw-bold text-brand fs-4">฿390</span>
+                </div>
+
+                <button class="btn-confirm-order">ยืนยันรายการ</button>
+            </div>
+        </div>
+    </div>
+</div>

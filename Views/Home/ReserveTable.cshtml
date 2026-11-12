@@ -1,0 +1,149 @@
+@{
+    ViewData["Title"] = "เลือกโต๊ะ";
+}
+
+<style>
+    .table-card {
+        background-color: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 30px 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+    .table-card:hover {
+        border-color: #0ea5e9;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    /* สถานะเมื่อโต๊ะถูกเลือก (กรอบสีฟ้า) */
+    .table-card.selected {
+        border: 2px solid #0ea5e9;
+        box-shadow: 0 4px 15px rgba(14, 165, 233, 0.15);
+    }
+    .status-dot {
+        height: 12px;
+        width: 12px;
+        background-color: #16a34a;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    .btn-confirm {
+        background-color: #bd3124;
+        color: white;
+        font-weight: bold;
+        padding: 10px 40px;
+        border-radius: 8px;
+        border: none;
+        transition: 0.2s;
+    }
+    .btn-confirm:hover {
+        background-color: #9c271c;
+        color: white;
+    }
+</style>
+
+<div class="container mt-5 pb-5">
+    <h2 class="fw-bold mb-2">เลือกโต๊ะ</h2>
+    <p class="text-muted mb-5">โต๊ะใหญ่สำหรับ 4 คน และโต๊ะเล็กสำหรับ 2 คน</p>
+
+    <!-- โต๊ะใหญ่ -->
+    <h5 class="fw-bold mb-3">โต๊ะใหญ่ — 4 คน</h5>
+    <div class="row g-4 mb-5">
+        <!-- โต๊ะ 01 -->
+        <div class="col-md-3">
+            <div class="table-card">
+                <h4 class="fw-bold mb-3">โต๊ะ 01</h4>
+                <p class="text-muted mb-3"><i class="bi bi-people-fill text-secondary"></i> 4 คน</p>
+                <div class="fw-bold text-success"><span class="status-dot"></span> ว่าง</div>
+            </div>
+        </div>
+        <!-- โต๊ะ 02 (ตั้งค่าให้ถูกเลือกเป็นค่าเริ่มต้น) -->
+        <div class="col-md-3">
+            <div class="table-card selected">
+                <h4 class="fw-bold mb-3">โต๊ะ 02</h4>
+                <p class="text-muted mb-3"><i class="bi bi-people-fill text-secondary"></i> 4 คน</p>
+                <div class="fw-bold text-success"><span class="status-dot"></span> ว่าง</div>
+            </div>
+        </div>
+        <!-- โต๊ะ 03 -->
+        <div class="col-md-3">
+            <div class="table-card">
+                <h4 class="fw-bold mb-3">โต๊ะ 03</h4>
+                <p class="text-muted mb-3"><i class="bi bi-people-fill text-secondary"></i> 4 คน</p>
+                <div class="fw-bold text-success"><span class="status-dot"></span> ว่าง</div>
+            </div>
+        </div>
+        <!-- โต๊ะ 04 -->
+        <div class="col-md-3">
+            <div class="table-card">
+                <h4 class="fw-bold mb-3">โต๊ะ 04</h4>
+                <p class="text-muted mb-3"><i class="bi bi-people-fill text-secondary"></i> 4 คน</p>
+                <div class="fw-bold text-success"><span class="status-dot"></span> ว่าง</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- โต๊ะเล็ก -->
+    <h5 class="fw-bold mb-3">โต๊ะเล็ก — 2 คน</h5>
+    <div class="row g-4 mb-4">
+        <!-- โต๊ะ 05 -->
+        <div class="col-md-3">
+            <div class="table-card">
+                <h4 class="fw-bold mb-3">โต๊ะ 01</h4>
+                <p class="text-muted mb-3"><i class="bi bi-people-fill text-secondary"></i> 2 คน</p>
+                <div class="fw-bold text-success"><span class="status-dot"></span> ว่าง</div>
+            </div>
+        </div>
+        <!-- โต๊ะ 06 -->
+        <div class="col-md-3">
+            <div class="table-card">
+                <h4 class="fw-bold mb-3">โต๊ะ 02</h4>
+                <p class="text-muted mb-3"><i class="bi bi-people-fill text-secondary"></i> 2 คน</p>
+                <div class="fw-bold text-success"><span class="status-dot"></span> ว่าง</div>
+            </div>
+        </div>
+        <!-- โต๊ะ 07 -->
+        <div class="col-md-3">
+            <div class="table-card">
+                <h4 class="fw-bold mb-3">โต๊ะ 03</h4>
+                <p class="text-muted mb-3"><i class="bi bi-people-fill text-secondary"></i> 2 คน</p>
+                <div class="fw-bold text-success"><span class="status-dot"></span> ว่าง</div>
+            </div>
+        </div>
+        <!-- โต๊ะ 08 -->
+        <div class="col-md-3">
+            <div class="table-card">
+                <h4 class="fw-bold mb-3">โต๊ะ 04</h4>
+                <p class="text-muted mb-3"><i class="bi bi-people-fill text-secondary"></i> 2 คน</p>
+                <div class="fw-bold text-success"><span class="status-dot"></span> ว่าง</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ปุ่มยืนยันโต๊ะ -->
+   <div class="text-end mt-4">
+    @if (Context.Request.Query["package"] == "alacarte")
+    {
+        <!-- ถ้ากดมาจากอาลาคาสต์ ให้ไปหน้า Menu -->
+        <a asp-controller="Home" asp-action="Menu" class="btn-confirm px-5 py-2 text-decoration-none d-inline-block">ยืนยันโต๊ะ</a>
+    }
+    else
+    {
+        <!-- ถ้ากดมาจากบุฟเฟต์ หรือกดจากเมนูจองโต๊ะปกติ ให้ไปหน้า ScanQR -->
+        <a asp-controller="Home" asp-action="ScanQR" class="btn-confirm px-5 py-2 text-decoration-none d-inline-block">ยืนยันโต๊ะ</a>
+    }
+</div>
+
+<!-- Script สำหรับคลิกเปลี่ยนกรอบสีฟ้า -->
+<script>
+    document.querySelectorAll('.table-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // ลบกรอบสีฟ้าออกจากโต๊ะที่เคยเลือก
+            document.querySelectorAll('.table-card').forEach(c => c.classList.remove('selected'));
+            // ใส่กรอบสีฟ้าให้โต๊ะที่เพิ่งคลิก
+            this.classList.add('selected');
+        });
+    });
+</script>

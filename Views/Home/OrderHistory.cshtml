@@ -1,0 +1,112 @@
+@{
+    ViewData["Title"] = "ประวัติการสั่งซื้อ";
+}
+
+<style>
+    .order-card {
+        background-color: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 24px 30px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    /* กรอบสีฟ้าสำหรับรายการแรก */
+    .order-card.selected {
+        border: 2px solid #0ea5e9;
+    }
+    .order-price {
+        color: #bd3124;
+        font-weight: bold;
+        font-size: 1.25rem;
+    }
+    .status-success {
+        color: #16a34a;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    .status-cancel {
+        color: #dc2626;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    .btn-details {
+        background-color: #6d635c; /* สีน้ำตาลเทา */
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 24px;
+        font-size: 0.9rem;
+        transition: 0.2s;
+    }
+    .btn-details:hover {
+        background-color: #554d47;
+        color: white;
+    }
+</style>
+
+<div class="container mt-5 pb-5" style="max-width: 1000px;">
+    <h2 class="fw-bold mb-4">ประวัติการสั่งซื้อ</h2>
+
+    <!-- รายการที่ 1 (มีกรอบสีฟ้า) -->
+    <div class="order-card selected shadow-sm">
+        <!-- ข้อมูลฝั่งซ้าย -->
+        <div>
+            <h5 class="fw-bold mb-2">#ORD00125</h5>
+            <p class="text-dark fw-bold mb-1" style="font-size: 0.9rem;">ร้าน: อีสาน เด้อ</p>
+            <p class="text-muted mb-0" style="font-size: 0.85rem;">ส้มตำไทย ×1, ลาบหมู ×1</p>
+        </div>
+        <!-- ข้อมูลฝั่งขวา -->
+        <div class="d-flex align-items-center gap-5">
+            <div class="text-start">
+                <p class="text-muted mb-2" style="font-size: 0.85rem;">15 ก.ย. 2026</p>
+                <p class="order-price mb-0">฿150</p>
+            </div>
+            <div class="text-center" style="min-width: 110px;">
+                <p class="status-success mb-2 text-start">สำเร็จ ✓</p>
+                <button class="btn-details">ดูรายละเอียด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- รายการที่ 2 -->
+    <div class="order-card shadow-sm">
+        <div>
+            <h5 class="fw-bold mb-2">#ORD00120</h5>
+            <p class="text-dark fw-bold mb-1" style="font-size: 0.9rem;">ร้าน: อีสาน เด้อ</p>
+            <p class="text-muted mb-0" style="font-size: 0.85rem;">บุฟเฟต์ 299 ×2</p>
+        </div>
+        <div class="d-flex align-items-center gap-5">
+            <div class="text-start">
+                <p class="text-muted mb-2" style="font-size: 0.85rem;">10 ก.ย. 2026</p>
+                <p class="order-price mb-0">฿598</p>
+            </div>
+            <div class="text-center" style="min-width: 110px;">
+                <p class="status-success mb-2 text-start">สำเร็จ ✓</p>
+                <button class="btn-details">ดูรายละเอียด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- รายการที่ 3 (ยกเลิก) -->
+    <div class="order-card shadow-sm">
+        <div>
+            <h5 class="fw-bold mb-2">#ORD00115</h5>
+            <p class="text-dark fw-bold mb-1" style="font-size: 0.9rem;">ร้าน: อีสาน เด้อ</p>
+            <p class="text-muted mb-0" style="font-size: 0.85rem;">คอหมูย่าง ×1, ข้าวเหนียว ×2</p>
+        </div>
+        <div class="d-flex align-items-center gap-5">
+            <div class="text-start">
+                <p class="text-muted mb-2" style="font-size: 0.85rem;">5 ก.ย. 2026</p>
+                <p class="order-price mb-0">฿150</p>
+            </div>
+            <div class="text-center" style="min-width: 110px;">
+                <p class="status-cancel mb-2 text-start">ยกเลิก</p>
+                <button class="btn-details">ดูรายละเอียด</button>
+            </div>
+        </div>
+    </div>
+
+</div>

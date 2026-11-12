@@ -1,0 +1,107 @@
+@model IEnumerable<IsanDer.Models.Menu>
+
+@{
+    ViewData["Title"] = "เมนูอาหาร";
+}
+
+<style>
+    /* สไตล์ปุ่มหมวดหมู่ */
+    .category-btn {
+        background-color: #8c7e75; /* สีน้ำตาลเทา */
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: bold;
+        margin-right: 12px;
+        margin-bottom: 12px;
+        transition: 0.2s;
+    }
+    .category-btn:hover {
+        background-color: #736760;
+        color: white;
+    }
+    /* ปุ่มหมวดหมู่ที่ถูกเลือก (สีแดง) */
+    .category-btn.active {
+        background-color: #bd3124;
+    }
+    .category-btn.active:hover {
+        background-color: #9c271c;
+    }
+
+    /* สไตล์การ์ดเมนูอาหาร */
+    .menu-card {
+        background-color: white;
+        border: 1px solid #f2e6d9;
+        border-radius: 16px;
+    }
+    .img-placeholder {
+        background-color: #f4e8d8;
+        height: 180px;
+        border-radius: 12px;
+        margin: 12px 12px 0 12px;
+    }
+    .text-brand {
+        color: #bd3124;
+    }
+    .btn-brand {
+        background-color: #bd3124;
+        color: white;
+        border: none;
+        transition: 0.3s;
+    }
+    .btn-brand:hover {
+        background-color: #9c271c;
+        color: white;
+    }
+</style>
+
+<div class="container mt-5 pb-5">
+    <h2 class="fw-bold mb-4">เมนูอาหาร</h2>
+
+    <!-- แถบหมวดหมู่ -->
+    <div class="d-flex flex-wrap mb-5">
+        <button class="category-btn active">ทั้งหมด</button>
+        <button class="category-btn">ส้มตำ</button>
+        <button class="category-btn">ลาบ / น้ำตก</button>
+        <button class="category-btn">ต้ม / แกง</button>
+        <button class="category-btn">ย่าง</button>
+        <button class="category-btn">เครื่องดื่ม</button>
+    </div>
+
+    <!-- รายการเมนูอาหาร (ดึงข้อมูลจาก Database) -->
+    <div class="row g-4">
+        
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <div class="col-md-4">
+                    <div class="menu-card shadow-sm h-100 pb-2">
+                        <div class="img-placeholder"></div>
+                        <div class="card-body p-4">
+                            <!-- ดึงชื่อเมนูจากฐานข้อมูล -->
+                            <h5 class="fw-bold mb-1">@item.MenuName</h5>
+                            <p class="text-muted small mb-3">⭐ 4.8 · อาหารอีสาน</p>
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <!-- ดึงราคาจากฐานข้อมูล -->
+                                <span class="text-brand fs-4 fw-bold">฿@item.Price</span>
+                                <!-- แนบ ID ของอาหารไปกับปุ่มเพิ่ม เพื่อให้หน้ารายละเอียดรู้ว่าเลือกเมนูไหน -->
+                                <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@item.MenuId" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <!-- แสดงข้อความหากยังไม่มีข้อมูลในฐานข้อมูล -->
+            <div class="col-12 text-center text-muted mt-5">
+                <h5>ยังไม่มีรายการอาหารในระบบ</h5>
+                <p>โปรดเพิ่มข้อมูลเมนูอาหารในตาราง Menus ของฐานข้อมูล isanderdb</p>
+            </div>
+        }
+
+    </div>
+</div>

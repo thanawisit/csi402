@@ -1,0 +1,56 @@
+@model IsanDer.Models.RegisterViewModel
+
+@{
+    ViewData["Title"] = "สมัครสมาชิก";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 bg-white p-4 rounded shadow-sm border-top border-danger border-4">
+        <!-- ธีมร้าน: หัวข้อสีแดง -->
+        <h2 class="text-danger text-center fw-bold mb-4">สมัครสมาชิก คุกกี้ อีสาน เด้อ</h2>
+
+        <form asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label fw-bold text-success"></label>
+                <input asp-for="Email" class="form-control border-success" placeholder="example@email.com" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FullName" class="form-label fw-bold text-success"></label>
+                <input asp-for="FullName" class="form-control border-success" placeholder="ชื่อ - นามสกุล" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="DateOfBirth" class="form-label fw-bold text-success"></label>
+                <input asp-for="DateOfBirth" class="form-control border-success" />
+                <span asp-validation-for="DateOfBirth" class="text-danger text-sm"></span>
+                <small class="text-muted">เพื่อรับสิทธิ์โปรวันเกิด ลด 40%</small>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label fw-bold text-success"></label>
+                <input asp-for="Password" class="form-control border-success" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="ConfirmPassword" class="form-label fw-bold text-success"></label>
+                <input asp-for="ConfirmPassword" class="form-control border-success" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <div class="d-grid">
+                <!-- ปุ่มสีเขียวตามธีมร้าน -->
+                <button type="submit" class="btn btn-success btn-lg fw-bold">ยืนยันการสมัครสมาชิก</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

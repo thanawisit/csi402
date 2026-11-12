@@ -1,0 +1,40 @@
+@model IsanDer.Models.LoginViewModel
+@{
+    ViewData["Title"] = "เข้าสู่ระบบ";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="card-title text-center mb-4">เข้าสู่ระบบ IsanDer</h3>
+                    
+                    <form asp-action="Login" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">อีเมล</label>
+                            <input asp-for="Email" class="form-control" placeholder="example@email.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Password" class="form-label">รหัสผ่าน</label>
+                            <input asp-for="Password" class="form-control" type="password" placeholder="********" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
+                        </div>
+                    </form>
+
+                    <div class="mt-4 text-center">
+                        <p class="mb-0">ยังไม่มีบัญชีใช่หรือไม่? <a asp-action="Register" class="text-decoration-none">สมัครสมาชิกที่นี่</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
