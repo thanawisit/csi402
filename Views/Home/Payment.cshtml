@@ -1,0 +1,88 @@
+@{
+    ViewData["Title"] = "ชำระเงิน";
+}
+
+<style>
+    .payment-box { background-color: var(--brand-green-soft); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; cursor: pointer; transition: 0.2s; font-weight: bold; color: var(--text); }
+    .payment-box:hover, .payment-box.active { background-color: #dcebd9; border-color: var(--brand-green); }
+    .summary-card { background-color: white; border: 1px solid var(--border); border-radius: 16px; padding: 30px; text-align: center; }
+    .btn-confirm-payment { background-color: var(--brand-red); color: white; border: none; border-radius: 8px; padding: 12px; width: 100%; font-weight: bold; transition: 0.2s; }
+    .btn-confirm-payment:hover { background-color: var(--brand-red-dark); }
+</style>
+
+<div class="container mt-5 pb-5">
+    <h2 class="fw-bold mb-4">ชำระเงิน</h2>
+
+    <!-- เพิ่ม Form ครอบทั้งหมด เพื่อส่งข้อมูลไปที่ฟังก์ชัน SaveOrder -->
+    <form asp-controller="Home" asp-action="SaveOrder" method="post">
+        
+        <!-- ซ่อนเวลารับอาหารและโต๊ะที่เลือก เพื่อบันทึกพร้อมออเดอร์ -->
+        <input type="hidden" name="arriveTime" value="@ViewBag.ArriveTime" />
+        <input type="hidden" name="tableId" value="@ViewBag.TableId" />
+        <!-- ซ่อนค่า Payment Method รอรับค่าจาก JavaScript เวลาลูกค้าคลิกกล่อง -->
+        <input type="hidden" name="paymentMethod" id="paymentMethodInput" value="เงินสด (ชำระที่หน้าร้าน)" />
+
+        <div class="row g-4">
+            <div class="col-md-7">
+                <div class="bg-white p-4 rounded-4 shadow-sm border border-light">
+                    <h5 class="fw-bold mb-3">วิธีการชำระเงิน (จำลอง)</h5>
+                    <div class="alert alert-warning mb-4" role="note">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        <strong>โหมดสาธิตสำหรับโปรเจกต์</strong>
+                        <div class="small mt-1">ระบบจะบันทึกช่องทางที่เลือกไว้ในออเดอร์ แต่ไม่มีการตัดเงินจริงหรือเชื่อมต่อธนาคาร</div>
+                    </div>
+                    
+                    <!-- เพิ่มพารามิเตอร์ที่ 2 ในฟังก์ชันเพื่อให้รู้ว่ากำลังกดเลือกช่องไหน -->
+                    <div class="payment-box active" onclick="selectPaymentMethod(this, 'เงินสด (ชำระที่หน้าร้าน)')">เงินสด (ชำระที่หน้าร้าน)</div>
+                    <div class="payment-box" onclick="selectPaymentMethod(this, 'PromptPay (จำลอง)')">PromptPay (จำลอง)</div>
+                    <div class="payment-box" onclick="selectPaymentMethod(this, 'บัตรเครดิต / เดบิต (จำลอง)')">บัตรเครดิต / เดบิต (จำลอง)</div>
+                </div>
+
+                <div class="bg-white p-4 rounded-4 shadow-sm border border-light mt-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-info-circle text-brand"></i> รายละเอียดการรับอาหาร</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">รูปแบบ:</span>
+                        <span class="fw-bold">@ViewBag.OrderType</span>
+                    </div>
+                    @if (ViewBag.IsPreorder == true)
+                    {
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">เวลารับอาหาร:</span>
+                            <span class="fw-bold text-brand">@ViewBag.ArriveTime น.</span>
+                        </div>
+                    }
+                    @if (ViewBag.TableNumber != null)
+                    {
+                        <div class="d-flex justify-content-between mt-2">
+                            <span class="text-muted">โต๊ะ:</span>
+                            <span class="fw-bold">@ViewBag.TableNumber</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="summary-card shadow-sm h-100 d-flex flex-column justify-content-center">
+                    <h5 class="fw-bold mb-4 text-start">ยอดชำระ:</h5>
+                    <h1 class="fw-bold mb-4" style="color: var(--brand-red);">฿@ViewBag.TotalAmount</h1>
+                    
+                    <!-- เปลี่ยนเป็น type="submit" ให้ปุ่มส่งแบบฟอร์ม -->
+                    <button type="submit" class="btn-confirm-payment mt-auto" onclick="alert('ระบบกำลังบันทึกออเดอร์ของคุณ...');">ยืนยันการสั่งอาหาร</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    // อัปเดต JavaScript ให้เก็บค่าวิธีการชำระเงินลง input hidden ด้วย
+    function selectPaymentMethod(selectedElement, methodValue) {
+        const boxes = document.querySelectorAll('.payment-box');
+        boxes.forEach(box => box.classList.remove('active'));
+        
+        selectedElement.classList.add('active');
+        
+        // ส่งค่าที่เลือกลงไปใน input ที่ซ่อนไว้
+        document.getElementById('paymentMethodInput').value = methodValue;
+    }
+</script>

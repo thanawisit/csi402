@@ -1,0 +1,93 @@
+@using System
+@{
+    ViewData["Title"] = "ติดต่อเรา";
+    const string address = "123 ถนนมิตรภาพ ตำบลในเมือง อำเภอเมือง จังหวัดขอนแก่น 40000";
+    var mapsUrl = $"https://www.google.com/maps/search/?api=1&query={Uri.EscapeDataString(address)}";
+}
+
+<div class="container mt-5 pb-5">
+    <section class="contact-hero hero-panel mb-4 p-4 p-md-5">
+        <div>
+            <span class="hero-kicker"><i class="bi bi-chat-dots-fill"></i> ติดต่อเรา</span>
+            <h1 class="hero-title fw-bold">ยินดีต้อนรับ<br><span>มาหาเราได้ทุกวัน</span></h1>
+            <p class="text-muted fs-5 mb-0">สอบถามข้อมูลร้านหรือเส้นทางได้ตามช่องทางด้านล่าง</p>
+        </div>
+        <div class="contact-hero-icon" aria-hidden="true">
+            <i class="bi bi-geo-alt-fill"></i>
+        </div>
+    </section>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <section class="contact-card h-100">
+                <div class="contact-heading">
+                    <span class="contact-icon"><i class="bi bi-geo-alt-fill"></i></span>
+                    <div>
+                        <span class="section-kicker">แวะมาทานที่ร้าน</span>
+                        <h2 class="h4 fw-bold mb-0">ที่ตั้งร้าน</h2>
+                    </div>
+                </div>
+                <address class="contact-address mb-4">@address</address>
+                <a class="btn btn-success" href="@mapsUrl" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-map me-2"></i>เปิดแผนที่
+                </a>
+            </section>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="row g-4">
+                <div class="col-12">
+                    <section class="contact-card">
+                        <div class="contact-heading">
+                            <span class="contact-icon contact-icon-red"><i class="bi bi-telephone-fill"></i></span>
+                            <div>
+                                <span class="section-kicker">โทรสอบถาม</span>
+                                <h2 class="h5 fw-bold mb-0">โทรศัพท์</h2>
+                            </div>
+                        </div>
+                        <a class="contact-link" href="tel:+66891234567">089-123-4567</a>
+                    </section>
+                </div>
+
+                <div class="col-12">
+                    <section class="contact-card">
+                        <div class="contact-heading">
+                            <span class="contact-icon"><i class="bi bi-envelope-fill"></i></span>
+                            <div>
+                                <span class="section-kicker">ส่งอีเมลถึงเรา</span>
+                                <h2 class="h5 fw-bold mb-0">อีเมล</h2>
+                            </div>
+                        </div>
+                        <a class="contact-link" href="mailto:support@isander.com">support@isander.com</a>
+                    </section>
+                </div>
+
+                <div class="col-12">
+                    <section class="contact-card">
+                        <div class="contact-heading">
+                            <span class="contact-icon"><i class="bi bi-line"></i></span>
+                            <div>
+                                <span class="section-kicker">LINE Official</span>
+                                <h2 class="h5 fw-bold mb-0">พูดคุยกับเรา</h2>
+                            </div>
+                        </div>
+                        <a class="contact-link" href="https://line.me/R/ti/p/%40IsanDer" target="_blank" rel="noopener noreferrer">@@IsanDer</a>
+                    </section>
+                </div>
+
+                <div class="col-12">
+                    <section class="contact-card">
+                        <div class="contact-heading">
+                            <span class="contact-icon contact-icon-red"><i class="bi bi-clock-fill"></i></span>
+                            <div>
+                                <span class="section-kicker">เปิดบริการทุกวัน</span>
+                                <h2 class="h5 fw-bold mb-0">เวลาทำการ</h2>
+                            </div>
+                        </div>
+                        <p class="contact-link mb-0">10:00–22:00 น.</p>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

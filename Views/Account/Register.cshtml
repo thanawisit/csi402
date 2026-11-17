@@ -4,50 +4,82 @@
     ViewData["Title"] = "สมัครสมาชิก";
 }
 
-<div class="row justify-content-center mt-5">
-    <div class="col-md-6 bg-white p-4 rounded shadow-sm border-top border-danger border-4">
-        <!-- ธีมร้าน: หัวข้อสีแดง -->
-        <h2 class="text-danger text-center fw-bold mb-4">สมัครสมาชิก คุกกี้ อีสาน เด้อ</h2>
+<div class="container mt-5 pb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="text-danger text-center fw-bold mb-2">สมัครสมาชิก</h2>
+                    <p class="text-muted text-center mb-4">สร้างบัญชีเพื่อสั่งอาหารและติดตามรายการสั่งซื้อ</p>
 
-        <form asp-action="Register" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <form asp-action="Register" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-            <div class="mb-3">
-                <label asp-for="Email" class="form-label fw-bold text-success"></label>
-                <input asp-for="Email" class="form-control border-success" placeholder="example@email.com" />
-                <span asp-validation-for="Email" class="text-danger"></span>
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label fw-semibold"></label>
+                            <input asp-for="FullName" class="form-control" autocomplete="name" placeholder="ชื่อ - นามสกุล" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" placeholder="name@example.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold"></label>
+                            <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" inputmode="tel" placeholder="เช่น 08xxxxxxxx" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                            <div class="form-text">ใช้ติดต่อเกี่ยวกับรายการสั่งซื้อเมื่อจำเป็น</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="DateOfBirth" class="form-label fw-semibold"></label>
+                            <input asp-for="DateOfBirth" class="form-control" autocomplete="bday" />
+                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                            <div class="form-text">ใช้รหัสผ่านอย่างน้อย 8 ตัวอักษร</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-check mb-2">
+                            <input asp-for="TermsAccepted" class="form-check-input" required />
+                            <label asp-for="TermsAccepted" class="form-check-label">
+                                ยอมรับ<a asp-controller="Home" asp-action="Terms">ข้อกำหนดการใช้บริการ</a>
+                                และรับทราบ<a asp-controller="Home" asp-action="Privacy">นโยบายความเป็นส่วนตัว</a>
+                            </label>
+                            <span asp-validation-for="TermsAccepted" class="text-danger d-block"></span>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input asp-for="MarketingConsent" class="form-check-input" />
+                            <label asp-for="MarketingConsent" class="form-check-label">
+                                ยินยอมรับข่าวสารและโปรโมชันทางอีเมลหรือโทรศัพท์ (ไม่บังคับ)
+                            </label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger btn-lg fw-bold">ยืนยันการสมัครสมาชิก</button>
+                        </div>
+                    </form>
+
+                    <p class="text-center text-muted mt-4 mb-0">
+                        มีบัญชีแล้ว? <a asp-controller="Account" asp-action="Login">เข้าสู่ระบบ</a>
+                    </p>
+                </div>
             </div>
-
-            <div class="mb-3">
-                <label asp-for="FullName" class="form-label fw-bold text-success"></label>
-                <input asp-for="FullName" class="form-control border-success" placeholder="ชื่อ - นามสกุล" />
-                <span asp-validation-for="FullName" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="DateOfBirth" class="form-label fw-bold text-success"></label>
-                <input asp-for="DateOfBirth" class="form-control border-success" />
-                <span asp-validation-for="DateOfBirth" class="text-danger text-sm"></span>
-                <small class="text-muted">เพื่อรับสิทธิ์โปรวันเกิด ลด 40%</small>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label fw-bold text-success"></label>
-                <input asp-for="Password" class="form-control border-success" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-
-            <div class="mb-4">
-                <label asp-for="ConfirmPassword" class="form-label fw-bold text-success"></label>
-                <input asp-for="ConfirmPassword" class="form-control border-success" />
-                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-            </div>
-
-            <div class="d-grid">
-                <!-- ปุ่มสีเขียวตามธีมร้าน -->
-                <button type="submit" class="btn btn-success btn-lg fw-bold">ยืนยันการสมัครสมาชิก</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 

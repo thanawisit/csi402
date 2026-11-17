@@ -1,0 +1,98 @@
+@model IsanDer.Models.OrderDetailViewModel
+
+@{
+    ViewData["Title"] = "รายละเอียดออเดอร์";
+    var statusClass = Model.Order.OrderStatus == "ยกเลิก"
+        ? "text-bg-danger"
+        : Model.Order.OrderStatus == "เสร็จแล้ว" || Model.Order.OrderStatus == "สำเร็จ"
+            ? "text-bg-success"
+            : "text-bg-warning";
+}
+
+<div class="container mt-5 pb-5" style="max-width: 1100px;">
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+        <div>
+            <span class="section-kicker">คำสั่งซื้อ #ORD@(Model.Order.OrderID.ToString("D4"))</span>
+            <h1 class="h2 fw-bold mb-0">รายละเอียดออเดอร์</h1>
+        </div>
+        <a asp-controller="Home" asp-action="OrderHistory" class="btn btn-outline-success">
+            <i class="bi bi-arrow-left me-1"></i>กลับไปประวัติการสั่งซื้อ
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <section class="card border-0 shadow-sm rounded-4 p-3 p-md-4">
+                <h2 class="h5 fw-bold mb-3">รายการอาหาร</h2>
+                @if (Model.Items.Count > 0)
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">เมนู</th>
+                                    <th scope="col" class="text-center">จำนวน</th>
+                                    <th scope="col" class="text-end">ราคาต่อหน่วย</th>
+                                    <th scope="col" class="text-end">รวม</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@item.MenuName</td>
+                                        <td class="text-center">@item.Quantity</td>
+                                        <td class="text-end">฿@item.UnitPrice.ToString("N2")</td>
+                                        <td class="text-end fw-semibold">฿@item.LineTotal.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">ไม่พบรายการอาหารในออเดอร์นี้</p>
+                }
+            </section>
+        </div>
+
+        <div class="col-lg-4">
+            <section class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <h2 class="h5 fw-bold mb-0">สรุปออเดอร์</h2>
+                    <span class="badge rounded-pill @statusClass">@Model.Order.OrderStatus</span>
+                </div>
+
+                <dl class="mb-0">
+                    <dt class="text-muted small">วันที่สั่ง</dt>
+                    <dd class="mb-3">@Model.Order.OrderDate.ToString("dd MMM yyyy HH:mm")</dd>
+
+                    <dt class="text-muted small">รูปแบบ</dt>
+                    <dd class="mb-3">@Model.Order.OrderType</dd>
+
+                    @if (Model.Order.OrderType == "สั่งล่วงหน้า รับที่ร้าน")
+                    {
+                        <dt class="text-muted small">เวลารับอาหาร</dt>
+                        <dd class="mb-3">@Model.Order.ArriveTime น.</dd>
+                    }
+
+                    @if (Model.Order.DiningTable != null)
+                    {
+                        <dt class="text-muted small">โต๊ะ</dt>
+                        <dd class="mb-3">@Model.Order.DiningTable.TableNumber</dd>
+                    }
+
+                    <dt class="text-muted small">วิธีชำระเงิน</dt>
+                    <dd class="mb-3">@Model.Order.PaymentMethod</dd>
+                </dl>
+
+                <hr />
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">ยอดรวม</span>
+                    <span class="fs-4 fw-bold text-brand">฿@Model.Order.TotalAmount.ToString("N2")</span>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

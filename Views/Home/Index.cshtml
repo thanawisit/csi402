@@ -3,142 +3,185 @@
 }
 
 <style>
-    /* กำหนดสีพื้นหลังและสีหลักของเว็บให้เหมือนในรูป */
-    body {
-        background-color: #fffaf4; /* สีพื้นหลังครีมอ่อน */
-    }
     .text-brand {
-        color: #bd3124; /* สีแดงของแบรนด์ */
+        color: var(--brand-red);
     }
     .bg-brand {
-        background-color: #bd3124;
+        background-color: var(--brand-red);
         color: white;
     }
     .btn-brand {
-        background-color: #bd3124;
+        background-color: var(--brand-red);
         color: white;
         border: none;
         transition: 0.3s;
     }
     .btn-brand:hover {
-        background-color: #9c271c;
+        background-color: var(--brand-red-dark);
         color: white;
     }
     
-    /* สไตล์กล่องโปรโมชั่น */
-    .promo-card {
-        border-radius: 12px;
-        padding: 50px 20px;
-        font-size: 1.5rem;
-        font-weight: bold;
-        text-align: center;
-    }
-    .promo-green {
-        background-color: #377d33;
-        color: white;
-    }
-
-    /* สไตล์การ์ดเมนูอาหาร */
     .menu-card {
         background-color: white;
-        border: 1px solid #f2e6d9;
+        border: 1px solid var(--border);
         border-radius: 16px;
     }
-    .img-placeholder {
-        background-color: #f4e8d8;
-        height: 180px;
-        border-radius: 12px;
-        margin: 12px 12px 0 12px;
-    }
     .search-box {
-        background-color: #fdf4e6;
-        border: 1px solid #f2e6d9;
+        background-color: var(--brand-green-soft);
+        border: 1px solid var(--border);
     }
 </style>
 
 <div class="container mt-5 pb-5">
-    
-    <!-- 1. ส่วนต้อนรับ (Hero Section) -->
-    <div class="mb-5">
-        <h1 class="fw-bold">ยินดีต้อนรับสู่ อีสาน เด้อ</h1>
-        <p class="text-muted fs-5 mb-4">อาหารอีสานรสแซ่บ สดใหม่ทุกวัน</p>
-        
-        <div class="d-flex gap-3 align-items-center" style="max-width: 850px;">
-            <button class="btn btn-brand px-5 py-3 rounded-3 fs-5 fw-bold shadow-sm">สั่งอาหาร</button>
-            <div class="flex-grow-1">
-                <input type="text" class="form-control form-control-lg search-box py-3 rounded-3" placeholder="ค้นหาเมนูอาหาร เช่น ส้มตำ ลาบ คอหมูย่าง">
+    <section class="mb-5 hero-panel p-4 p-md-5">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <span class="hero-kicker"><i class="bi bi-fire"></i> รสอีสานแท้ ทำสดใหม่ทุกวัน</span>
+                <h1 class="hero-title fw-bold">แซ่บนัว<br><span>ถึงใจทุกคำ</span></h1>
+                <p class="text-muted fs-5 mb-4">มื้ออร่อยแบบอีสานแท้ เลือกเมนูโปรดแล้วให้เราจัดความแซ่บถึงโต๊ะ</p>
+
+                <div class="d-flex flex-column flex-md-row gap-3 align-items-stretch align-items-md-center">
+                    <a asp-controller="Home" asp-action="Menu" class="btn btn-brand px-4 py-3 rounded-3 fw-bold text-decoration-none">
+                        เลือกเมนู <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                    <form asp-controller="Home" asp-action="Menu" method="get" class="flex-grow-1">
+                        <div class="input-group">
+                            <input type="search" name="q" class="form-control form-control-lg search-box py-3 rounded-start-3" placeholder="ค้นหาเมนู เช่น ส้มตำ ลาบ คอหมูย่าง" aria-label="ค้นหาเมนูอาหาร">
+                            <button type="submit" class="btn btn-success px-3" aria-label="ค้นหา">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="hero-highlights">
+                    <span><i class="bi bi-check-circle-fill"></i> วัตถุดิบสดใหม่</span>
+                    <span><i class="bi bi-check-circle-fill"></i> รสชาติจัดจ้าน</span>
+                    <span><i class="bi bi-check-circle-fill"></i> อิ่มอร่อยทุกมื้อ</span>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="hero-art" aria-hidden="true">
+                    <div class="hero-orbit">
+                        <div class="hero-dish"><i class="bi bi-egg-fried"></i></div>
+                    </div>
+                    <span class="hero-float hero-float-top"><i class="bi bi-stars"></i> แซ่บสะใจ</span>
+                    <span class="hero-float hero-float-bottom"><i class="bi bi-leaf-fill"></i> สดใหม่ทุกวัน</span>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- 2. ส่วนโปรโมชั่น -->
-    <div class="mb-5">
-        <h3 class="fw-bold mb-4">โปรโมชั่น</h3>
+    <section class="mb-5">
+        <div class="section-heading">
+            <div>
+                <span class="section-kicker">สิทธิพิเศษ</span>
+                <h3 class="fw-bold mb-0">โปรโมชั่น</h3>
+            </div>
+        </div>
         <div class="row g-4">
             <div class="col-md-6">
-                <div class="promo-card bg-brand shadow-sm">
-                    ถ้าสมัครสมาชิกจะได้รับชามะลิฟรี
+                <div class="promo-card promo-red">
+                    <span class="promo-icon"><i class="bi bi-cup-hot"></i></span>
+                    <div class="promo-content">
+                        <span class="promo-label">สิทธิพิเศษสำหรับสมาชิก</span>
+                        <h4>สมัครสมาชิก<br>รับชามะลิฟรี</h4>
+                        <p class="promo-description">ร่วมเป็นสมาชิกอีสานเด้อเพื่อรับสิทธิพิเศษ</p>
+                        <a asp-controller="Account" asp-action="Register" class="promo-action">
+                            สมัครสมาชิก <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                    <i class="bi bi-stars promo-decoration" aria-hidden="true"></i>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="promo-card promo-green shadow-sm">
-                    เด็กที่สูงน้อยกว่า 120 ซม. กินฟรี
+                <div class="promo-card promo-green">
+                    <span class="promo-icon"><i class="bi bi-emoji-smile"></i></span>
+                    <div class="promo-content">
+                        <span class="promo-label">อิ่มอร่อยกันทั้งครอบครัว</span>
+                        <h4>เด็กสูงไม่ถึง 120 ซม.<br>กินฟรี</h4>
+                        <p class="promo-description">พาครอบครัวมาอิ่มอร่อยด้วยกัน</p>
+                        <a asp-controller="Home" asp-action="Buffet" class="promo-action">
+                            ดูแพ็กเกจบุฟเฟต์ <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                    <i class="bi bi-stars promo-decoration" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- 3. ส่วนเมนูแนะนำ -->
-    <div class="mb-4">
-        <h3 class="fw-bold mb-4">เมนูแนะนำ</h3>
+    <section class="mb-4">
+        <div class="section-heading">
+            <div>
+                <span class="section-kicker">จานเด็ดประจำร้าน</span>
+                <h3 class="fw-bold mb-0">เมนูแนะนำ</h3>
+            </div>
+            <a asp-controller="Home" asp-action="Menu" class="text-decoration-none fw-bold">ดูเมนูทั้งหมด <i class="bi bi-arrow-right"></i></a>
+        </div>
         <div class="row g-4">
             
-            <!-- เมนูที่ 1 -->
             <div class="col-md-4">
                 <div class="menu-card shadow-sm h-100 pb-2">
-                    <div class="img-placeholder"></div>
+                    <div class="food-art food-art-somtum" aria-hidden="true"><i class="bi bi-flower1"></i></div>
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-1">ส้มตำไทย</h5>
                         <p class="text-muted small mb-3">⭐ 4.8 · อาหารอีสาน</p>
                         <div class="d-flex justify-content-between align-items-center mt-4">
                             <span class="text-brand fs-4 fw-bold">฿60</span>
-                            <button class="btn btn-brand px-4 py-2 rounded-pill fw-bold">+ เพิ่ม</button>
+                            @if (User.Identity != null && User.Identity.IsAuthenticated)
+                            {
+                                <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="1" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                            }
+                            else
+                            {
+                                <a asp-controller="Account" asp-action="Login" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                            }
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- เมนูที่ 2 -->
             <div class="col-md-4">
                 <div class="menu-card shadow-sm h-100 pb-2">
-                    <div class="img-placeholder"></div>
+                    <div class="food-art food-art-larb" aria-hidden="true"><i class="bi bi-fire"></i></div>
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-1">ลาบหมู</h5>
                         <p class="text-muted small mb-3">⭐ 4.8 · อาหารอีสาน</p>
                         <div class="d-flex justify-content-between align-items-center mt-4">
                             <span class="text-brand fs-4 fw-bold">฿90</span>
-                            <button class="btn btn-brand px-4 py-2 rounded-pill fw-bold">+ เพิ่ม</button>
+                            @if (User.Identity != null && User.Identity.IsAuthenticated)
+                            {
+                                <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="2" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                            }
+                            else
+                            {
+                                <a asp-controller="Account" asp-action="Login" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                            }
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- เมนูที่ 3 -->
             <div class="col-md-4">
                 <div class="menu-card shadow-sm h-100 pb-2">
-                    <div class="img-placeholder"></div>
+                    <div class="food-art food-art-pork" aria-hidden="true"><i class="bi bi-egg-fried"></i></div>
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-1">คอหมูย่าง</h5>
                         <p class="text-bold mb-3 text-muted small">⭐ 4.8 · อาหารอีสาน</p>
                         <div class="d-flex justify-content-between align-items-center mt-4">
                             <span class="text-brand fs-4 fw-bold">฿120</span>
-                            <button class="btn btn-brand px-4 py-2 rounded-pill fw-bold">+ เพิ่ม</button>
+                            @if (User.Identity != null && User.Identity.IsAuthenticated)
+                            {
+                                <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="3" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                            }
+                            else
+                            {
+                                <a asp-controller="Account" asp-action="Login" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                            }
                         </div>
                     </div>
                 </div>
-            </div>
-
         </div>
-    </div>
-
+    </section>
 </div>

@@ -1,106 +1,125 @@
+@model IEnumerable<IsanDer.Controllers.CartItem>
+
 @{
     ViewData["Title"] = "รายการสั่งอาหาร";
+    decimal totalAmount = 0; // ตัวแปรเก็บยอดรวมทั้งหมด
 }
 
 <style>
-    .cart-item-card {
-        background-color: white;
-        border: 1px solid #f2e6d9;
-        border-radius: 12px;
-        padding: 20px 24px;
-        margin-bottom: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .summary-card {
-        background-color: white;
-        border: 1px solid #f2e6d9;
-        border-radius: 16px;
-        padding: 30px;
-    }
-    .text-brand { color: #bd3124; }
-    .btn-confirm-order {
-        background-color: #bd3124;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 12px;
-        width: 100%;
-        font-weight: bold;
-        transition: 0.2s;
-    }
-    .btn-confirm-order:hover {
-        background-color: #9c271c;
-    }
-    .summary-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 15px;
-        color: #555;
-        font-size: 0.95rem;
-    }
+    .cart-item-card { background-color: white; border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .summary-card { background-color: white; border: 1px solid var(--border); border-radius: 16px; padding: 30px; }
+    .text-brand { color: var(--brand-red); }
+    .btn-confirm-order { background-color: var(--brand-red); color: white; border: none; border-radius: 8px; padding: 12px; width: 100%; font-weight: bold; transition: 0.2s; cursor: pointer; }
+    .btn-confirm-order:hover { background-color: var(--brand-red-dark); }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 15px; color: #555; font-size: 0.95rem; }
 </style>
 
 <div class="container mt-5 pb-5">
     <h2 class="fw-bold mb-4">รายการสั่งอาหาร</h2>
+    @if (ViewBag.TableNumber != null)
+    {
+        <p class="text-muted">โต๊ะที่เลือก: <strong>@ViewBag.TableNumber</strong></p>
+    }
 
     <div class="row g-4">
         <!-- ฝั่งซ้าย: รายการอาหาร -->
         <div class="col-md-8">
-            
-            <!-- รายการที่ 1 -->
-            <div class="cart-item-card shadow-sm">
-                <div>
-                    <h6 class="fw-bold mb-1">ส้มตำไทย</h6>
-                    <p class="text-muted small mb-0">฿60 × 1</p>
-                </div>
-                <div class="fw-bold text-brand fs-5">฿60</div>
-            </div>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    decimal rowTotal = item.Price * item.Qty; // คำนวณราคา x จำนวน
+                    totalAmount += rowTotal; // บวกเข้ายอดรวม
 
-            <!-- รายการที่ 2 -->
-            <div class="cart-item-card shadow-sm">
-                <div>
-                    <h6 class="fw-bold mb-1">ลาบหมู</h6>
-                    <p class="text-muted small mb-0">฿90 × 1</p>
+                    <div class="cart-item-card shadow-sm">
+                        <div>
+                            <h6 class="fw-bold mb-1">@item.MenuName</h6>
+                            
+                            <!-- ปุ่ม + / - -->
+                            <div class="d-flex align-items-center mt-2">
+                                <span class="text-muted small me-3">฿@item.Price</span>
+                                
+                                <form asp-controller="Home" asp-action="DecreaseQty" method="post" class="m-0 p-0">
+                                    <input type="hidden" name="menuId" value="@item.MenuId" />
+                                    <input type="hidden" name="tableId" value="@ViewBag.TableId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary px-2 py-0" style="border-radius: 6px;">-</button>
+                                </form>
+                                
+                                <span class="mx-3 fw-bold">@item.Qty</span>
+                                
+                                <form asp-controller="Home" asp-action="IncreaseQty" method="post" class="m-0 p-0">
+                                    <input type="hidden" name="menuId" value="@item.MenuId" />
+                                    <input type="hidden" name="tableId" value="@ViewBag.TableId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary px-2 py-0" style="border-radius: 6px;">+</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="fw-bold text-brand fs-5">฿@rowTotal</div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center text-muted mt-5">
+                    <h5>ยังไม่มีรายการอาหารในตะกร้า</h5>
+                    <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" class="text-decoration-none mt-2 d-inline-block">← กลับไปเลือกอาหาร</a>
                 </div>
-                <div class="fw-bold text-brand fs-5">฿90</div>
-            </div>
-
-            <!-- รายการที่ 3 -->
-            <div class="cart-item-card shadow-sm">
-                <div>
-                    <h6 class="fw-bold mb-1">คอหมูย่าง</h6>
-                    <p class="text-muted small mb-0">฿120 × 2</p>
-                </div>
-                <div class="fw-bold text-brand fs-5">฿240</div>
-            </div>
-
+            }
         </div>
 
-        <!-- ฝั่งขวา: สรุปคำสั่งซื้อ -->
+        <!-- ฝั่งขวา: สรุปคำสั่งซื้อ และ สั่งล่วงหน้า -->
         <div class="col-md-4">
-            <div class="summary-card shadow-sm">
-                <h5 class="fw-bold mb-4">สรุปคำสั่งซื้อ</h5>
-                
-                <div class="summary-row">
-                    <span>ค่าอาหาร</span>
-                    <span class="fw-bold text-dark">฿390</span>
-                </div>
-                <div class="summary-row mb-4">
-                    <span>ค่าบริการ</span>
-                    <span class="fw-bold text-dark">฿0</span>
-                </div>
-                
-                <hr class="mb-4">
-                
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <span class="fw-bold fs-5">รวมทั้งหมด</span>
-                    <span class="fw-bold text-brand fs-4">฿390</span>
-                </div>
+            <!-- ใช้ Form ส่งข้อมูลไปหน้า Payment -->
+            <form asp-controller="Home" asp-action="Payment" method="post">
+                <input type="hidden" name="tableId" value="@ViewBag.TableId" />
+                <div class="summary-card shadow-sm">
+                    
+                    <h6 class="fw-bold mb-3 text-brand"><i class="bi bi-clock-history"></i> รายละเอียดการรับอาหาร</h6>
+                    @if (ViewBag.IsPreorder == true)
+                    {
+                        <div class="alert alert-success">
+                            <strong>สั่งล่วงหน้า · รับที่ร้าน</strong>
+                            <div class="small mt-1">ไม่มีบริการจัดส่ง กรุณาเลือกเวลารับอาหารวันนี้</div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label small text-muted" for="arriveTime">เวลาที่ต้องการมารับอาหาร</label>
+                            <input type="time" id="arriveTime" name="arriveTime" class="form-control" min="@ViewBag.MinPickupTime" required />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            <strong>ทานที่ร้าน · โต๊ะ @ViewBag.TableNumber</strong>
+                        </div>
+                        <input type="hidden" name="arriveTime" value="-" />
+                    }
+                    @if (ViewBag.OrderError != null)
+                    {
+                        <div class="alert alert-danger" role="alert">@ViewBag.OrderError</div>
+                    }
 
-                <button class="btn-confirm-order">ยืนยันรายการ</button>
-            </div>
+                    <hr class="mb-4">
+                    
+                    <h5 class="fw-bold mb-4">สรุปคำสั่งซื้อ</h5>
+                    <div class="summary-row">
+                        <span>ค่าอาหาร</span>
+                        <span class="fw-bold text-dark">฿@totalAmount</span>
+                    </div>
+                    <div class="summary-row mb-4">
+                        <span>ค่าบริการ</span>
+                        <span class="fw-bold text-dark">฿0</span>
+                    </div>
+                    
+                    <hr class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-bold fs-5">รวมทั้งหมด</span>
+                        <span class="fw-bold text-brand fs-4">฿@totalAmount</span>
+                    </div>
+
+                    <!-- ปุ่มยืนยันถูกเปลี่ยนเป็น submit เพื่อส่งฟอร์ม -->
+                    <button type="submit" class="btn-confirm-order">ยืนยันรายการ</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

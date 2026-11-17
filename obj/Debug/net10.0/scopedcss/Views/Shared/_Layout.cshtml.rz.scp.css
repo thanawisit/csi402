@@ -8,19 +8,23 @@ a.navbar-brand[b-0iwgaj0how] {
 }
 
 a[b-0iwgaj0how] {
-  color: #0077cc;
+  color: var(--brand-green-dark);
+}
+
+a:hover[b-0iwgaj0how] {
+  color: var(--brand-red);
 }
 
 .btn-primary[b-0iwgaj0how] {
   color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+  background-color: var(--brand-red);
+  border-color: var(--brand-red);
 }
 
 .nav-pills .nav-link.active[b-0iwgaj0how], .nav-pills .show > .nav-link[b-0iwgaj0how] {
   color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+  background-color: var(--brand-green);
+  border-color: var(--brand-green);
 }
 
 .border-top[b-0iwgaj0how] {
@@ -40,9 +44,8 @@ button.accept-policy[b-0iwgaj0how] {
 }
 
 .footer[b-0iwgaj0how] {
-  position: absolute;
-  bottom: 0;
+  position: static;
   width: 100%;
-  white-space: nowrap;
-  line-height: 60px;
+  white-space: normal;
+  line-height: inherit;
 }

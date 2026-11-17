@@ -1,0 +1,169 @@
+@model AdminDashboardViewModel
+@{
+    var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+    var roleLabel = role != null && AppRoles.Labels.TryGetValue(role, out var label) ? label : role ?? "ผู้ใช้";
+    ViewData["Title"] = "ระบบหลังบ้าน";
+    var canManageMenus = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Manager);
+    var canManageOrders = canManageMenus ||
+                          User.IsInRole(AppRoles.Receptionist) ||
+                          User.IsInRole(AppRoles.Chef);
+    var canManageStock = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.StockChecker);
+    var canManageUsers = canManageMenus;
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="fw-bold mb-1">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">สวัสดี @User.Identity?.Name · @roleLabel</p>
+        </div>
+    </div>
+
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+    }
+    @if (TempData["AdminError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["AdminError"]</div>
+    }
+
+    <div class="row g-3 mb-4">
+        @if (canManageMenus || canManageStock)
+        {
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="text-muted">เมนูทั้งหมด</div>
+                        <div class="display-6 fw-bold text-danger">@Model.MenuCount</div>
+                        @if (canManageMenus)
+                        {
+                            <a asp-action="Menus" class="btn btn-sm btn-outline-danger mt-2">จัดการเมนู</a>
+                        }
+                        else
+                        {
+                            <a asp-action="Stock" class="btn btn-sm btn-outline-success mt-2">ตรวจสอบสต๊อก</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        @if (canManageOrders)
+        {
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="text-muted">ออเดอร์รอดำเนินการ</div>
+                        <div class="display-6 fw-bold text-success">@Model.PendingOrderCount</div>
+                        <a asp-action="Orders" class="btn btn-sm btn-outline-success mt-2">จัดการออเดอร์</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="text-muted">ออเดอร์วันนี้</div>
+                        <div class="display-6 fw-bold text-primary">@Model.TodayOrderCount</div>
+                        <div class="small text-muted">ยอดสั่งรวม ฿@Model.TodayOrderTotal.ToString("N2")</div>
+                    </div>
+                </div>
+            </div>
+        }
+        @if (canManageUsers)
+        {
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="text-muted">บัญชีผู้ใช้</div>
+                        <div class="display-6 fw-bold">@Model.UserCount</div>
+                        <a asp-action="Users" class="btn btn-sm btn-outline-secondary mt-2">ดูบัญชีผู้ใช้</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row g-3 mb-4">
+        @if (canManageStock)
+        {
+            <div class="col-sm-6 @(canManageUsers ? "col-xl-3" : "col-xl-6")">
+                <a asp-action="Stock" class="btn btn-success w-100 py-3 rounded-3">
+                    <i class="bi bi-box-seam me-2"></i>ตรวจสอบสต๊อก
+                </a>
+            </div>
+        }
+        @if (canManageMenus)
+        {
+            <div class="col-sm-6 col-xl-3">
+                <a asp-action="Reports" class="btn btn-outline-primary w-100 py-3 rounded-3">
+                    <i class="bi bi-graph-up-arrow me-2"></i>รายงานยอดขาย
+                </a>
+            </div>
+        }
+        @if (canManageUsers)
+        {
+            <div class="col-sm-6 col-xl-3">
+                <a asp-action="Users" class="btn btn-outline-success w-100 py-3 rounded-3">
+                    <i class="bi bi-people me-2"></i>
+                    จัดการบัญชีและบทบาทผู้ใช้
+                </a>
+            </div>
+        }
+    </div>
+
+    @if (canManageOrders)
+    {
+        <section class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <h2 class="h5 fw-bold mb-0">ออเดอร์ล่าสุด</h2>
+                    <a asp-action="Orders" class="btn btn-sm btn-outline-success">ดูออเดอร์ทั้งหมด</a>
+                </div>
+                @if (Model.RecentOrders.Count == 0)
+                {
+                    <p class="text-muted mb-0">ยังไม่มีออเดอร์</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>เลขออเดอร์</th>
+                                    <th>ลูกค้า</th>
+                                    <th>รูปแบบ</th>
+                                    <th>วันที่</th>
+                                    <th>ยอดรวม</th>
+                                    <th>สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var order in Model.RecentOrders)
+                                {
+                                    <tr>
+                                        <td>@("#ORD" + order.OrderID.ToString("D4"))</td>
+                                        <td>@order.User?.Username</td>
+                                        <td>
+                                            @order.OrderType
+                                            @if (order.DiningTable != null)
+                                            {
+                                                <div class="small text-muted">โต๊ะ @order.DiningTable.TableNumber</div>
+                                            }
+                                            else if (order.ArriveTime != "-")
+                                            {
+                                                <div class="small text-muted">รับเวลา @order.ArriveTime น.</div>
+                                            }
+                                        </td>
+                                        <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>฿@order.TotalAmount.ToString("N2")</td>
+                                        <td>@order.OrderStatus</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>

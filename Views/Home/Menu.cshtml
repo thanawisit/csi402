@@ -2,12 +2,16 @@
 
 @{
     ViewData["Title"] = "เมนูอาหาร";
+    var searchTerm = ViewBag.SearchTerm as string;
+    var selectedCategory = ViewBag.MenuCategory as string;
 }
 
 <style>
     /* สไตล์ปุ่มหมวดหมู่ */
     .category-btn {
-        background-color: #8c7e75; /* สีน้ำตาลเทา */
+        display: inline-flex;
+        align-items: center;
+        background-color: #377d33;
         color: white;
         border: none;
         padding: 10px 24px;
@@ -16,9 +20,10 @@
         margin-right: 12px;
         margin-bottom: 12px;
         transition: 0.2s;
+        text-decoration: none;
     }
     .category-btn:hover {
-        background-color: #736760;
+        background-color: #2b6127;
         color: white;
     }
     /* ปุ่มหมวดหมู่ที่ถูกเลือก (สีแดง) */
@@ -32,41 +37,72 @@
     /* สไตล์การ์ดเมนูอาหาร */
     .menu-card {
         background-color: white;
-        border: 1px solid #f2e6d9;
+        border: 1px solid var(--border);
         border-radius: 16px;
     }
-    .img-placeholder {
-        background-color: #f4e8d8;
-        height: 180px;
-        border-radius: 12px;
-        margin: 12px 12px 0 12px;
-    }
     .text-brand {
-        color: #bd3124;
+        color: var(--brand-red);
     }
     .btn-brand {
-        background-color: #bd3124;
+        background-color: var(--brand-red);
         color: white;
         border: none;
         transition: 0.3s;
     }
     .btn-brand:hover {
-        background-color: #9c271c;
+        background-color: var(--brand-red-dark);
         color: white;
+    }
+    .menu-search-form {
+        max-width: 760px;
     }
 </style>
 
 <div class="container mt-5 pb-5">
     <h2 class="fw-bold mb-4">เมนูอาหาร</h2>
+    @if (ViewBag.OrderError != null)
+    {
+        <div class="alert alert-warning" role="alert">@ViewBag.OrderError</div>
+    }
+    @if (ViewBag.TableNumber != null)
+    {
+        <p class="text-muted">กำลังสั่งอาหารสำหรับโต๊ะ <strong>@ViewBag.TableNumber</strong></p>
+    }
+    else
+    {
+        <p class="text-muted">สั่งล่วงหน้าและมารับที่ร้าน · ระบุเวลารับอาหารได้ในตะกร้า</p>
+    }
+
+    <form asp-controller="Home" asp-action="Menu" method="get" class="menu-search-form mb-4">
+        <div class="input-group">
+            <input type="search" name="q" value="@searchTerm" class="form-control form-control-lg" placeholder="ค้นหาจากชื่อเมนู เช่น ส้มตำ ลาบ คอหมูย่าง" aria-label="ค้นหาเมนูอาหาร">
+            @if (ViewBag.TableId != null)
+            {
+                <input type="hidden" name="tableId" value="@ViewBag.TableId">
+            }
+            @if (selectedCategory != null)
+            {
+                <input type="hidden" name="category" value="@selectedCategory">
+            }
+            <button type="submit" class="btn btn-success px-4">
+                <i class="bi bi-search me-1"></i> ค้นหา
+            </button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(searchTerm))
+    {
+        <p class="text-muted">ผลการค้นหาสำหรับ “@searchTerm”</p>
+    }
 
     <!-- แถบหมวดหมู่ -->
     <div class="d-flex flex-wrap mb-5">
-        <button class="category-btn active">ทั้งหมด</button>
-        <button class="category-btn">ส้มตำ</button>
-        <button class="category-btn">ลาบ / น้ำตก</button>
-        <button class="category-btn">ต้ม / แกง</button>
-        <button class="category-btn">ย่าง</button>
-        <button class="category-btn">เครื่องดื่ม</button>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" class="category-btn @(selectedCategory == null ? "active" : "")">ทั้งหมด</a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="somtum" class="category-btn @(selectedCategory == "somtum" ? "active" : "")">ส้มตำ</a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="larb" class="category-btn @(selectedCategory == "larb" ? "active" : "")">ลาบ / น้ำตก</a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="soup" class="category-btn @(selectedCategory == "soup" ? "active" : "")">ต้ม / แกง</a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="grilled" class="category-btn @(selectedCategory == "grilled" ? "active" : "")">ย่าง</a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="drinks" class="category-btn @(selectedCategory == "drinks" ? "active" : "")">เครื่องดื่ม</a>
     </div>
 
     <!-- รายการเมนูอาหาร (ดึงข้อมูลจาก Database) -->
@@ -78,7 +114,10 @@
             {
                 <div class="col-md-4">
                     <div class="menu-card shadow-sm h-100 pb-2">
-                        <div class="img-placeholder"></div>
+                        <div class="img-placeholder menu-food-art" aria-hidden="true">
+                            <span class="menu-food-art-plate"><i class="bi bi-egg-fried"></i></span>
+                            <span class="menu-food-art-label">อีสานแซ่บ</span>
+                        </div>
                         <div class="card-body p-4">
                             <!-- ดึงชื่อเมนูจากฐานข้อมูล -->
                             <h5 class="fw-bold mb-1">@item.MenuName</h5>
@@ -86,13 +125,33 @@
                             <div class="d-flex justify-content-between align-items-center mt-4">
                                 <!-- ดึงราคาจากฐานข้อมูล -->
                                 <span class="text-brand fs-4 fw-bold">฿@item.Price</span>
-                                <!-- แนบ ID ของอาหารไปกับปุ่มเพิ่ม เพื่อให้หน้ารายละเอียดรู้ว่าเลือกเมนูไหน -->
-                                <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@item.MenuId" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                
+                                @if (!string.Equals(item.Status, "Available", StringComparison.OrdinalIgnoreCase) || item.StockQuantity == 0)
+                                {
+                                    <span class="badge text-bg-secondary">ปิดขาย / สินค้าหมด</span>
+                                }
+                                else if (User.Identity != null && User.Identity.IsAuthenticated)
+                                {
+                                    <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@item.MenuId" asp-route-tableId="@ViewBag.TableId" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Account" asp-action="Login" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                }
                             </div>
                         </div>
                     </div>
                 </div>
             }
+        }
+        else if (!string.IsNullOrWhiteSpace(searchTerm) || selectedCategory != null)
+        {
+            <div class="col-12 text-center text-muted mt-5">
+                <i class="bi bi-search fs-2"></i>
+                <h5 class="mt-3">ไม่พบเมนูที่ตรงกับตัวกรองนี้</h5>
+                <p>ลองเลือกหมวดหมู่อื่นหรือค้นหาด้วยคำอื่น</p>
+                <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" class="btn btn-outline-success">ล้างตัวกรอง</a>
+            </div>
         }
         else
         {

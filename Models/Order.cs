@@ -1,31 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IsanDer.Models;
 
+[Table("orders")] // ระบุให้ตรงกับชื่อตารางใน MySQL
 public partial class Order
 {
-    public int OrderId { get; set; }
+    [Key]
+    public int OrderID { get; set; }
 
-    public int UserId { get; set; }
+    public int UserID { get; set; }
 
-    public int MenuId { get; set; }
+    public int? TableID { get; set; }
 
-    public string TableNumber { get; set; } = null!;
+    public DateTime OrderDate { get; set; } = DateTime.Now;
 
-    public int Quantity { get; set; }
+    public string OrderType { get; set; } = null!;
 
-    public string? SpicinessLevel { get; set; }
+    public string ArriveTime { get; set; } = null!;
 
-    public string? SpecialRequest { get; set; }
+    public string PaymentMethod { get; set; } = null!;
 
     public decimal TotalAmount { get; set; }
 
-    public string OrderStatus { get; set; } = null!;
+    public string OrderStatus { get; set; } = "รอดำเนินการ";
 
-    public DateTime? OrderDateTime { get; set; }
+    // สำหรับเชื่อมโยงกับตาราง User (เพื่อไม่ให้มี Error)
+    public virtual User? User { get; set; }
 
-    public virtual Menu Menu { get; set; } = null!;
-
-    public virtual User User { get; set; } = null!;
+    public virtual DiningTable? DiningTable { get; set; }
 }

@@ -1,0 +1,64 @@
+@model IEnumerable<Menu>
+@{
+    ViewData["Title"] = "จัดการเมนู";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="fw-bold mb-1">จัดการเมนู</h1>
+            <p class="text-muted mb-0">เพิ่ม แก้ไข หรือปิดการขายเมนู โดยข้อมูลในออเดอร์เดิมจะยังคงอยู่</p>
+        </div>
+        <a asp-action="MenuCreate" class="btn btn-danger"><i class="bi bi-plus-lg me-1"></i>เพิ่มเมนู</a>
+    </div>
+
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ชื่อเมนู</th>
+                        <th>ราคา</th>
+                        <th>สถานะ</th>
+                        <th class="text-end pe-4">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var menu in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-semibold">@menu.MenuName</td>
+                            <td>฿@menu.Price.ToString("N2")</td>
+                            <td>
+                                @if (menu.Status == "Available")
+                                {
+                                    <span class="badge text-bg-success">พร้อมขาย</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">ปิดขาย</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                <a asp-action="MenuEdit" asp-route-id="@menu.MenuId" class="btn btn-sm btn-outline-primary">แก้ไข</a>
+                                @if (menu.Status != "Unavailable")
+                                {
+                                    <form asp-action="DisableMenu" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@menu.MenuId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">ปิดขาย</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

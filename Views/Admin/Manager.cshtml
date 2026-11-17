@@ -1,0 +1,58 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "แดชบอร์ดผู้จัดการ";
+}
+
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="fw-bold mb-1">แดชบอร์ดผู้จัดการ</h1>
+        <p class="text-muted mb-0">สวัสดี @User.Identity?.Name · จัดการพนักงาน ดูยอดขาย และดูแลเมนู</p>
+    </div>
+
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+    }
+    @if (TempData["AdminError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["AdminError"]</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <i class="bi bi-journal-text fs-2 text-danger"></i>
+                    <h2 class="h5 fw-bold mt-3">จัดการเมนู</h2>
+                    <div class="display-6 fw-bold text-danger">@Model.MenuCount</div>
+                    <p class="text-muted">เมนูทั้งหมด · เพิ่มเมนูใหม่หรือแก้ไขข้อมูลเมนู</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-action="Menus" class="btn btn-outline-danger">รายการเมนู</a>
+                        <a asp-action="MenuCreate" class="btn btn-danger">เพิ่มเมนู</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <i class="bi bi-people fs-2 text-success"></i>
+                    <h2 class="h5 fw-bold mt-3">ดูแลพนักงาน</h2>
+                    <div class="display-6 fw-bold text-success">@Model.UserCount</div>
+                    <p class="text-muted">พนักงานในระบบ · ดูรายชื่อและข้อมูลติดต่อ</p>
+                    <a asp-action="Users" class="btn btn-outline-success">ดูรายชื่อพนักงาน</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <i class="bi bi-graph-up-arrow fs-2 text-primary"></i>
+                    <h2 class="h5 fw-bold mt-3">ดูยอดขาย</h2>
+                    <p class="text-muted">ตรวจสอบยอดขายและออเดอร์ที่เสร็จแล้วตามช่วงวันที่</p>
+                    <a asp-action="Reports" class="btn btn-outline-primary">เปิดรายงานยอดขาย</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

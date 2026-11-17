@@ -1,5 +1,19 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@{
+    var isStaff = User.IsInRole(AppRoles.Admin) ||
+                  User.IsInRole(AppRoles.Manager) ||
+                  User.IsInRole(AppRoles.Receptionist) ||
+                  User.IsInRole(AppRoles.Chef) ||
+                  User.IsInRole(AppRoles.StockChecker);
+    var canManageMenus = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Manager);
+    var canManageOrders = User.IsInRole(AppRoles.Admin) ||
+                          User.IsInRole(AppRoles.Receptionist) ||
+                          User.IsInRole(AppRoles.Chef);
+    var canManageStock = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.StockChecker);
+    var canManageUsers = canManageMenus;
+    var canViewReports = canManageMenus;
+}
+<!DOCTYPE html>
+<html lang="th">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,31 +27,6 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/IsanDer.styles.css" asp-append-version="true" />
     
-    <style>
-        /* ตกแต่ง Navbar ให้เหมือนในรูป */
-        .navbar-brand-custom {
-            color: #bd3124 !important; /* สีแดงแบรนด์ */
-            font-weight: 800;
-            font-size: 1.5rem;
-        }
-        .nav-link-custom {
-            color: #333 !important;
-            font-weight: 600;
-            margin: 0 10px;
-        }
-        .nav-link-custom:hover {
-            color: #bd3124 !important;
-        }
-        .nav-icon {
-            color: #555;
-            margin-left: 20px;
-            text-decoration: none;
-            transition: 0.2s;
-        }
-        .nav-icon:hover {
-            color: #bd3124;
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -45,7 +34,14 @@
             <div class="container">
                 
                 <!-- 1. โลโก้ (ฝั่งซ้าย) -->
-                <a class="navbar-brand navbar-brand-custom" asp-area="" asp-controller="Home" asp-action="Index">อีสาน เด้อ</a>
+                <a class="navbar-brand navbar-brand-custom" asp-area="" asp-controller="@(isStaff ? "Admin" : "Home")" asp-action="@(User.IsInRole(AppRoles.Manager) ? "Manager" : "Index")">
+                    <span class="brand-mark"><i class="bi bi-fire"></i></span>
+                    <span>อีสาน เด้อ</span>
+                    @if (isStaff)
+                    {
+                        <span class="badge rounded-pill bg-warning text-dark ms-1">ระบบหลังบ้าน</span>
+                    }
+                </a>
                 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -54,36 +50,99 @@
                 
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     
-                    <!-- 2. เมนูหลัก (จัดให้อยู่ตรงกลางด้วย mx-auto) -->
                     <ul class="navbar-nav mx-auto">
-                        <li class="nav-item">
-                            <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Index">หน้าแรก</a>
-                        </li>
-                        <li class="nav-item">
-                          <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Menu">เมนู</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Buffet">บุฟเฟต์</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link nav-link-custom" href="#">สั่งล่วงหน้า</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Contact">ติดต่อเรา</a>
-                        <li class="nav-item">
-                            <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="OrderHistory">ประวัติการสั่งซื้อ</a>
-                        </li>
+                        @if (isStaff)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="@(User.IsInRole(AppRoles.Manager) ? "Manager" : "Index")">แดชบอร์ด</a>
+                            </li>
+                            @if (canManageMenus)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Menus">จัดการเมนู</a>
+                                </li>
+                            }
+                            @if (canManageOrders)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Orders">จัดการออเดอร์</a>
+                                </li>
+                            }
+                            @if (canManageStock)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Stock">สต๊อก</a>
+                                </li>
+                            }
+                            @if (canViewReports)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Reports">ยอดขาย</a>
+                                </li>
+                            }
+                            @if (canManageUsers)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Users">
+                                        @(User.IsInRole(AppRoles.Manager) ? "พนักงาน" : "ผู้ใช้")
+                                    </a>
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Index">หน้าแรก</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Menu">เมนู</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Buffet">บุฟเฟต์</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Menu" title="เลือกอาหารล่วงหน้าและมารับที่ร้าน">สั่งล่วงหน้า</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="Contact">ติดต่อเรา</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom" asp-area="" asp-controller="Home" asp-action="OrderHistory">ประวัติการสั่งซื้อ</a>
+                            </li>
+                        }
                     </ul>
 
-                    <!-- 3. ไอคอนรถเข็น และ โปรไฟล์ผู้ใช้งาน (ฝั่งขวา) -->
                     <div class="d-flex align-items-center">
-                        <a asp-controller="Home" asp-action="Cart" class="nav-icon fs-5">
-                            <i class="bi bi-cart2"></i>
-                        </a>
-                        <!-- ลิงก์ไอคอนโปรไฟล์ไปที่หน้า Login -->
-                        <a asp-controller="Account" asp-action="Login" class="nav-icon fs-4">
-                            <i class="bi bi-person-fill"></i>
-                        </a>
+                        @if (isStaff)
+                        {
+                            <a asp-controller="Home" asp-action="Index" class="nav-link nav-link-custom">หน้าร้าน</a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Home" asp-action="Cart" class="nav-icon fs-5" aria-label="ตะกร้าสินค้า">
+                                <i class="bi bi-cart2"></i>
+                            </a>
+                        }
+
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            @if (!isStaff)
+                            {
+                                <a asp-controller="Home" asp-action="Profile" class="nav-icon fs-4" aria-label="โปรไฟล์">
+                                    <i class="bi bi-person-fill"></i>
+                                </a>
+                            }
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="ms-3">
+                                <button type="submit" class="btn btn-link nav-icon text-decoration-none p-0" aria-label="ออกจากระบบ">
+                                    <i class="bi bi-box-arrow-right"></i> ออกจากระบบ
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a asp-controller="Account" asp-action="Login" class="nav-icon text-decoration-none">เข้าสู่ระบบ</a>
+                        }
+                        
                     </div>
 
                 </div>
@@ -99,7 +158,17 @@
 
     <footer class="border-top footer text-muted mt-5">
         <div class="container">
-            &copy; 2026 - IsanDer - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            @if (isStaff)
+            {
+                <span>&copy; 2026 - IsanDer - ระบบจัดการร้าน</span>
+            }
+            else
+            {
+                <span>&copy; 2026 - IsanDer - </span>
+                <a asp-area="" asp-controller="Home" asp-action="Privacy">นโยบายความเป็นส่วนตัว</a>
+                <span class="mx-2">|</span>
+                <a asp-area="" asp-controller="Home" asp-action="Terms">ข้อกำหนดการใช้บริการ</a>
+            }
         </div>
     </footer>
     

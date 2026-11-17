@@ -1,0 +1,109 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "ศูนย์ควบคุมแอดมิน";
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <span class="badge rounded-pill bg-danger-subtle text-danger mb-2">ADMIN CONTROL CENTER</span>
+            <h1 class="fw-bold mb-1">ศูนย์ควบคุมแอดมิน</h1>
+            <p class="text-muted mb-0">สวัสดี @User.Identity?.Name · ภาพรวมบัญชีและการดูแลระบบ</p>
+        </div>
+        <a asp-action="Users" class="btn btn-danger rounded-3 px-4 py-2">
+            <i class="bi bi-shield-lock me-2"></i>จัดการบัญชีและสิทธิ์
+        </a>
+    </div>
+
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+    }
+    @if (TempData["AdminError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["AdminError"]</div>
+    }
+
+    <section class="mb-4">
+        <h2 class="h5 fw-bold mb-3">ภาพรวมบัญชี</h2>
+        <div class="row g-3">
+            <div class="col-sm-6 col-xl-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-muted">บัญชีทั้งหมด</div>
+                                <div class="display-6 fw-bold">@Model.UserCount</div>
+                            </div>
+                            <i class="bi bi-people fs-3 text-primary"></i>
+                        </div>
+                        <a asp-action="Users" class="btn btn-sm btn-outline-primary mt-3">ดูบัญชีทั้งหมด</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-muted">พนักงาน</div>
+                                <div class="display-6 fw-bold text-success">@Model.StaffCount</div>
+                            </div>
+                            <i class="bi bi-person-badge fs-3 text-success"></i>
+                        </div>
+                        <a asp-action="Users" class="btn btn-sm btn-outline-success mt-3">จัดการบทบาทพนักงาน</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-xl-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="text-muted">ลูกค้า</div>
+                                <div class="display-6 fw-bold text-info">@Model.CustomerCount</div>
+                            </div>
+                            <i class="bi bi-person-heart fs-3 text-info"></i>
+                        </div>
+                        <a asp-action="Users" class="btn btn-sm btn-outline-info mt-3">ตรวจสอบบัญชีลูกค้า</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <div class="mb-3">
+                <h2 class="h5 fw-bold mb-1">เครื่องมือดูแลระบบ</h2>
+                <p class="text-muted mb-0">จัดการสิทธิ์และตรวจสอบส่วนสำคัญของระบบร้าน</p>
+            </div>
+            <div class="row g-3">
+                <div class="col-sm-6 col-xl-3">
+                    <a asp-action="Users" class="btn btn-outline-primary w-100 h-100 py-3 rounded-3">
+                        <i class="bi bi-person-gear fs-4 d-block mb-2"></i>
+                        บัญชีและบทบาทผู้ใช้
+                    </a>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <a asp-action="Stock" class="btn btn-outline-success w-100 h-100 py-3 rounded-3">
+                        <i class="bi bi-box-seam fs-4 d-block mb-2"></i>
+                        ตรวจสอบสต๊อก
+                    </a>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <a asp-action="Reports" class="btn btn-outline-warning w-100 h-100 py-3 rounded-3">
+                        <i class="bi bi-graph-up-arrow fs-4 d-block mb-2"></i>
+                        รายงานยอดขาย
+                    </a>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <a asp-action="Orders" class="btn btn-outline-secondary w-100 h-100 py-3 rounded-3">
+                        <i class="bi bi-receipt fs-4 d-block mb-2"></i>
+                        ตรวจสอบออเดอร์
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

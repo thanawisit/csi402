@@ -1,143 +1,53 @@
+@model IsanDer.Models.Menu
+
 @{
-    ViewData["Title"] = "รายละเอียดอาหาร";
+    ViewData["Title"] = Model.MenuName;
 }
 
-<style>
-    .back-link {
-        color: #bd3124;
-        text-decoration: none;
-        font-weight: bold;
-        display: inline-block;
-        margin-bottom: 20px;
-    }
-    .back-link:hover {
-        color: #9c271c;
-    }
-    .food-image-placeholder {
-        background-color: #f4e8d8;
-        border: 2px solid #0ea5e9;
-        border-radius: 16px;
-        height: 100%;
-        min-height: 400px;
-        width: 100%;
-    }
-    .food-detail-card {
-        background-color: white;
-        border: 1px solid #f2e6d9;
-        border-radius: 16px;
-        padding: 40px;
-        height: 100%;
-    }
-    .text-brand { color: #bd3124; }
-    .btn-spice {
-        background-color: #736760;
-        color: white;
-        border: none;
-        padding: 8px 24px;
-        border-radius: 8px;
-        font-weight: normal;
-        margin-right: 10px;
-        transition: 0.2s;
-    }
-    .btn-spice.active {
-        background-color: #bd3124;
-    }
-    .qty-control {
-        display: flex;
-        align-items: center;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        width: fit-content;
-        padding: 5px 15px;
-    }
-    .qty-btn {
-        background: none;
-        border: none;
-        color: #bd3124;
-        font-size: 1.2rem;
-        font-weight: bold;
-        padding: 0 15px;
-    }
-    .qty-input {
-        width: 40px;
-        text-align: center;
-        border: none;
-        font-weight: bold;
-        pointer-events: none;
-    }
-    .btn-add-menu {
-        background-color: #bd3124;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 15px;
-        font-weight: bold;
-        width: 100%;
-        margin-top: 40px;
-        transition: 0.2s;
-    }
-    .btn-add-menu:hover {
-        background-color: #9c271c;
-    }
-</style>
+<div class="container mt-5 pb-5">
+    <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" class="text-danger text-decoration-none mb-4 d-inline-block">← กลับไปเมนูอาหาร</a>
 
-<div class="container mt-4 pb-5">
-    <a asp-action="Menu" class="back-link">← กลับไปเมนูอาหาร</a>
-
-    <div class="row g-4 align-items-stretch">
-        <!-- รูปภาพ (ซ้าย) -->
+    <div class="row g-4">
         <div class="col-md-6">
-            <div class="food-image-placeholder"></div>
+            <!-- กรอบรูปภาพอาหาร -->
+            <div style="background-color: var(--brand-green-soft); height: 400px; border-radius: 16px; border: 1px solid var(--brand-red);"></div>
         </div>
-
-        <!-- รายละเอียด (ขวา) -->
+        
         <div class="col-md-6">
-            <div class="food-detail-card shadow-sm">
-                <h2 class="fw-bold mb-2">ส้มตำไทย</h2>
-                <p class="text-muted small mb-4">⭐ 4.8 · 120 รีวิว</p>
+            <div class="p-4 bg-white shadow-sm rounded-4 border border-light h-100">
+                <!-- ดึงชื่อและราคาจากฐานข้อมูล -->
+                <h2 class="fw-bold mb-2">@Model.MenuName</h2>
+                @if (ViewBag.TableId != null)
+                {
+                    <p class="text-muted">โต๊ะ @ViewBag.TableNumber</p>
+                }
+                <p class="text-muted mb-4">⭐ 4.8 · 120 รีวิว</p>
                 
-                <h3 class="text-brand fw-bold mb-4">฿60</h3>
+                <h3 class="fw-bold text-danger mb-4">฿@Model.Price</h3>
                 
-                <p class="text-dark mb-5">
-                    ส้มตำไทยรสแซ่บ เปรี้ยวหวาน<br>
-                    พร้อมถั่วลิสงและกุ้งแห้ง
-                </p>
+                @if (!string.Equals(Model.Status, "Available", StringComparison.OrdinalIgnoreCase) || Model.StockQuantity == 0)
+                {
+                    <div class="alert alert-secondary mb-0">เมนูนี้ปิดขายหรือสินค้าหมดแล้ว</div>
+                }
+                else
+                {
+                    <form asp-controller="Home" asp-action="AddToCart" method="post">
+                        <input type="hidden" name="menuId" value="@Model.MenuId" />
+                        <input type="hidden" name="tableId" value="@ViewBag.TableId" />
+                        
+                        <div class="mb-4">
+                            <label class="fw-bold mb-2">จำนวน</label>
+                            <div class="d-flex align-items-center">
+                                <input type="number" name="qty" value="1" min="1" max="@Model.StockQuantity" class="form-control text-center me-3" style="width: 100px;" />
+                            </div>
+                        </div>
 
-                <div class="mb-4">
-                    <h6 class="fw-bold mb-3">ระดับความเผ็ด</h6>
-                    <button class="btn-spice" onclick="selectSpice(this)">ไม่เผ็ด</button>
-                    <button class="btn-spice active" onclick="selectSpice(this)">เผ็ดกลาง</button>
-                    <button class="btn-spice" onclick="selectSpice(this)">เผ็ดมาก</button>
-                </div>
-
-                <div>
-                    <h6 class="fw-bold mb-3">จำนวน</h6>
-                    <div class="qty-control">
-                        <button class="qty-btn" onclick="updateQty(-1)">-</button>
-                        <input type="text" id="qtyValue" class="qty-input" value="1" readonly>
-                        <button class="qty-btn" onclick="updateQty(1)">+</button>
-                    </div>
-                </div>
-
-               <a asp-controller="Home" asp-action="Cart" class="btn-add-menu text-center text-decoration-none d-block">เพิ่มลงรายการอาหาร</a>
+                        <button type="submit" class="btn btn-danger w-100 py-3 rounded-3 fw-bold fs-5">
+                            เพิ่มลงรายการอาหาร
+                        </button>
+                    </form>
+                }
             </div>
         </div>
     </div>
 </div>
-
-<!-- Script สำหรับปุ่มกดความเผ็ดและจำนวน -->
-<script>
-    function selectSpice(element) {
-        document.querySelectorAll('.btn-spice').forEach(btn => btn.classList.remove('active'));
-        element.classList.add('active');
-    }
-
-    function updateQty(change) {
-        let input = document.getElementById('qtyValue');
-        let currentValue = parseInt(input.value);
-        let newValue = currentValue + change;
-        if (newValue >= 1) { 
-            input.value = newValue;
-        }
-    }
-</script>

@@ -8,19 +8,23 @@ a.navbar-brand {
 }
 
 a {
-  color: #0077cc;
+  color: var(--brand-green-dark);
+}
+
+a:hover {
+  color: var(--brand-red);
 }
 
 .btn-primary {
   color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+  background-color: var(--brand-red);
+  border-color: var(--brand-red);
 }
 
 .nav-pills .nav-link.active, .nav-pills .show > .nav-link {
   color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
+  background-color: var(--brand-green);
+  border-color: var(--brand-green);
 }
 
 .border-top {
@@ -40,9 +44,8 @@ button.accept-policy {
 }
 
 .footer {
-  position: absolute;
-  bottom: 0;
+  position: static;
   width: 100%;
-  white-space: nowrap;
-  line-height: 60px;
+  white-space: normal;
+  line-height: inherit;
 }

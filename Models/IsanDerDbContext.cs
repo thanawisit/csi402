@@ -18,7 +18,12 @@ public partial class IsanDerDbContext : DbContext
 
     public virtual DbSet<Menu> Menus { get; set; }
 
+    public virtual DbSet<DiningTable> DiningTables { get; set; }
+
     public virtual DbSet<Order> Orders { get; set; }
+
+    // เพิ่ม DbSet สำหรับตาราง order_items
+    public virtual DbSet<OrderItem> OrderItems { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -35,65 +40,86 @@ public partial class IsanDerDbContext : DbContext
         modelBuilder.Entity<Menu>(entity =>
         {
             entity.HasKey(e => e.MenuId).HasName("PRIMARY");
-
             entity.ToTable("menus");
-
             entity.Property(e => e.MenuId).HasColumnName("MenuID");
             entity.Property(e => e.MenuName).HasMaxLength(100);
             entity.Property(e => e.Price).HasPrecision(10, 2);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'Available'");
+            entity.Property(e => e.StockQuantity);
         });
 
+        modelBuilder.Entity<DiningTable>(entity =>
+        {
+            entity.HasKey(e => e.TableID).HasName("PRIMARY");
+            entity.ToTable("dining_tables");
+            entity.Property(e => e.TableID).HasColumnName("TableID");
+            entity.Property(e => e.TableNumber).HasMaxLength(10).IsRequired();
+            entity.HasIndex(e => e.TableNumber).IsUnique();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+        });
+
+        // ตั้งค่าโครงสร้างตาราง orders (หัวบิล) แบบใหม่
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.OrderId).HasName("PRIMARY");
-
+            entity.HasKey(e => e.OrderID).HasName("PRIMARY");
             entity.ToTable("orders");
 
-            entity.HasIndex(e => e.MenuId, "MenuID");
+            entity.HasIndex(e => e.UserID, "UserID");
+            entity.HasIndex(e => e.TableID, "IX_orders_TableID");
 
-            entity.HasIndex(e => e.UserId, "UserID");
-
-            entity.Property(e => e.OrderId).HasColumnName("OrderID");
-            entity.Property(e => e.MenuId).HasColumnName("MenuID");
-            entity.Property(e => e.OrderDateTime)
+            entity.Property(e => e.OrderID).HasColumnName("OrderID");
+            entity.Property(e => e.UserID).HasColumnName("UserID");
+            entity.Property(e => e.TableID).HasColumnName("TableID");
+            
+            entity.Property(e => e.OrderDate)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("datetime");
-            entity.Property(e => e.OrderStatus)
-                .HasMaxLength(20)
-                .HasDefaultValueSql("'Pending'");
-            entity.Property(e => e.Quantity).HasDefaultValueSql("'1'");
-            entity.Property(e => e.SpecialRequest).HasMaxLength(255);
-            entity.Property(e => e.SpicinessLevel)
-                .HasMaxLength(20)
-                .HasDefaultValueSql("'00000000'");
-            entity.Property(e => e.TableNumber).HasMaxLength(10);
+                
+            entity.Property(e => e.OrderType).HasMaxLength(50);
+            entity.Property(e => e.ArriveTime).HasMaxLength(20);
+            entity.Property(e => e.PaymentMethod).HasMaxLength(50);
             entity.Property(e => e.TotalAmount).HasPrecision(10, 2);
-            entity.Property(e => e.UserId).HasColumnName("UserID");
+            
+            entity.Property(e => e.OrderStatus)
+                .HasMaxLength(50)
+                .HasDefaultValueSql("'รอดำเนินการ'");
 
-            entity.HasOne(d => d.Menu).WithMany(p => p.Orders)
-                .HasForeignKey(d => d.MenuId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("orders_ibfk_2");
+            entity.HasOne(e => e.DiningTable)
+                .WithMany(e => e.Orders)
+                .HasForeignKey(e => e.TableID)
+                .OnDelete(DeleteBehavior.SetNull);
 
-            entity.HasOne(d => d.User).WithMany(p => p.Orders)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("orders_ibfk_1");
+            entity.HasOne(e => e.User)
+                .WithMany(e => e.Orders)
+                .HasForeignKey(e => e.UserID);
+        });
+
+        // ตั้งค่าโครงสร้างตาราง order_items (รายละเอียดอาหารในบิล) ที่เพิ่มเข้ามาใหม่
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasKey(e => e.OrderItemID).HasName("PRIMARY");
+            entity.ToTable("order_items");
+
+            entity.Property(e => e.OrderItemID).HasColumnName("OrderItemID");
+            entity.Property(e => e.OrderID).HasColumnName("OrderID");
+            entity.Property(e => e.MenuID).HasColumnName("MenuID");
+            entity.Property(e => e.Price).HasPrecision(10, 2);
+            entity.Property(e => e.StockDeducted).HasDefaultValue(false);
         });
 
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("PRIMARY");
-
             entity.ToTable("users");
-
             entity.HasIndex(e => e.Email, "Email").IsUnique();
-
             entity.Property(e => e.UserId).HasColumnName("UserID");
             entity.Property(e => e.Email).HasMaxLength(100);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+            entity.Property(e => e.DateOfBirth).HasColumnType("date");
+            entity.Property(e => e.MarketingConsent).HasDefaultValue(false);
+            entity.Property(e => e.TermsAcceptedAt).HasColumnType("datetime");
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
             entity.Property(e => e.Role)
                 .HasMaxLength(20)

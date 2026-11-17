@@ -5,40 +5,47 @@
 <style>
     .package-card {
         background-color: white;
-        border: 1px solid #f2e6d9;
+        border: 1px solid var(--border);
         border-radius: 16px;
         padding: 50px 40px;
         height: 100%;
         display: flex;
         flex-direction: column;
     }
-    .text-brand-red { color: #bd3124; }
-    .text-brand-green { color: #377d33; }
+    .text-brand-red { color: var(--brand-red); }
+    .text-brand-green { color: var(--brand-green); }
     .btn-brand-red { 
-        background-color: #bd3124; color: white; border: none; 
+        background-color: var(--brand-red); color: white; border: none; 
         padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; 
     }
-    .btn-brand-red:hover { background-color: #9c271c; color: white; }
+    .btn-brand-red:hover { background-color: var(--brand-red-dark); color: white; }
     
     .btn-brand-green { 
-        background-color: #377d33; color: white; border: none; 
+        background-color: var(--brand-green); color: white; border: none; 
         padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; 
     }
-    .btn-brand-green:hover { background-color: #2b6127; color: white; }
+    .btn-brand-green:hover { background-color: var(--brand-green-dark); color: white; }
     
     .check-list { list-style: none; padding-left: 0; margin-top: 30px; flex-grow: 1; }
     .check-list li { margin-bottom: 15px; color: #555; display: flex; align-items: center; }
-    .check-list li::before { content: '✓'; margin-right: 10px; color: #333; }
+    .check-list li::before { content: '✓'; margin-right: 10px; color: var(--brand-green); }
 </style>
 
 <div class="container mt-5 pb-5">
-    <h2 class="fw-bold mb-5">บุฟเฟต์</h2>
+    <div class="section-heading mb-4">
+        <div>
+            <span class="section-kicker">อิ่มอร่อยในแบบที่ชอบ</span>
+            <h2 class="fw-bold mb-0">เลือกแพ็กเกจ</h2>
+        </div>
+    </div>
 
     <div class="row g-4">
         <!-- แพ็กเกจบุฟเฟต์ 299 -->
         <div class="col-md-6">
-            <div class="package-card shadow-sm">
-                <h3 class="fw-bold text-brand-red mb-4">บุฟเฟต์ 299 บาท</h3>
+            <div class="package-card package-card-red shadow-sm">
+                <span class="package-icon"><i class="bi bi-fire"></i></span>
+                <span class="section-kicker">คุ้มครบ จบในราคาเดียว</span>
+                <h3 class="fw-bold text-brand-red mb-3">บุฟเฟต์ 299 บาท</h3>
                 <ul class="check-list">
                     <li>ส้มตำ ลาบ น้ำตก ย่าง ต้มแซ่บ</li>
                     <li>รับประทานตามเวลาที่ร้านกำหนด</li>
@@ -52,10 +59,12 @@
         <!-- แพ็กเกจอาลาคาสต์ -->
         <div class="col-md-6">
             <div class="package-card shadow-sm">
-                <h3 class="fw-bold text-brand-green mb-4">อาลาคาสต์</h3>
+                <span class="package-icon"><i class="bi bi-journal-richtext"></i></span>
+                <span class="section-kicker">เลือกได้ตามใจ</span>
+                <h3 class="fw-bold text-brand-green mb-3">อาลาคาสต์</h3>
                 <ul class="check-list">
-                    <li>ส้มตำ ลาบ น้ำตก ย่าง ต้มแซ่บ</li>
-                    <li>รับประทานตามเวลาที่ร้านกำหนด</li>
+                    <li>เลือกสั่งอาหารเป็นจานจากเมนู</li>
+                    <li>คิดราคาตามรายการอาหารที่สั่ง</li>
                 </ul>
                 <div class="mt-5">
                     <a asp-controller="Home" asp-action="ReserveTable" asp-route-package="alacarte" class="btn-brand-green text-center text-decoration-none d-block">เลือกแพ็กเกจ</a>

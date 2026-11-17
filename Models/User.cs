@@ -15,5 +15,13 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
+    public string? PhoneNumber { get; set; }
+
+    public DateTime? DateOfBirth { get; set; }
+
+    public bool MarketingConsent { get; set; }
+
+    public DateTime? TermsAcceptedAt { get; set; }
+
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 }

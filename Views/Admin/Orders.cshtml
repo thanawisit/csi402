@@ -1,0 +1,89 @@
+@model IEnumerable<Order>
+@{
+    ViewData["Title"] = "จัดการออเดอร์";
+    var allowedStatuses = (string[])ViewBag.AllowedOrderStatuses;
+}
+
+<div class="container py-4">
+    <h1 class="fw-bold mb-1">จัดการออเดอร์</h1>
+    <p class="text-muted mb-4">เปลี่ยนสถานะตามหน้าที่ของแต่ละบทบาท</p>
+
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+    }
+    @if (TempData["AdminError"] != null)
+    {
+        <div class="alert alert-danger">@TempData["AdminError"]</div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">ออเดอร์</th>
+                        <th>ลูกค้า</th>
+                        <th>รับอาหาร</th>
+                        <th>วัน / เวลา</th>
+                        <th>ยอดรวม</th>
+                        <th>สถานะ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">@("#ORD" + order.OrderID.ToString("D4"))</td>
+                            <td>
+                                @order.User?.Username
+                                <div class="small text-muted">@order.User?.PhoneNumber</div>
+                            </td>
+                            <td>
+                                @order.OrderType
+                                @if (order.DiningTable != null)
+                                {
+                                    <div class="small text-muted">โต๊ะ @order.DiningTable.TableNumber</div>
+                                }
+                                else if (order.ArriveTime != "-")
+                                {
+                                    <div class="small text-muted">รับเวลา @order.ArriveTime น.</div>
+                                }
+                            </td>
+                            <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>฿@order.TotalAmount.ToString("N2")</td>
+                            <td>
+                                @if (allowedStatuses.Length == 0)
+                                {
+                                    <span>@order.OrderStatus</span>
+                                }
+                                else
+                                {
+                                    <form asp-action="UpdateOrderStatus" method="post" class="d-flex gap-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@order.OrderID" />
+                                        <select name="status" class="form-select form-select-sm" aria-label="สถานะออเดอร์">
+                                            @if (!allowedStatuses.Contains(order.OrderStatus))
+                                            {
+                                                <option value="@order.OrderStatus" selected>@order.OrderStatus</option>
+                                            }
+                                            @foreach (var status in allowedStatuses)
+                                            {
+                                                <option value="@status" selected="@(status == order.OrderStatus)">@status</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-outline-success">บันทึก</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-5">ยังไม่มีออเดอร์</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
