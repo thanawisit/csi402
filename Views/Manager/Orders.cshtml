@@ -1,0 +1,6 @@
+@model IEnumerable<Order>
+@{
+    ViewData["Title"] = "จัดการออเดอร์";
+}
+
+@await Html.PartialAsync("~/Views/Admin/Orders.cshtml", Model)

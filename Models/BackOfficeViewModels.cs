@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace IsanDer.Models;
 
@@ -11,6 +12,8 @@ public sealed class AdminDashboardViewModel
     public int CustomerCount { get; set; }
     public int TodayOrderCount { get; set; }
     public decimal TodayOrderTotal { get; set; }
+    public decimal TodayPaidTotal { get; set; }
+    public int PendingPaymentCount { get; set; }
     public IReadOnlyList<Order> RecentOrders { get; set; } = Array.Empty<Order>();
 }
 
@@ -30,6 +33,11 @@ public sealed class MenuInputViewModel
     [Required]
     [Display(Name = "สถานะ")]
     public string Status { get; set; } = "Available";
+
+    [Display(Name = "รูปภาพเมนู")]
+    public IFormFile? ImageFile { get; set; }
+
+    public string? CurrentImagePath { get; set; }
 }
 
 public sealed class AdminUserListItemViewModel

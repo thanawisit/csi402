@@ -8,34 +8,98 @@
     .summary-card { background-color: white; border: 1px solid var(--border); border-radius: 16px; padding: 30px; text-align: center; }
     .btn-confirm-payment { background-color: var(--brand-red); color: white; border: none; border-radius: 8px; padding: 12px; width: 100%; font-weight: bold; transition: 0.2s; }
     .btn-confirm-payment:hover { background-color: var(--brand-red-dark); }
+    .promptpay-qr { display: block; width: 100%; max-width: 320px; height: auto; margin: 0 auto; }
 </style>
 
 <div class="container mt-5 pb-5">
     <h2 class="fw-bold mb-4">ชำระเงิน</h2>
+    @if (ViewBag.OrderError != null)
+    {
+        <div class="alert alert-danger" role="alert">@ViewBag.OrderError</div>
+    }
+
+    @if (ViewBag.IsBuffet == true)
+    {
+        <form asp-controller="Home" asp-action="BuffetCheckout" method="get" class="bg-white p-4 rounded-4 shadow-sm border border-light mb-4">
+            <input type="hidden" name="tableId" value="@ViewBag.TableId" />
+            <input type="hidden" name="guestCount" value="@ViewBag.BuffetGuestCount" />
+            <h5 class="fw-bold mb-3">ใช้โค้ดเด็กกินฟรี</h5>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label for="promoCode" class="form-label">รหัสโปรโมชั่น</label>
+                    <input type="text" id="promoCode" name="promoCode" value="@ViewBag.PromoCode"
+                           class="form-control text-uppercase" autocomplete="off" />
+                </div>
+                <div class="col-md-4">
+                    <label for="buffetFreeChildCount" class="form-label">จำนวนเด็กที่เข้าเงื่อนไข</label>
+                    <input type="number" id="buffetFreeChildCount" name="buffetFreeChildCount"
+                           value="@ViewBag.BuffetFreeChildCount" min="0" max="@ViewBag.BuffetGuestCount"
+                           class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-success w-100">ตรวจสอบโค้ด</button>
+                </div>
+            </div>
+            <p class="small text-muted mt-3 mb-0">ลด @ViewBag.BuffetPricePerPerson บาทต่อเด็ก 1 คน อายุไม่เกิน 10 ปีและแต่งกายตามธีม พนักงานจะตรวจสอบสิทธิ์ที่ร้าน</p>
+            @if (ViewBag.PromoError != null)
+            {
+                <div class="alert alert-danger mt-3 mb-0" role="alert">@ViewBag.PromoError</div>
+            }
+            else if ((decimal)ViewBag.DiscountAmount > 0m)
+            {
+                <div class="alert alert-success mt-3 mb-0" role="status">
+                    ใช้โค้ด @ViewBag.PromoCode ได้ รับส่วนลด ฿@(((decimal)ViewBag.DiscountAmount).ToString("N2"))
+                </div>
+            }
+        </form>
+    }
 
     <!-- เพิ่ม Form ครอบทั้งหมด เพื่อส่งข้อมูลไปที่ฟังก์ชัน SaveOrder -->
-    <form asp-controller="Home" asp-action="SaveOrder" method="post">
+    <form asp-controller="Home" asp-action="SaveOrder" method="post" enctype="multipart/form-data">
         
         <!-- ซ่อนเวลารับอาหารและโต๊ะที่เลือก เพื่อบันทึกพร้อมออเดอร์ -->
         <input type="hidden" name="arriveTime" value="@ViewBag.ArriveTime" />
         <input type="hidden" name="tableId" value="@ViewBag.TableId" />
+        <input type="hidden" name="buffetGuestCount" value="@ViewBag.BuffetGuestCount" />
+        @if (ViewBag.IsBuffet == true)
+        {
+            <input type="hidden" name="promoCode" value="@ViewBag.PromoCode" />
+            <input type="hidden" name="buffetFreeChildCount" value="@ViewBag.BuffetFreeChildCount" />
+        }
         <!-- ซ่อนค่า Payment Method รอรับค่าจาก JavaScript เวลาลูกค้าคลิกกล่อง -->
-        <input type="hidden" name="paymentMethod" id="paymentMethodInput" value="เงินสด (ชำระที่หน้าร้าน)" />
+        <input type="hidden" name="paymentMethod" id="paymentMethodInput"
+               value="@(ViewBag.IsBuffet == true && (decimal)ViewBag.TotalAmount == 0m ? "โปรโมชั่น (ไม่มียอดชำระ)" : "เงินสด (ชำระที่หน้าร้าน)")" />
 
         <div class="row g-4">
             <div class="col-md-7">
                 <div class="bg-white p-4 rounded-4 shadow-sm border border-light">
-                    <h5 class="fw-bold mb-3">วิธีการชำระเงิน (จำลอง)</h5>
-                    <div class="alert alert-warning mb-4" role="note">
-                        <i class="bi bi-info-circle-fill me-1"></i>
-                        <strong>โหมดสาธิตสำหรับโปรเจกต์</strong>
-                        <div class="small mt-1">ระบบจะบันทึกช่องทางที่เลือกไว้ในออเดอร์ แต่ไม่มีการตัดเงินจริงหรือเชื่อมต่อธนาคาร</div>
-                    </div>
-                    
-                    <!-- เพิ่มพารามิเตอร์ที่ 2 ในฟังก์ชันเพื่อให้รู้ว่ากำลังกดเลือกช่องไหน -->
-                    <div class="payment-box active" onclick="selectPaymentMethod(this, 'เงินสด (ชำระที่หน้าร้าน)')">เงินสด (ชำระที่หน้าร้าน)</div>
-                    <div class="payment-box" onclick="selectPaymentMethod(this, 'PromptPay (จำลอง)')">PromptPay (จำลอง)</div>
-                    <div class="payment-box" onclick="selectPaymentMethod(this, 'บัตรเครดิต / เดบิต (จำลอง)')">บัตรเครดิต / เดบิต (จำลอง)</div>
+                    @if ((decimal)ViewBag.TotalAmount == 0m)
+                    {
+                        <div class="alert alert-success mb-0">
+                            โปรโมชั่นครอบคลุมยอดทั้งหมด ไม่ต้องชำระเงินเพิ่ม
+                        </div>
+                    }
+                    else
+                    {
+                        <h5 class="fw-bold mb-3">วิธีการชำระเงิน</h5>
+                        <div class="alert alert-info mb-4" role="note">
+                            <i class="bi bi-info-circle-fill me-1"></i>
+                            PromptPay ต้องแนบสลิป และจะนับเป็นยอดรับเงินจริงหลังแอดมินตรวจสอบเท่านั้น
+                        </div>
+
+                        <div class="payment-box active" onclick="selectPaymentMethod(this, 'เงินสด (ชำระที่หน้าร้าน)')">เงินสด (ชำระที่หน้าร้าน)</div>
+                        <div class="payment-box" onclick="selectPaymentMethod(this, 'PromptPay')">PromptPay (แนบสลิปเพื่อตรวจสอบ)</div>
+
+                        <div id="promptPayQr" class="text-center mt-4" hidden aria-live="polite">
+                            <h6 class="fw-bold">สแกน QR เพื่อชำระเงินผ่าน PromptPay</h6>
+                            <img src="~/images/promptpay-qr.png" asp-append-version="true" class="promptpay-qr rounded border" alt="QR Code สำหรับชำระเงินผ่าน PromptPay" />
+                            <p class="small text-muted mt-2">กรุณาชำระ ฿@ViewBag.TotalAmount แล้วแนบสลิปเพื่อให้แอดมินตรวจสอบ</p>
+                            <div class="text-start">
+                                <label for="paymentProof" class="form-label fw-bold">แนบสลิป (PNG/JPEG ไม่เกิน 5 MB)</label>
+                                <input type="file" id="paymentProof" name="paymentProof" class="form-control" accept=".png,.jpg,.jpeg,image/png,image/jpeg" />
+                            </div>
+                        </div>
+                    }
                 </div>
 
                 <div class="bg-white p-4 rounded-4 shadow-sm border border-light mt-4">
@@ -44,6 +108,25 @@
                         <span class="text-muted">รูปแบบ:</span>
                         <span class="fw-bold">@ViewBag.OrderType</span>
                     </div>
+                    @if (ViewBag.IsBuffet == true)
+                    {
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">แพ็กเกจ (@ViewBag.BuffetGuestCount คน × ฿@ViewBag.BuffetPricePerPerson)</span>
+                            <span class="fw-bold">฿@(((decimal)ViewBag.TotalAmount + (decimal)ViewBag.DiscountAmount).ToString("N2"))</span>
+                        </div>
+                        @if ((decimal)ViewBag.DiscountAmount > 0m)
+                        {
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>ส่วนลดเด็กกินฟรี (@ViewBag.BuffetFreeChildCount คน)</span>
+                                <span>-฿@(((decimal)ViewBag.DiscountAmount).ToString("N2"))</span>
+                            </div>
+                        }
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">ยอดหลังหักส่วนลด</span>
+                            <span class="fw-bold">฿@(((decimal)ViewBag.TotalAmount).ToString("N2"))</span>
+                        </div>
+                        <p class="small text-muted mb-2">อาหารในแพ็กเกจรวมแล้ว ไม่คิดราคาเมนูซ้ำ</p>
+                    }
                     @if (ViewBag.IsPreorder == true)
                     {
                         <div class="d-flex justify-content-between">
@@ -64,10 +147,9 @@
             <div class="col-md-5">
                 <div class="summary-card shadow-sm h-100 d-flex flex-column justify-content-center">
                     <h5 class="fw-bold mb-4 text-start">ยอดชำระ:</h5>
-                    <h1 class="fw-bold mb-4" style="color: var(--brand-red);">฿@ViewBag.TotalAmount</h1>
+                    <h1 class="fw-bold mb-4" style="color: var(--brand-red);">฿@(((decimal)ViewBag.TotalAmount).ToString("N2"))</h1>
                     
-                    <!-- เปลี่ยนเป็น type="submit" ให้ปุ่มส่งแบบฟอร์ม -->
-                    <button type="submit" class="btn-confirm-payment mt-auto" onclick="alert('ระบบกำลังบันทึกออเดอร์ของคุณ...');">ยืนยันการสั่งอาหาร</button>
+                    <button type="submit" class="btn-confirm-payment mt-auto">ยืนยันการสั่งอาหาร</button>
                 </div>
             </div>
         </div>
@@ -75,14 +157,17 @@
 </div>
 
 <script>
-    // อัปเดต JavaScript ให้เก็บค่าวิธีการชำระเงินลง input hidden ด้วย
     function selectPaymentMethod(selectedElement, methodValue) {
         const boxes = document.querySelectorAll('.payment-box');
         boxes.forEach(box => box.classList.remove('active'));
         
         selectedElement.classList.add('active');
-        
-        // ส่งค่าที่เลือกลงไปใน input ที่ซ่อนไว้
         document.getElementById('paymentMethodInput').value = methodValue;
+        const promptPaySelected = methodValue === 'PromptPay';
+        document.getElementById('promptPayQr').hidden = !promptPaySelected;
+        document.getElementById('paymentProof').required = promptPaySelected;
+        if (!promptPaySelected) {
+            document.getElementById('paymentProof').value = '';
+        }
     }
 </script>

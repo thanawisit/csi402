@@ -196,3 +196,11 @@ C:\Users\User\AppData\Local\Temp\IsanDer-ManagerVerify\IsanDer.deps.json
 C:\Users\User\AppData\Local\Temp\IsanDer-ManagerVerify\IsanDer.runtimeconfig.json
 C:\Users\User\AppData\Local\Temp\IsanDer-ManagerVerify\IsanDer.dll
 C:\Users\User\AppData\Local\Temp\IsanDer-ManagerVerify\IsanDer.pdb
+C:\Users\User\AppData\Local\Temp\IsanDerStaffViewsRelease\appsettings.Development.json
+C:\Users\User\AppData\Local\Temp\IsanDerStaffViewsRelease\appsettings.json
+C:\Users\User\AppData\Local\Temp\IsanDerStaffViewsRelease\IsanDer.staticwebassets.runtime.json
+C:\Users\User\AppData\Local\Temp\IsanDerStaffViewsRelease\IsanDer.staticwebassets.endpoints.json
+C:\Users\User\AppData\Local\Temp\IsanDerStaffViewsRelease\IsanDer.deps.json
+C:\Users\User\AppData\Local\Temp\IsanDerStaffViewsRelease\IsanDer.runtimeconfig.json
+C:\Users\User\AppData\Local\Temp\IsanDerStaffViewsRelease\IsanDer.dll
+C:\Users\User\AppData\Local\Temp\IsanDerStaffViewsRelease\IsanDer.pdb

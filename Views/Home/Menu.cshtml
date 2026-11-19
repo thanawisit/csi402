@@ -60,6 +60,13 @@
 
 <div class="container mt-5 pb-5">
     <h2 class="fw-bold mb-4">เมนูอาหาร</h2>
+    @if (ViewBag.OrderSuccess != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="status">
+            @ViewBag.OrderSuccess
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
+        </div>
+    }
     @if (ViewBag.OrderError != null)
     {
         <div class="alert alert-warning" role="alert">@ViewBag.OrderError</div>
@@ -114,10 +121,18 @@
             {
                 <div class="col-md-4">
                     <div class="menu-card shadow-sm h-100 pb-2">
-                        <div class="img-placeholder menu-food-art" aria-hidden="true">
-                            <span class="menu-food-art-plate"><i class="bi bi-egg-fried"></i></span>
-                            <span class="menu-food-art-label">อีสานแซ่บ</span>
-                        </div>
+                        @if (!string.IsNullOrWhiteSpace(item.ImagePath))
+                        {
+                            <img src="@item.ImagePath" alt="รูปเมนู @item.MenuName"
+                                 class="w-100" style="height: 220px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="img-placeholder menu-food-art" aria-hidden="true">
+                                <span class="menu-food-art-plate"><i class="bi bi-egg-fried"></i></span>
+                                <span class="menu-food-art-label">อีสานแซ่บ</span>
+                            </div>
+                        }
                         <div class="card-body p-4">
                             <!-- ดึงชื่อเมนูจากฐานข้อมูล -->
                             <h5 class="fw-bold mb-1">@item.MenuName</h5>

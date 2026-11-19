@@ -53,7 +53,7 @@
             <div class="col-sm-6 col-xl-3">
                 <div class="card border-0 shadow-sm rounded-4 h-100">
                     <div class="card-body p-4">
-                        <div class="text-muted">ออเดอร์รอดำเนินการ</div>
+                        <div class="text-muted">ออเดอร์รอร้านยืนยัน</div>
                         <div class="display-6 fw-bold text-success">@Model.PendingOrderCount</div>
                         <a asp-action="Orders" class="btn btn-sm btn-outline-success mt-2">จัดการออเดอร์</a>
                     </div>
@@ -65,6 +65,8 @@
                         <div class="text-muted">ออเดอร์วันนี้</div>
                         <div class="display-6 fw-bold text-primary">@Model.TodayOrderCount</div>
                         <div class="small text-muted">ยอดสั่งรวม ฿@Model.TodayOrderTotal.ToString("N2")</div>
+                        <div class="small text-success">รับเงินจริงแล้ว ฿@Model.TodayPaidTotal.ToString("N2")</div>
+                        <div class="small text-warning">สลิปรอตรวจ/ส่งใหม่ @Model.PendingPaymentCount รายการ</div>
                     </div>
                 </div>
             </div>
@@ -76,7 +78,7 @@
                     <div class="card-body p-4">
                         <div class="text-muted">บัญชีผู้ใช้</div>
                         <div class="display-6 fw-bold">@Model.UserCount</div>
-                        <a asp-action="Users" class="btn btn-sm btn-outline-secondary mt-2">ดูบัญชีผู้ใช้</a>
+                        <a asp-controller="Accounts" asp-action="Index" class="btn btn-sm btn-outline-secondary mt-2">ดูบัญชีผู้ใช้</a>
                     </div>
                 </div>
             </div>
@@ -103,7 +105,7 @@
         @if (canManageUsers)
         {
             <div class="col-sm-6 col-xl-3">
-                <a asp-action="Users" class="btn btn-outline-success w-100 py-3 rounded-3">
+                <a asp-controller="Accounts" asp-action="Index" class="btn btn-outline-success w-100 py-3 rounded-3">
                     <i class="bi bi-people me-2"></i>
                     จัดการบัญชีและบทบาทผู้ใช้
                 </a>
@@ -153,10 +155,14 @@
                                             {
                                                 <div class="small text-muted">รับเวลา @order.ArriveTime น.</div>
                                             }
+                                            @if (order.BuffetGuestCount is int guestCount)
+                                            {
+                                                <div class="small text-muted">บุฟเฟต์ @guestCount คน</div>
+                                            }
                                         </td>
                                         <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
                                         <td>฿@order.TotalAmount.ToString("N2")</td>
-                                        <td>@order.OrderStatus</td>
+                                        <td>@OrderStatusLabels.Display(order.OrderStatus)</td>
                                     </tr>
                                 }
                             </tbody>

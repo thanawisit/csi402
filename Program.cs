@@ -18,8 +18,14 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// เพิ่มบรรทัดนี้เพื่อเชื่อมต่อกับไฟล์ IsanDerDbContext ของเรา
-builder.Services.AddDbContext<IsanDer.Models.IsanDerDbContext>();
+// --- ส่วนที่แก้ไขเพิ่มเติมสำหรับการเชื่อมต่อ TiDB ---
+// ดึงค่า Connection String ที่ชื่อ DefaultConnection จากไฟล์ appsettings.json
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// เพิ่มบรรทัดนี้เพื่อเชื่อมต่อกับไฟล์ IsanDerDbContext ของเราโดยใช้ MySQL Provider
+builder.Services.AddDbContext<IsanDer.Models.IsanDerDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+// ---------------------------------------------
 
 // 2. เพิ่มตั้งค่าระบบ Authentication (ยืนยันตัวตน) ด้วย Cookie
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -84,6 +90,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 

@@ -1,0 +1,144 @@
+@model PromotionManagementViewModel
+@{
+    ViewData["Title"] = "จัดการโปรโมชั่น";
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <span class="badge rounded-pill bg-success-subtle text-success mb-2">PROMOTION MANAGEMENT</span>
+            <h1 class="fw-bold mb-1">จัดการโปรโมชั่น</h1>
+            <p class="text-muted mb-0">แก้ไขแบนเนอร์หน้าแรกและตั้งรหัสส่วนลดสำหรับบุฟเฟต์</p>
+        </div>
+        <a asp-controller="Admin" asp-action="@(User.IsInRole(AppRoles.Manager) ? "Manager" : "Index")" class="btn btn-outline-secondary rounded-3">
+            <i class="bi bi-arrow-left me-2"></i>กลับแดชบอร์ด
+        </a>
+    </div>
+
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+    }
+
+    <form asp-action="Promotions" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <section class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="h5 fw-bold mb-0">แบนเนอร์สมาชิก</h2>
+                            <div class="form-check form-switch">
+                                <input asp-for="Membership.IsActive" class="form-check-input" />
+                                <label asp-for="Membership.IsActive" class="form-check-label">แสดง</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Membership.Kicker" class="form-label">ข้อความกำกับ</label>
+                            <input asp-for="Membership.Kicker" class="form-control" />
+                            <span asp-validation-for="Membership.Kicker" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Membership.Headline" class="form-label">หัวข้อ (ขึ้นบรรทัดใหม่ได้)</label>
+                            <textarea asp-for="Membership.Headline" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Membership.Headline" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Membership.Description" class="form-label">รายละเอียด</label>
+                            <textarea asp-for="Membership.Description" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Membership.Description" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="Membership.LinkText" class="form-label">ข้อความปุ่ม</label>
+                            <input asp-for="Membership.LinkText" class="form-control" />
+                            <span asp-validation-for="Membership.LinkText" class="text-danger"></span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="col-lg-6">
+                <section class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h2 class="h5 fw-bold mb-0">แบนเนอร์บุฟเฟต์</h2>
+                            <div class="form-check form-switch">
+                                <input asp-for="Buffet.IsActive" class="form-check-input" />
+                                <label asp-for="Buffet.IsActive" class="form-check-label">แสดง</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Buffet.Kicker" class="form-label">ข้อความกำกับ</label>
+                            <input asp-for="Buffet.Kicker" class="form-control" />
+                            <span asp-validation-for="Buffet.Kicker" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Buffet.Headline" class="form-label">หัวข้อ (ขึ้นบรรทัดใหม่ได้)</label>
+                            <textarea asp-for="Buffet.Headline" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Buffet.Headline" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Buffet.Description" class="form-label">รายละเอียด</label>
+                            <textarea asp-for="Buffet.Description" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Buffet.Description" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="Buffet.LinkText" class="form-label">ข้อความปุ่ม</label>
+                            <input asp-for="Buffet.LinkText" class="form-control" />
+                            <span asp-validation-for="Buffet.LinkText" class="text-danger"></span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <section class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">โค้ดเด็กกินฟรีสำหรับบุฟเฟต์</h2>
+                        <p class="text-muted mb-0">ลดค่าบุฟเฟต์ 299 บาทต่อเด็ก 1 คน อายุไม่เกิน 10 ปีและแต่งกายตามธีม</p>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input asp-for="ChildBuffet.IsActive" class="form-check-input" />
+                        <label asp-for="ChildBuffet.IsActive" class="form-check-label">เปิดใช้โค้ด</label>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="ChildBuffet.Code" class="form-label">รหัสส่วนลด</label>
+                        <input asp-for="ChildBuffet.Code" class="form-control text-uppercase" autocomplete="off" />
+                        <span asp-validation-for="ChildBuffet.Code" class="text-danger"></span>
+                        <div class="form-text">ตัวอักษรอังกฤษ ตัวเลข ขีดกลาง หรือขีดล่าง 3-50 ตัว</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ChildBuffet.StartDate" class="form-label">วันที่เริ่มใช้</label>
+                        <input asp-for="ChildBuffet.StartDate" type="date" class="form-control" />
+                        <span asp-validation-for="ChildBuffet.StartDate" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ChildBuffet.EndDate" class="form-label">วันที่สิ้นสุด</label>
+                        <input asp-for="ChildBuffet.EndDate" type="date" class="form-control" />
+                        <span asp-validation-for="ChildBuffet.EndDate" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0">
+                    ลูกค้ากรอกรหัสและจำนวนเด็กในหน้าชำระเงินบุฟเฟต์ ระบบตรวจรหัสและวันที่ ส่วนพนักงานตรวจอายุและการแต่งกายที่ร้าน
+                </div>
+            </div>
+        </section>
+
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-success px-4 py-2">
+                <i class="bi bi-check2 me-1"></i>บันทึกโปรโมชั่น
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

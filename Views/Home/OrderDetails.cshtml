@@ -10,6 +10,14 @@
 }
 
 <div class="container mt-5 pb-5" style="max-width: 1100px;">
+    @if (TempData["PaymentMessage"] != null)
+    {
+        <div class="alert alert-success" role="status">@TempData["PaymentMessage"]</div>
+    }
+    @if (TempData["PaymentError"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["PaymentError"]</div>
+    }
     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
         <div>
             <span class="section-kicker">คำสั่งซื้อ #ORD@(Model.Order.OrderID.ToString("D4"))</span>
@@ -23,8 +31,22 @@
     <div class="row g-4">
         <div class="col-lg-8">
             <section class="card border-0 shadow-sm rounded-4 p-3 p-md-4">
-                <h2 class="h5 fw-bold mb-3">รายการอาหาร</h2>
-                @if (Model.Items.Count > 0)
+                <h2 class="h5 fw-bold mb-3">@(Model.Order.BuffetGuestCount.HasValue ? "แพ็กเกจบุฟเฟต์" : "รายการอาหาร")</h2>
+                @if (Model.Order.BuffetGuestCount is int buffetGuests)
+                {
+                    <div class="d-flex justify-content-between">
+                        <span>บุฟเฟต์ 299 บาท × @buffetGuests คน</span>
+                        <span class="fw-semibold">฿@((Model.Order.TotalAmount + Model.Order.DiscountAmount).ToString("N2"))</span>
+                    </div>
+                    @if (Model.Order.DiscountAmount > 0m)
+                    {
+                        <div class="d-flex justify-content-between text-success mt-2">
+                            <span>ส่วนลดเด็กกินฟรี (@Model.Order.BuffetFreeChildCount คน) · โค้ด @Model.Order.PromoCode</span>
+                            <span>-฿@Model.Order.DiscountAmount.ToString("N2")</span>
+                        </div>
+                    }
+                }
+                else if (Model.Items.Count > 0)
                 {
                     <div class="table-responsive">
                         <table class="table align-middle mb-0">
@@ -61,7 +83,7 @@
             <section class="card border-0 shadow-sm rounded-4 p-4">
                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                     <h2 class="h5 fw-bold mb-0">สรุปออเดอร์</h2>
-                    <span class="badge rounded-pill @statusClass">@Model.Order.OrderStatus</span>
+                    <span class="badge rounded-pill @statusClass">@OrderStatusLabels.Display(Model.Order.OrderStatus)</span>
                 </div>
 
                 <dl class="mb-0">
@@ -82,12 +104,46 @@
                         <dt class="text-muted small">โต๊ะ</dt>
                         <dd class="mb-3">@Model.Order.DiningTable.TableNumber</dd>
                     }
+                    @if (Model.Order.BuffetGuestCount is int guestCount)
+                    {
+                        <dt class="text-muted small">จำนวนผู้ใช้บุฟเฟต์</dt>
+                        <dd class="mb-3">@guestCount คน</dd>
+                    }
+                    @if (Model.Order.BuffetFreeChildCount > 0)
+                    {
+                        <dt class="text-muted small">จำนวนเด็กที่ใช้สิทธิ์</dt>
+                        <dd class="mb-3">@Model.Order.BuffetFreeChildCount คน · โค้ด @Model.Order.PromoCode</dd>
+                    }
 
                     <dt class="text-muted small">วิธีชำระเงิน</dt>
                     <dd class="mb-3">@Model.Order.PaymentMethod</dd>
+
+                    <dt class="text-muted small">สถานะชำระเงิน</dt>
+                    <dd class="mb-3">@Model.Order.PaymentStatus</dd>
                 </dl>
 
+                @if (Model.Order.PaymentMethod == "PromptPay" &&
+                     Model.Order.PaymentStatus == PaymentStatuses.NeedsResubmission &&
+                     Model.Order.OrderStatus != "ยกเลิก")
+                {
+                    <form asp-controller="Home" asp-action="ResubmitPaymentProof" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Order.OrderID" />
+                        <label for="paymentProof" class="form-label fw-bold">ส่งสลิปใหม่ (PNG/JPEG ไม่เกิน 5 MB)</label>
+                        <input type="file" id="paymentProof" name="paymentProof" class="form-control mb-3"
+                               accept=".png,.jpg,.jpeg,image/png,image/jpeg" required />
+                        <button type="submit" class="btn btn-outline-success w-100">ส่งสลิปใหม่ให้ตรวจสอบ</button>
+                    </form>
+                }
+
                 <hr />
+                @if (Model.Order.DiscountAmount > 0m)
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-2 text-success">
+                        <span>ส่วนลด</span>
+                        <span>-฿@Model.Order.DiscountAmount.ToString("N2")</span>
+                    </div>
+                }
                 <div class="d-flex justify-content-between align-items-center">
                     <span class="fw-bold">ยอดรวม</span>
                     <span class="fs-4 fw-bold text-brand">฿@Model.Order.TotalAmount.ToString("N2")</span>

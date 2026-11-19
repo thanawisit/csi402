@@ -27,6 +27,10 @@ public partial class IsanDerDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<HomePromotion> HomePromotions { get; set; }
+
+    public virtual DbSet<BuffetChildPromotion> BuffetChildPromotions { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseMySql("server=localhost;database=isanderdb;user=root;password=!Urozx147", Microsoft.EntityFrameworkCore.ServerVersion.Parse("26.7.0-mysql"));
@@ -80,6 +84,13 @@ public partial class IsanDerDbContext : DbContext
             entity.Property(e => e.OrderType).HasMaxLength(50);
             entity.Property(e => e.ArriveTime).HasMaxLength(20);
             entity.Property(e => e.PaymentMethod).HasMaxLength(50);
+            entity.Property(e => e.PaymentStatus)
+                .HasMaxLength(30)
+                .HasDefaultValueSql("'รอชำระเงิน'");
+            entity.Property(e => e.BuffetGuestCount);
+            entity.Property(e => e.BuffetFreeChildCount).HasDefaultValue(0);
+            entity.Property(e => e.PromoCode).HasMaxLength(50);
+            entity.Property(e => e.DiscountAmount).HasPrecision(10, 2).HasDefaultValue(0m);
             entity.Property(e => e.TotalAmount).HasPrecision(10, 2);
             
             entity.Property(e => e.OrderStatus)
@@ -125,6 +136,31 @@ public partial class IsanDerDbContext : DbContext
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'Customer'");
             entity.Property(e => e.Username).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<HomePromotion>(entity =>
+        {
+            entity.HasKey(promotion => promotion.PromotionId).HasName("PRIMARY");
+            entity.ToTable("home_promotions");
+            entity.HasIndex(promotion => promotion.SlotKey).IsUnique();
+            entity.Property(promotion => promotion.PromotionId).HasColumnName("PromotionID");
+            entity.Property(promotion => promotion.SlotKey).HasMaxLength(40);
+            entity.Property(promotion => promotion.Kicker).HasMaxLength(100);
+            entity.Property(promotion => promotion.Headline).HasMaxLength(200);
+            entity.Property(promotion => promotion.Description).HasMaxLength(500);
+            entity.Property(promotion => promotion.LinkText).HasMaxLength(100);
+            entity.Property(promotion => promotion.IsActive).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<BuffetChildPromotion>(entity =>
+        {
+            entity.HasKey(promotion => promotion.PromotionId).HasName("PRIMARY");
+            entity.ToTable("buffet_child_promotions");
+            entity.Property(promotion => promotion.PromotionId).HasColumnName("PromotionID");
+            entity.Property(promotion => promotion.Code).HasMaxLength(50);
+            entity.Property(promotion => promotion.StartDate).HasColumnType("date");
+            entity.Property(promotion => promotion.EndDate).HasColumnType("date");
+            entity.Property(promotion => promotion.IsActive).HasDefaultValue(false);
         });
 
         OnModelCreatingPartial(modelBuilder);

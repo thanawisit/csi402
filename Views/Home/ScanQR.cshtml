@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "สแกน QR สั่งอาหาร";
+    ViewData["Title"] = "สาธิตการสแกน QR";
 }
 
 <style>
@@ -26,15 +26,41 @@
 </style>
 
 <div class="container mt-5 pb-5 text-center">
-    <h3 class="fw-bold mb-5">สแกน QR Code เพื่อสั่งอาหาร</h3>
+    <h3 class="fw-bold mb-4">สาธิตการสแกน QR Code</h3>
 
     <div class="qr-card shadow-sm mb-4">
-        <!-- ไอคอนตารางสี่เหลี่ยมคล้ายรูป QR Code -->
-        <i class="bi bi-grid-3x3-gap-fill qr-icon"></i>
+        <div>
+            <i class="bi bi-grid-3x3-gap-fill qr-icon" aria-hidden="true"></i>
+            <div class="small text-muted mt-3">QR จำลองสำหรับโปรเจกต์</div>
+        </div>
     </div>
 
     <h4 class="fw-bold text-brand mb-2">
         @(ViewBag.TableNumber == null ? "ยังไม่ได้เลือกโต๊ะ" : $"โต๊ะ {ViewBag.TableNumber}")
     </h4>
-    <p class="text-muted small">สแกนด้วยกล้องโทรศัพท์ของคุณ</p>
+    <p class="text-muted">หน้านี้จำลองการสแกนเท่านั้น เลือกจำนวนผู้ใช้บุฟเฟต์เพื่อไปชำระเงิน</p>
+
+    @if (ViewBag.TableId != null)
+    {
+        <form asp-controller="Home" asp-action="BuffetCheckout" method="get" class="mx-auto mt-3" style="max-width: 320px;">
+            <input type="hidden" name="tableId" value="@ViewBag.TableId" />
+            <label for="guestCount" class="form-label fw-bold">จำนวนผู้ใช้บุฟเฟต์</label>
+            <div class="input-group">
+                <input type="number" id="guestCount" name="guestCount" class="form-control"
+                       value="1" min="1" max="@ViewBag.TableCapacity" required />
+                <span class="input-group-text">คน</span>
+            </div>
+            <div class="small text-muted mt-1">โต๊ะนี้รองรับไม่เกิน @ViewBag.TableCapacity คน</div>
+            <button type="submit" class="btn btn-success px-4 py-2 mt-3">
+                จำลองสแกนแล้ว ไปชำระค่าบุฟเฟต์
+            </button>
+        </form>
+    }
+    else
+    {
+        <a asp-controller="Home" asp-action="ReserveTable" asp-route-package="buffet"
+           class="btn btn-outline-success px-4 py-2 mt-2">
+            กลับไปเลือกโต๊ะ
+        </a>
+    }
 </div>

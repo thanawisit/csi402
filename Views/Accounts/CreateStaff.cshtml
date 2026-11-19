@@ -1,0 +1,73 @@
+@model CreateStaffAccountViewModel
+@{
+    ViewData["Title"] = "สร้างบัญชี Staff";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-xl-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 p-md-5">
+                    <span class="badge rounded-pill bg-success-subtle text-success mb-2">ADMIN ONLY</span>
+                    <h1 class="h3 fw-bold mb-2">สร้างบัญชี Staff</h1>
+                    <p class="text-muted mb-4">กำหนดข้อมูลเข้าสู่ระบบและตำแหน่งพนักงาน</p>
+
+                    <form asp-action="CreateStaff" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Username" class="form-label fw-semibold"></label>
+                            <input asp-for="Username" class="form-control" autocomplete="name" />
+                            <span asp-validation-for="Username" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold"></label>
+                            <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Role" class="form-label fw-semibold"></label>
+                            <select asp-for="Role" class="form-select">
+                                <option value="@AppRoles.Receptionist">พนักงานต้อนรับ</option>
+                                <option value="@AppRoles.Chef">พ่อครัว</option>
+                                <option value="@AppRoles.StockChecker">คนเช็คสต๊อก</option>
+                            </select>
+                            <span asp-validation-for="Role" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                            <div class="form-text">ใช้รหัสผ่านอย่างน้อย 8 ตัวอักษร</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success">สร้างบัญชี Staff</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">ยกเลิก</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

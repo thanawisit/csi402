@@ -1,0 +1,6 @@
+@model SalesReportViewModel
+@{
+    ViewData["Title"] = "รายงานยอดขาย";
+}
+
+@await Html.PartialAsync("~/Views/Admin/Reports.cshtml", Model)

@@ -1,0 +1,6 @@
+@model IEnumerable<AdminUserListItemViewModel>
+@{
+    ViewData["Title"] = "ดูแลพนักงาน";
+}
+
+@await Html.PartialAsync("~/Views/Admin/Users.cshtml", Model)

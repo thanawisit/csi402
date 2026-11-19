@@ -1,0 +1,10 @@
+@model MenuInputViewModel
+@{
+    ViewData["Title"] = Model.MenuId.HasValue ? "แก้ไขเมนู" : "เพิ่มเมนู";
+}
+
+@await Html.PartialAsync("~/Views/Admin/MenuForm.cshtml", Model)
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

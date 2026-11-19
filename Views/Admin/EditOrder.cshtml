@@ -1,0 +1,138 @@
+@model OrderEditViewModel
+@{
+    ViewData["Title"] = "แก้ไขออเดอร์";
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="fw-bold mb-1">แก้ไขออเดอร์ #ORD@Model.OrderId.ToString("D4")</h1>
+            <div class="text-muted">
+                สถานะ @OrderStatusLabels.Display(Model.OrderStatus)
+                · ชำระเงิน @Model.PaymentStatus
+                · ยอดเดิม ฿@Model.CurrentTotalAmount.ToString("N2")
+            </div>
+        </div>
+        <a asp-action="Orders" class="btn btn-outline-secondary">กลับรายการออเดอร์</a>
+    </div>
+
+    @if (Model.PaymentStatus == PaymentStatuses.PendingReview)
+    {
+        <div class="alert alert-warning">
+            หากยอดออเดอร์เปลี่ยน สลิปเดิมจะต้องส่งตรวจสอบใหม่
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <form asp-action="EditOrder" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="OrderId" type="hidden" />
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                    <h2 class="h5 fw-bold mb-0">รายการอาหาร</h2>
+                    <button id="add-order-item" type="button" class="btn btn-sm btn-outline-success">เพิ่มรายการ</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>เมนู</th>
+                                <th style="width: 160px">จำนวน</th>
+                                <th class="text-end" style="width: 100px">นำออก</th>
+                            </tr>
+                        </thead>
+                        <tbody id="order-item-rows">
+                            @for (var index = 0; index < Model.Items.Count; index++)
+                            {
+                                <tr>
+                                    <td>
+                                        <select name="Items[@index].MenuId" data-field="MenuId" class="form-select" required>
+                                            <option value="">เลือกเมนู</option>
+                                            @foreach (var menu in Model.Menus)
+                                            {
+                                                var unavailable = menu.Status != "Available";
+                                                var selected = menu.MenuId == Model.Items[index].MenuId;
+                                                <option value="@menu.MenuId" selected="@selected">
+                                                    @menu.MenuName · ฿@menu.Price.ToString("N2")@(unavailable ? " (ปิดขาย)" : "")
+                                                </option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input name="Items[@index].Quantity" data-field="Quantity" type="number" min="1" max="99"
+                                               value="@Model.Items[index].Quantity" class="form-control" required />
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-order-item">นำออก</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="small text-muted">
+                    บันทึกแล้วระบบคำนวณยอดตามราคาเมนูปัจจุบันและปรับสต๊อกให้อัตโนมัติ
+                    แก้ไขไม่ได้เมื่อเริ่มเตรียมอาหาร ชำระเงินแล้ว หรือเป็นออเดอร์บุฟเฟต์
+                </p>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">บันทึกการแก้ไข</button>
+                    <a asp-action="Orders" class="btn btn-outline-secondary">ยกเลิก</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<template id="order-item-template">
+    <tr>
+        <td>
+            <select data-field="MenuId" class="form-select" required>
+                <option value="">เลือกเมนู</option>
+                @foreach (var menu in Model.Menus)
+                {
+                    var unavailable = menu.Status != "Available";
+                    <option value="@menu.MenuId">
+                        @menu.MenuName · ฿@menu.Price.ToString("N2")@(unavailable ? " (ปิดขาย)" : "")
+                    </option>
+                }
+            </select>
+        </td>
+        <td>
+            <input data-field="Quantity" type="number" min="1" max="99" value="1" class="form-control" required />
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-order-item">นำออก</button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script>
+        const orderItemRows = document.getElementById("order-item-rows");
+        const orderItemTemplate = document.getElementById("order-item-template");
+
+        function reindexOrderItems() {
+            orderItemRows.querySelectorAll("tr").forEach((row, index) => {
+                row.querySelectorAll("[data-field]").forEach((field) => {
+                    field.name = `Items[${index}].${field.dataset.field}`;
+                });
+            });
+        }
+
+        document.getElementById("add-order-item").addEventListener("click", () => {
+            orderItemRows.appendChild(orderItemTemplate.content.firstElementChild.cloneNode(true));
+            reindexOrderItems();
+        });
+
+        orderItemRows.addEventListener("click", (event) => {
+            if (event.target.closest(".remove-order-item")) {
+                event.target.closest("tr").remove();
+                reindexOrderItems();
+            }
+        });
+    </script>
+}

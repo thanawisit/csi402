@@ -10,7 +10,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4 p-md-5">
                     <h1 class="h3 fw-bold mb-4">@ViewData["Title"]</h1>
-                    <form asp-action="@(isEdit ? "MenuEdit" : "MenuCreate")" method="post">
+                    <form asp-action="@(isEdit ? "MenuEdit" : "MenuCreate")" method="post" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                         <input asp-for="MenuId" type="hidden" />
@@ -33,6 +33,22 @@
                                 }
                             </select>
                             <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.CurrentImagePath))
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">รูปปัจจุบัน</label>
+                                <div>
+                                    <img src="@Model.CurrentImagePath" alt="รูปเมนู @Model.MenuName"
+                                         class="img-thumbnail" style="max-width: 240px; max-height: 180px; object-fit: cover;" />
+                                </div>
+                            </div>
+                        }
+                        <div class="mb-4">
+                            <label asp-for="ImageFile" class="form-label"></label>
+                            <input asp-for="ImageFile" type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="form-control" />
+                            <span asp-validation-for="ImageFile" class="text-danger"></span>
+                            <div class="form-text">รองรับ JPG หรือ PNG ขนาดไม่เกิน 5 MB@(isEdit ? " หากไม่เลือกรูปใหม่จะใช้รูปเดิม" : "")</div>
                         </div>
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-danger">บันทึก</button>

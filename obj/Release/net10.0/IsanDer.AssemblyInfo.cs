@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IsanDer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a131ef0a3b9aa8e2a110eb42e73788b10285158a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a05fac8448f9241b341bdca7eaa60dd6c9029471")]
 [assembly: System.Reflection.AssemblyProductAttribute("IsanDer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IsanDer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,4 +1,5 @@
-﻿@{
+@model HomePageViewModel
+@{
     ViewData["Title"] = "หน้าแรก";
 }
 
@@ -73,42 +74,39 @@
     </section>
 
     <section class="mb-5">
-        <div class="section-heading">
-            <div>
-                <span class="section-kicker">สิทธิพิเศษ</span>
-                <h3 class="fw-bold mb-0">โปรโมชั่น</h3>
-            </div>
-        </div>
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="promo-card promo-red">
-                    <span class="promo-icon"><i class="bi bi-cup-hot"></i></span>
-                    <div class="promo-content">
-                        <span class="promo-label">สิทธิพิเศษสำหรับสมาชิก</span>
-                        <h4>สมัครสมาชิก<br>รับชามะลิฟรี</h4>
-                        <p class="promo-description">ร่วมเป็นสมาชิกอีสานเด้อเพื่อรับสิทธิพิเศษ</p>
-                        <a asp-controller="Account" asp-action="Register" class="promo-action">
-                            สมัครสมาชิก <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-                    <i class="bi bi-stars promo-decoration" aria-hidden="true"></i>
+        @if (Model.Promotions.Count > 0)
+        {
+            <div class="section-heading">
+                <div>
+                    <span class="section-kicker">สิทธิพิเศษ</span>
+                    <h3 class="fw-bold mb-0">โปรโมชั่น</h3>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="promo-card promo-green">
-                    <span class="promo-icon"><i class="bi bi-emoji-smile"></i></span>
-                    <div class="promo-content">
-                        <span class="promo-label">อิ่มอร่อยกันทั้งครอบครัว</span>
-                        <h4>เด็กสูงไม่ถึง 120 ซม.<br>กินฟรี</h4>
-                        <p class="promo-description">พาครอบครัวมาอิ่มอร่อยด้วยกัน</p>
-                        <a asp-controller="Home" asp-action="Buffet" class="promo-action">
-                            ดูแพ็กเกจบุฟเฟต์ <i class="bi bi-arrow-right"></i>
-                        </a>
+            <div class="row g-4">
+                @foreach (var promotion in Model.Promotions)
+                {
+                    var isMembership = promotion.SlotKey == "membership";
+                    <div class="col-md-6">
+                        <div class="promo-card @(isMembership ? "promo-red" : "promo-green")">
+                            <span class="promo-icon">
+                                <i class="bi @(isMembership ? "bi-cup-hot" : "bi-emoji-smile")"></i>
+                            </span>
+                            <div class="promo-content">
+                                <span class="promo-label">@promotion.Kicker</span>
+                                <h4 style="white-space: pre-line">@promotion.Headline</h4>
+                                <p class="promo-description">@promotion.Description</p>
+                                <a asp-controller="@(isMembership ? "Account" : "Home")"
+                                   asp-action="@(isMembership ? "Register" : "Buffet")"
+                                   class="promo-action">
+                                    @promotion.LinkText <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                            <i class="bi bi-stars promo-decoration" aria-hidden="true"></i>
+                        </div>
                     </div>
-                    <i class="bi bi-stars promo-decoration" aria-hidden="true"></i>
-                </div>
+                }
             </div>
-        </div>
+        }
     </section>
 
     <section class="mb-4">
@@ -120,68 +118,63 @@
             <a asp-controller="Home" asp-action="Menu" class="text-decoration-none fw-bold">ดูเมนูทั้งหมด <i class="bi bi-arrow-right"></i></a>
         </div>
         <div class="row g-4">
-            
-            <div class="col-md-4">
-                <div class="menu-card shadow-sm h-100 pb-2">
-                    <div class="food-art food-art-somtum" aria-hidden="true"><i class="bi bi-flower1"></i></div>
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-1">ส้มตำไทย</h5>
-                        <p class="text-muted small mb-3">⭐ 4.8 · อาหารอีสาน</p>
-                        <div class="d-flex justify-content-between align-items-center mt-4">
-                            <span class="text-brand fs-4 fw-bold">฿60</span>
-                            @if (User.Identity != null && User.Identity.IsAuthenticated)
-                            {
-                                <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="1" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
-                            }
-                            else
-                            {
-                                <a asp-controller="Account" asp-action="Login" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @for (var index = 0; index < Model.FeaturedMenus.Count; index++)
+            {
+                var menu = Model.FeaturedMenus[index];
+                var fallbackArt = index % 3 == 0
+                    ? "food-art-somtum"
+                    : index % 3 == 1
+                        ? "food-art-larb"
+                        : "food-art-pork";
 
-            <div class="col-md-4">
-                <div class="menu-card shadow-sm h-100 pb-2">
-                    <div class="food-art food-art-larb" aria-hidden="true"><i class="bi bi-fire"></i></div>
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-1">ลาบหมู</h5>
-                        <p class="text-muted small mb-3">⭐ 4.8 · อาหารอีสาน</p>
-                        <div class="d-flex justify-content-between align-items-center mt-4">
-                            <span class="text-brand fs-4 fw-bold">฿90</span>
-                            @if (User.Identity != null && User.Identity.IsAuthenticated)
-                            {
-                                <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="2" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
-                            }
-                            else
-                            {
-                                <a asp-controller="Account" asp-action="Login" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
-                            }
+                <div class="col-md-4">
+                    <div class="menu-card shadow-sm h-100 pb-2">
+                        @if (!string.IsNullOrWhiteSpace(menu.ImagePath))
+                        {
+                            <img src="@menu.ImagePath" alt="รูปเมนู @menu.MenuName"
+                                 class="w-100" style="height: 220px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="food-art @fallbackArt" aria-hidden="true">
+                                @if (index % 3 == 0)
+                                {
+                                    <i class="bi bi-flower1"></i>
+                                }
+                                else if (index % 3 == 1)
+                                {
+                                    <i class="bi bi-fire"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-egg-fried"></i>
+                                }
+                            </div>
+                        }
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-1">@menu.MenuName</h5>
+                            <p class="text-muted small mb-3">⭐ 4.8 · อาหารอีสาน</p>
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <span class="text-brand fs-4 fw-bold">฿@menu.Price.ToString("0.##")</span>
+                                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                                {
+                                    <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@menu.MenuId"
+                                       class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Account" asp-action="Login"
+                                       class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="menu-card shadow-sm h-100 pb-2">
-                    <div class="food-art food-art-pork" aria-hidden="true"><i class="bi bi-egg-fried"></i></div>
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-1">คอหมูย่าง</h5>
-                        <p class="text-bold mb-3 text-muted small">⭐ 4.8 · อาหารอีสาน</p>
-                        <div class="d-flex justify-content-between align-items-center mt-4">
-                            <span class="text-brand fs-4 fw-bold">฿120</span>
-                            @if (User.Identity != null && User.Identity.IsAuthenticated)
-                            {
-                                <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="3" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
-                            }
-                            else
-                            {
-                                <a asp-controller="Account" asp-action="Login" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
-                            }
-                        </div>
-                    </div>
-                </div>
+            }
+            @if (Model.FeaturedMenus.Count == 0)
+            {
+                <div class="col-12 text-muted">ยังไม่มีเมนูพร้อมขาย</div>
+            }
         </div>
     </section>
 </div>

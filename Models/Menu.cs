@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IsanDer.Models;
 
@@ -15,4 +16,6 @@ public partial class Menu
 
     public int? StockQuantity { get; set; }
 
+    [NotMapped]
+    public string? ImagePath { get; set; }
 }

@@ -5,9 +5,12 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using IsanDer.Models;
+using IsanDer.Services;
 
 namespace IsanDer.Controllers;
 
@@ -23,14 +26,41 @@ public class HomeController : Controller
 {
     private const string DineInOrderType = "ทานที่ร้าน";
     private const string PreorderPickupOrderType = "สั่งล่วงหน้า รับที่ร้าน";
+    private const string BuffetOrderType = "บุฟเฟต์";
+    private const decimal BuffetPricePerPerson = 299m;
+    private const string FreePromotionPaymentMethod = "โปรโมชั่น (ไม่มียอดชำระ)";
     private readonly IsanDerDbContext _context;
+    private readonly IWebHostEnvironment _environment;
 
-    public HomeController(IsanDerDbContext context)
+    public HomeController(IsanDerDbContext context, IWebHostEnvironment environment)
     {
         _context = context;
+        _environment = environment;
     }
 
-    public IActionResult Index() => View();
+    public IActionResult Index()
+    {
+        var featuredMenus = _context.Menus
+            .AsNoTracking()
+            .Where(menu => menu.Status == "Available" && (menu.StockQuantity == null || menu.StockQuantity > 0))
+            .OrderBy(menu => menu.MenuId)
+            .Take(3)
+            .ToList();
+        foreach (var menu in featuredMenus)
+        {
+            menu.ImagePath = MenuImageStorage.GetPublicPath(_environment.WebRootPath, menu.MenuId);
+        }
+
+        return View(new HomePageViewModel
+        {
+            Promotions = _context.HomePromotions
+                .AsNoTracking()
+                .Where(promotion => promotion.IsActive)
+                .OrderBy(promotion => promotion.SortOrder)
+                .ToList(),
+            FeaturedMenus = featuredMenus
+        });
+    }
     public IActionResult Privacy() => View();
     public IActionResult Terms() => View();
     public IActionResult Contact() => View();
@@ -78,8 +108,50 @@ public class HomeController : Controller
         var table = GetActiveTable(tableId);
         if (tableId.HasValue && table == null) return BadRequest();
 
+        ViewBag.TableId = table?.TableID;
         ViewBag.TableNumber = table?.TableNumber;
+        ViewBag.TableCapacity = table?.Capacity;
         return View();
+    }
+
+    [Authorize(Roles = AppRoles.Customer)]
+    [HttpGet]
+    public IActionResult BuffetCheckout(
+        int tableId,
+        int guestCount,
+        string? promoCode,
+        int buffetFreeChildCount = 0)
+    {
+        var table = GetActiveTable(tableId);
+        if (table == null) return BadRequest();
+        if (guestCount < 1 || guestCount > table.Capacity) return BadRequest();
+
+        var discountAmount = 0m;
+        if (!TryCalculateBuffetChildDiscount(
+                guestCount,
+                promoCode,
+                buffetFreeChildCount,
+                out discountAmount,
+                out var promoError))
+        {
+            ViewBag.PromoError = promoError;
+            discountAmount = 0m;
+        }
+
+        ViewBag.DiscountAmount = discountAmount;
+        ViewBag.TotalAmount = BuffetPricePerPerson * guestCount - discountAmount;
+        ViewBag.OrderType = BuffetOrderType;
+        ViewBag.ArriveTime = "-";
+        ViewBag.IsPreorder = false;
+        ViewBag.IsBuffet = true;
+        ViewBag.BuffetGuestCount = guestCount;
+        ViewBag.BuffetFreeChildCount = buffetFreeChildCount;
+        ViewBag.PromoCode = promoCode?.Trim();
+        ViewBag.BuffetPricePerPerson = BuffetPricePerPerson;
+        ViewBag.OrderError = TempData["OrderError"] as string;
+        ViewBag.TableId = table.TableID;
+        ViewBag.TableNumber = table.TableNumber;
+        return View("Payment");
     }
     // ลบ OrderHistory() ตัวเก่าตรงนี้ออกไปแล้วครับ เพื่อไม่ให้ซ้ำกัน
 
@@ -91,6 +163,7 @@ public class HomeController : Controller
         ViewBag.TableId = table?.TableID;
         ViewBag.TableNumber = table?.TableNumber;
         ViewBag.OrderError = TempData["OrderError"] as string;
+        ViewBag.OrderSuccess = TempData["OrderSuccess"] as string;
         var searchTerm = q?.Trim();
         var selectedCategory = category?.Trim().ToLowerInvariant();
         if (string.IsNullOrEmpty(selectedCategory) || selectedCategory == "all")
@@ -140,6 +213,11 @@ public class HomeController : Controller
         }
 
         var menuList = menuQuery.ToList();
+        foreach (var menu in menuList)
+        {
+            menu.ImagePath = MenuImageStorage.GetPublicPath(_environment.WebRootPath, menu.MenuId);
+        }
+
         return View(menuList);
     }
 
@@ -150,6 +228,7 @@ public class HomeController : Controller
 
         var menu = _context.Menus.FirstOrDefault(m => m.MenuId == id);
         if (menu == null) return RedirectToAction("Menu");
+        menu.ImagePath = MenuImageStorage.GetPublicPath(_environment.WebRootPath, menu.MenuId);
         ViewBag.TableId = table?.TableID;
         ViewBag.TableNumber = table?.TableNumber;
         return View(menu);
@@ -183,7 +262,7 @@ public class HomeController : Controller
         if (menu.StockQuantity.HasValue && requestedQuantity > menu.StockQuantity.Value)
         {
             TempData["OrderError"] = "จำนวนสินค้าในสต๊อกไม่เพียงพอ";
-            return RedirectToAction(nameof(Cart), new { tableId });
+            return RedirectToAction(nameof(Menu), new { tableId });
         }
 
         if (existingItem != null)
@@ -195,7 +274,8 @@ public class HomeController : Controller
             cart.Add(new CartItem { MenuId = menu.MenuId, MenuName = menu.MenuName, Price = menu.Price, Qty = qty });
         }
         SaveCart(cart);
-        return RedirectToAction(nameof(Cart), new { tableId });
+        TempData["OrderSuccess"] = $"เพิ่ม {menu.MenuName} ลงตะกร้าแล้ว";
+        return RedirectToAction(nameof(Menu), new { tableId });
     }
 
     [Authorize(Roles = AppRoles.Customer)]
@@ -287,6 +367,8 @@ public class HomeController : Controller
         ViewBag.OrderType = isPreorder ? PreorderPickupOrderType : DineInOrderType;
         ViewBag.ArriveTime = isPreorder ? arriveTime : "-";
         ViewBag.IsPreorder = isPreorder;
+        ViewBag.IsBuffet = false;
+        ViewBag.BuffetGuestCount = null;
         ViewBag.TableId = tableId;
         ViewBag.TableNumber = table?.TableNumber;
         
@@ -317,20 +399,70 @@ public class HomeController : Controller
     [Authorize(Roles = AppRoles.Customer)]
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult SaveOrder(string? paymentMethod, string? arriveTime, int? tableId)
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<IActionResult> SaveOrder(
+        string? paymentMethod,
+        string? arriveTime,
+        int? tableId,
+        int? buffetGuestCount,
+        string? promoCode,
+        int? buffetFreeChildCount,
+        IFormFile? paymentProof)
     {
         if (User.Identity == null || !User.Identity.IsAuthenticated) return RedirectToAction("Login", "Account");
-        var cart = GetCart();
-        if (cart.Count == 0) return RedirectToAction(nameof(Cart), new { tableId });
+        const string cashMethod = "เงินสด (ชำระที่หน้าร้าน)";
+        const string promptPayMethod = "PromptPay";
 
+        var isBuffet = buffetGuestCount.HasValue;
+        var guestCount = buffetGuestCount.GetValueOrDefault();
+        var freeChildCount = buffetFreeChildCount.GetValueOrDefault();
+        var normalizedPromoCode = string.IsNullOrWhiteSpace(promoCode) ? null : promoCode.Trim();
         var table = GetActiveTable(tableId);
         if (tableId.HasValue && table == null) return BadRequest();
+        if (isBuffet && (table == null || guestCount < 1 || guestCount > table.Capacity))
+        {
+            return BadRequest();
+        }
+        if (paymentMethod != cashMethod &&
+            paymentMethod != promptPayMethod &&
+            !(isBuffet && paymentMethod == FreePromotionPaymentMethod))
+        {
+            return BadRequest();
+        }
+
+        var discountAmount = 0m;
+        if (isBuffet)
+        {
+            if (!TryCalculateBuffetChildDiscount(
+                    guestCount,
+                    normalizedPromoCode,
+                    freeChildCount,
+                    out discountAmount,
+                    out var promoError))
+            {
+                TempData["OrderError"] = promoError;
+                return RedirectToAction(nameof(BuffetCheckout), new
+                {
+                    tableId,
+                    guestCount,
+                    promoCode = normalizedPromoCode,
+                    buffetFreeChildCount = freeChildCount
+                });
+            }
+        }
+        else if (normalizedPromoCode != null || freeChildCount != 0)
+        {
+            return BadRequest();
+        }
+
+        var cart = isBuffet ? new List<CartItem>() : GetCart();
+        if (!isBuffet && cart.Count == 0) return RedirectToAction(nameof(Cart), new { tableId });
 
         var isPreorder = table == null;
         if (isPreorder && !IsFuturePickupTime(arriveTime))
         {
             TempData["OrderError"] = "กรุณาเลือกเวลารับอาหารที่ยังมาไม่ถึง";
-            return RedirectToAction(nameof(Cart));
+            return RedirectToAction(nameof(Cart), new { tableId });
         }
 
         var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
@@ -361,16 +493,57 @@ public class HomeController : Controller
             return RedirectToAction(nameof(Cart), new { tableId });
         }
 
-        decimal totalAmount = cart.Sum(item => menus[item.MenuId].Price * item.Qty);
+        decimal totalAmount = isBuffet
+            ? BuffetPricePerPerson * guestCount - discountAmount
+            : cart.Sum(item => menus[item.MenuId].Price * item.Qty);
+
+        if (isBuffet && totalAmount == 0m)
+        {
+            paymentMethod = FreePromotionPaymentMethod;
+        }
+        else if (paymentMethod == FreePromotionPaymentMethod)
+        {
+            return BadRequest();
+        }
+
+        var isPromptPay = paymentMethod == promptPayMethod;
+        var proofExtension = string.Empty;
+        if (isPromptPay && !PaymentProofStorage.TryGetExtension(paymentProof, out proofExtension))
+        {
+            TempData["OrderError"] = paymentProof?.Length > PaymentProofStorage.MaxFileSize
+                ? "ไฟล์สลิปต้องมีขนาดไม่เกิน 5 MB"
+                : "กรุณาแนบสลิปเป็นไฟล์ PNG หรือ JPEG";
+            if (isBuffet)
+            {
+                return RedirectToAction(nameof(BuffetCheckout), new
+                {
+                    tableId,
+                    guestCount,
+                    promoCode = normalizedPromoCode,
+                    buffetFreeChildCount = freeChildCount
+                });
+            }
+            return RedirectToAction(nameof(Cart), new { tableId });
+        }
+        if (!isPromptPay && paymentProof is { Length: > 0 }) return BadRequest();
 
         var newOrder = new Order
         {
             UserID = user.UserId,
             TableID = table?.TableID,
             OrderDate = System.DateTime.Now,
-            OrderType = isPreorder ? PreorderPickupOrderType : DineInOrderType,
+            OrderType = isBuffet ? BuffetOrderType : isPreorder ? PreorderPickupOrderType : DineInOrderType,
             ArriveTime = isPreorder ? arriveTime! : "-",
-            PaymentMethod = paymentMethod ?? "เงินสด (ชำระที่หน้าร้าน)",
+            PaymentMethod = paymentMethod!,
+            PaymentStatus = isPromptPay
+                ? PaymentStatuses.PendingReview
+                : totalAmount == 0m
+                    ? PaymentStatuses.Paid
+                    : PaymentStatuses.Unpaid,
+            BuffetGuestCount = isBuffet ? guestCount : null,
+            BuffetFreeChildCount = isBuffet ? freeChildCount : 0,
+            PromoCode = isBuffet && freeChildCount > 0 ? normalizedPromoCode : null,
+            DiscountAmount = discountAmount,
             TotalAmount = totalAmount,
             OrderStatus = "รอดำเนินการ"
         };
@@ -398,10 +571,67 @@ public class HomeController : Controller
             _context.OrderItems.Add(orderItem);
         }
         _context.SaveChanges();
+
+        if (isPromptPay)
+        {
+            await PaymentProofStorage.SaveAsync(
+                _environment.ContentRootPath,
+                newOrder.OrderID,
+                paymentProof!,
+                proofExtension,
+                HttpContext.RequestAborted);
+        }
         transaction.Commit();
-        ClearCart();
+        if (!isBuffet)
+        {
+            ClearCart();
+        }
 
         return RedirectToAction("OrderHistory");  
+    }
+
+    [Authorize(Roles = AppRoles.Customer)]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<IActionResult> ResubmitPaymentProof(int id, IFormFile? paymentProof)
+    {
+        var userEmail = User.FindFirstValue(ClaimTypes.Email);
+        if (string.IsNullOrWhiteSpace(userEmail)) return Challenge();
+
+        var user = _context.Users.SingleOrDefault(account => account.Email == userEmail);
+        if (user == null) return Challenge();
+
+        var order = _context.Orders.SingleOrDefault(item =>
+            item.OrderID == id &&
+            item.UserID == user.UserId &&
+            item.PaymentMethod == "PromptPay");
+        if (order == null) return NotFound();
+        if (order.PaymentStatus != PaymentStatuses.NeedsResubmission ||
+            order.OrderStatus == "ยกเลิก")
+        {
+            return BadRequest();
+        }
+
+        if (!PaymentProofStorage.TryGetExtension(paymentProof, out var extension))
+        {
+            TempData["PaymentError"] = paymentProof?.Length > PaymentProofStorage.MaxFileSize
+                ? "ไฟล์สลิปต้องมีขนาดไม่เกิน 5 MB"
+                : "กรุณาแนบสลิปเป็นไฟล์ PNG หรือ JPEG";
+            return RedirectToAction(nameof(OrderDetails), new { id });
+        }
+
+        await PaymentProofStorage.SaveAsync(
+            _environment.ContentRootPath,
+            order.OrderID,
+            paymentProof!,
+            extension,
+            HttpContext.RequestAborted);
+        order.PaymentStatus = PaymentStatuses.PendingReview;
+        _context.SaveChanges();
+
+        TempData["PaymentMessage"] = "ส่งสลิปใหม่แล้ว กรุณารอแอดมินตรวจสอบ";
+        return RedirectToAction(nameof(OrderDetails), new { id });
     }
 
     [Authorize(Roles = AppRoles.Customer)]
@@ -477,6 +707,54 @@ public class HomeController : Controller
             Order = order,
             Items = items
         });
+    }
+
+    private bool TryCalculateBuffetChildDiscount(
+        int guestCount,
+        string? promoCode,
+        int freeChildCount,
+        out decimal discountAmount,
+        out string? errorMessage)
+    {
+        discountAmount = 0m;
+        errorMessage = null;
+        var normalizedCode = promoCode?.Trim();
+        if (string.IsNullOrEmpty(normalizedCode))
+        {
+            if (freeChildCount == 0) return true;
+
+            errorMessage = "กรุณากรอกรหัสโปรโมชั่นสำหรับเด็กก่อน";
+            return false;
+        }
+
+        if (freeChildCount < 1 || freeChildCount > guestCount)
+        {
+            errorMessage = "จำนวนเด็กที่ใช้สิทธิ์ต้องอยู่ระหว่าง 1 คนถึงจำนวนผู้ใช้บุฟเฟต์";
+            return false;
+        }
+
+        var promotion = _context.BuffetChildPromotions
+            .AsNoTracking()
+            .Single(item => item.PromotionId == 1);
+        if (!promotion.IsActive ||
+            !string.Equals(promotion.Code, normalizedCode, StringComparison.OrdinalIgnoreCase))
+        {
+            errorMessage = "รหัสโปรโมชั่นไม่ถูกต้องหรือไม่ได้เปิดใช้งาน";
+            return false;
+        }
+
+        var today = DateTime.Today;
+        if (!promotion.StartDate.HasValue ||
+            !promotion.EndDate.HasValue ||
+            today < promotion.StartDate.Value.Date ||
+            today > promotion.EndDate.Value.Date)
+        {
+            errorMessage = "รหัสโปรโมชั่นนี้อยู่นอกช่วงวันที่ใช้งาน";
+            return false;
+        }
+
+        discountAmount = BuffetPricePerPerson * freeChildCount;
+        return true;
     }
 
     private static bool IsValidPackage(string? package) =>

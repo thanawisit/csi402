@@ -1,0 +1,6 @@
+@model IEnumerable<Menu>
+@{
+    ViewData["Title"] = "จัดการเมนู";
+}
+
+@await Html.PartialAsync("~/Views/Admin/Menus.cshtml", Model)

@@ -2,6 +2,10 @@
 @{
     ViewData["Title"] = "จัดการออเดอร์";
     var allowedStatuses = (string[])ViewBag.AllowedOrderStatuses;
+    var canReviewPayments = (bool)ViewBag.CanReviewPayments;
+    var isChef = (bool)ViewBag.IsChef;
+    var canEditOrders = (bool)ViewBag.CanEditOrders;
+    var orderLinesById = (Dictionary<int, List<OrderListItemViewModel>>)ViewBag.OrderLines;
 }
 
 <div class="container py-4">
@@ -23,18 +27,51 @@
                 <thead>
                     <tr>
                         <th class="ps-4">ออเดอร์</th>
+                        <th>รายการอาหาร</th>
                         <th>ลูกค้า</th>
                         <th>รับอาหาร</th>
                         <th>วัน / เวลา</th>
                         <th>ยอดรวม</th>
+                        <th>การชำระเงิน</th>
                         <th>สถานะ</th>
+                        @if (canEditOrders)
+                        {
+                            <th>จัดการ</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var order in Model)
                     {
+                        var rowAllowedStatuses = allowedStatuses;
+                        if (isChef)
+                        {
+                            rowAllowedStatuses = (order.OrderStatus == "รอดำเนินการ" || order.OrderStatus == "ยืนยันแล้ว")
+                                ? ["กำลังเตรียม"]
+                                : order.OrderStatus == "กำลังเตรียม"
+                                    ? ["พร้อมรับ"]
+                                    : [];
+                        }
+
                         <tr>
                             <td class="ps-4">@("#ORD" + order.OrderID.ToString("D4"))</td>
+                            <td>
+                                @if (orderLinesById.TryGetValue(order.OrderID, out var orderLines))
+                                {
+                                    @foreach (var line in orderLines)
+                                    {
+                                        <div>@line.MenuName <span class="text-muted">× @line.Quantity</span></div>
+                                    }
+                                }
+                                else if (order.BuffetGuestCount is int buffetCount)
+                                {
+                                    <span>บุฟเฟต์ @buffetCount คน</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
                             <td>
                                 @order.User?.Username
                                 <div class="small text-muted">@order.User?.PhoneNumber</div>
@@ -49,13 +86,66 @@
                                 {
                                     <div class="small text-muted">รับเวลา @order.ArriveTime น.</div>
                                 }
+                                @if (order.BuffetGuestCount is int guestCount)
+                                {
+                                    <div class="small text-muted">บุฟเฟต์ @guestCount คน</div>
+                                    @if (order.BuffetFreeChildCount > 0)
+                                    {
+                                        <div class="small text-success">
+                                            เด็กฟรี @order.BuffetFreeChildCount คน · โค้ด @order.PromoCode
+                                        </div>
+                                    }
+                                }
                             </td>
                             <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>฿@order.TotalAmount.ToString("N2")</td>
                             <td>
-                                @if (allowedStatuses.Length == 0)
+                                ฿@order.TotalAmount.ToString("N2")
+                                @if (order.DiscountAmount > 0m)
                                 {
-                                    <span>@order.OrderStatus</span>
+                                    <div class="small text-success">ส่วนลด ฿@order.DiscountAmount.ToString("N2")</div>
+                                }
+                            </td>
+                            <td>
+                                <span>@order.PaymentStatus</span>
+                                @if (order.PaymentMethod == "PromptPay")
+                                {
+                                    <div class="small text-muted">PromptPay</div>
+                                    @if (canReviewPayments && order.PaymentStatus == PaymentStatuses.PendingReview)
+                                    {
+                                        <a asp-action="PaymentProof" asp-route-id="@order.OrderID" target="_blank" rel="noopener">ดูสลิป</a>
+                                    }
+                                }
+                                @if (canReviewPayments && order.OrderStatus != "ยกเลิก" && order.PaymentStatus != PaymentStatuses.Paid)
+                                {
+                                    @if (order.PaymentMethod == "เงินสด (ชำระที่หน้าร้าน)" && order.PaymentStatus == PaymentStatuses.Unpaid)
+                                    {
+                                        <form asp-action="ConfirmPayment" method="post" class="mt-1">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@order.OrderID" />
+                                            <button type="submit" class="btn btn-sm btn-success">ยืนยันรับเงิน</button>
+                                        </form>
+                                    }
+                                    else if (order.PaymentMethod == "PromptPay" && order.PaymentStatus == PaymentStatuses.PendingReview)
+                                    {
+                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                            <form asp-action="ConfirmPayment" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@order.OrderID" />
+                                                <button type="submit" class="btn btn-sm btn-success">ยืนยัน</button>
+                                            </form>
+                                            <form asp-action="RejectPayment" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@order.OrderID" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">ขอสลิปใหม่</button>
+                                            </form>
+                                        </div>
+                                    }
+                                }
+                            </td>
+                            <td>
+                                @if (rowAllowedStatuses.Length == 0)
+                                {
+                                    <span>@OrderStatusLabels.Display(order.OrderStatus)</span>
                                 }
                                 else
                                 {
@@ -63,24 +153,37 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@order.OrderID" />
                                         <select name="status" class="form-select form-select-sm" aria-label="สถานะออเดอร์">
-                                            @if (!allowedStatuses.Contains(order.OrderStatus))
+                                            @if (!rowAllowedStatuses.Contains(order.OrderStatus))
                                             {
-                                                <option value="@order.OrderStatus" selected>@order.OrderStatus</option>
+                                                <option value="@order.OrderStatus" selected>@OrderStatusLabels.Display(order.OrderStatus)</option>
                                             }
-                                            @foreach (var status in allowedStatuses)
+                                            @foreach (var status in rowAllowedStatuses)
                                             {
-                                                <option value="@status" selected="@(status == order.OrderStatus)">@status</option>
+                                                <option value="@status" selected="@(status == order.OrderStatus)">@OrderStatusLabels.Display(status)</option>
                                             }
                                         </select>
                                         <button type="submit" class="btn btn-sm btn-outline-success">บันทึก</button>
                                     </form>
                                 }
                             </td>
+                            @if (canEditOrders)
+                            {
+                                <td>
+                                    @if (order.BuffetGuestCount is null &&
+                                         order.PaymentStatus != PaymentStatuses.Paid &&
+                                         (order.OrderStatus == "รอดำเนินการ" || order.OrderStatus == "ยืนยันแล้ว"))
+                                    {
+                                        <a asp-action="EditOrder" asp-route-id="@order.OrderID" class="btn btn-sm btn-outline-primary">
+                                            แก้ไข
+                                        </a>
+                                    }
+                                </td>
+                            }
                         </tr>
                     }
                     @if (!Model.Any())
                     {
-                        <tr><td colspan="6" class="text-center text-muted py-5">ยังไม่มีออเดอร์</td></tr>
+                        <tr><td colspan="@(canEditOrders ? 9 : 8)" class="text-center text-muted py-5">ยังไม่มีออเดอร์</td></tr>
                     }
                 </tbody>
             </table>

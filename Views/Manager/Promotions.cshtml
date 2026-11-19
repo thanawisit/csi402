@@ -1,0 +1,10 @@
+@model PromotionManagementViewModel
+@{
+    ViewData["Title"] = "จัดการโปรโมชั่น";
+}
+
+@await Html.PartialAsync("~/Views/Admin/Promotions.cshtml", Model)
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

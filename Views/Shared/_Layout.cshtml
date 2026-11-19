@@ -6,10 +6,12 @@
                   User.IsInRole(AppRoles.StockChecker);
     var canManageMenus = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Manager);
     var canManageOrders = User.IsInRole(AppRoles.Admin) ||
+                          User.IsInRole(AppRoles.Manager) ||
                           User.IsInRole(AppRoles.Receptionist) ||
                           User.IsInRole(AppRoles.Chef);
     var canManageStock = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.StockChecker);
     var canManageUsers = canManageMenus;
+    var canManagePromotions = canManageMenus;
     var canViewReports = canManageMenus;
 }
 <!DOCTYPE html>
@@ -80,12 +82,23 @@
                                     <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Reports">ยอดขาย</a>
                                 </li>
                             }
+                            @if (canManagePromotions)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Promotions">โปรโมชั่น</a>
+                                </li>
+                            }
                             @if (canManageUsers)
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Users">
-                                        @(User.IsInRole(AppRoles.Manager) ? "พนักงาน" : "ผู้ใช้")
-                                    </a>
+                                    @if (User.IsInRole(AppRoles.Admin))
+                                    {
+                                        <a class="nav-link nav-link-custom" asp-controller="Accounts" asp-action="Index">บัญชีและบทบาท</a>
+                                    }
+                                    else
+                                    {
+                                        <a class="nav-link nav-link-custom" asp-controller="Admin" asp-action="Users">พนักงาน</a>
+                                    }
                                 </li>
                             }
                         }
@@ -119,8 +132,9 @@
                         }
                         else
                         {
-                            <a asp-controller="Home" asp-action="Cart" class="nav-icon fs-5" aria-label="ตะกร้าสินค้า">
+                            <a asp-controller="Home" asp-action="Cart" asp-route-tableId="@ViewBag.TableId" class="nav-icon fs-5" aria-label="ตะกร้าสินค้า">
                                 <i class="bi bi-cart2"></i>
+                                @await Component.InvokeAsync("CartCount")
                             </a>
                         }
 

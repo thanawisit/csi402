@@ -1,17 +1,11 @@
 @model IEnumerable<AdminUserListItemViewModel>
 @{
-    var isManager = (bool)ViewBag.IsManager;
-    ViewData["Title"] = isManager ? "ดูแลพนักงาน" : "จัดการบัญชีผู้ใช้";
-    var canManageRoles = (bool)ViewBag.CanManageRoles;
+    ViewData["Title"] = "ดูแลพนักงาน";
 }
 
 <div class="container py-4">
     <h1 class="fw-bold mb-1">@ViewData["Title"]</h1>
-    <p class="text-muted mb-4">
-        @(isManager
-            ? "แสดงรายชื่อและข้อมูลติดต่อของพนักงาน บทบาทบัญชีจัดการได้โดยแอดมินเท่านั้น"
-            : "ดูแลบัญชีผู้ใช้และกำหนดบทบาทพนักงาน")
-    </p>
+    <p class="text-muted mb-4">แสดงรายชื่อและข้อมูลติดต่อของพนักงาน บทบาทบัญชีจัดการได้จากหน้าแยกสำหรับแอดมิน</p>
 
     @if (TempData["AdminMessage"] != null)
     {
@@ -27,60 +21,26 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th class="ps-4">@(isManager ? "ชื่อพนักงาน" : "ชื่อผู้ใช้")</th>
+                        <th class="ps-4">ชื่อพนักงาน</th>
                         <th>อีเมล</th>
                         <th>โทรศัพท์</th>
                         <th>บทบาท</th>
-                        @if (canManageRoles)
-                        {
-                            <th class="text-end pe-4">บันทึก</th>
-                        }
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var account in Model)
                     {
-                        var isCurrentAccount = string.Equals(
-                            account.Email,
-                            User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value,
-                            StringComparison.OrdinalIgnoreCase);
                         <tr>
                             <td class="ps-4">@account.Username</td>
                             <td>@account.Email</td>
                             <td>@(account.PhoneNumber ?? "-")</td>
-                            <td>
-                                @if (canManageRoles)
-                                {
-                                    <form asp-action="UpdateUserRole" method="post" id="role-@account.UserId" class="d-flex gap-2">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="userId" value="@account.UserId" />
-                                        <select name="role" class="form-select form-select-sm" aria-label="บทบาทของ @account.Username" disabled="@isCurrentAccount">
-                                            @foreach (var role in AppRoles.Labels)
-                                            {
-                                                <option value="@role.Key" selected="@(role.Key == account.Role)">@role.Value</option>
-                                            }
-                                        </select>
-                                    </form>
-                                }
-                                else
-                                {
-                                    @(AppRoles.Labels.TryGetValue(account.Role, out var label) ? label : account.Role)
-                                }
-                            </td>
-                            @if (canManageRoles)
-                            {
-                                <td class="text-end pe-4">
-                                    <button type="submit" form="role-@account.UserId" class="btn btn-sm btn-outline-success" disabled="@isCurrentAccount">บันทึกบทบาท</button>
-                                </td>
-                            }
+                            <td>@(AppRoles.Labels.TryGetValue(account.Role, out var label) ? label : account.Role)</td>
                         </tr>
                     }
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="@(canManageRoles ? 5 : 4)" class="text-center text-muted py-5">
-                                @(isManager ? "ยังไม่มีข้อมูลพนักงาน" : "ยังไม่มีบัญชีผู้ใช้")
-                            </td>
+                            <td colspan="4" class="text-center text-muted py-5">ยังไม่มีข้อมูลพนักงาน</td>
                         </tr>
                     }
                 </tbody>

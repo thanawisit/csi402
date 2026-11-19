@@ -23,6 +23,16 @@ public partial class Order
 
     public string PaymentMethod { get; set; } = null!;
 
+    public string PaymentStatus { get; set; } = PaymentStatuses.Unpaid;
+
+    public int? BuffetGuestCount { get; set; }
+
+    public int BuffetFreeChildCount { get; set; }
+
+    public string? PromoCode { get; set; }
+
+    public decimal DiscountAmount { get; set; }
+
     public decimal TotalAmount { get; set; }
 
     public string OrderStatus { get; set; } = "รอดำเนินการ";
