@@ -96,6 +96,191 @@ using (var scope = app.Services.CreateScope())
         connection.Open();
     }
 
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS users (
+            UserID INT NOT NULL AUTO_INCREMENT,
+            Username VARCHAR(50) NOT NULL,
+            PasswordHash VARCHAR(255) NOT NULL,
+            Role VARCHAR(20) NOT NULL DEFAULT 'Customer',
+            Email VARCHAR(100) NOT NULL,
+            PhoneNumber VARCHAR(20) NULL,
+            DateOfBirth DATE NULL,
+            MarketingConsent TINYINT(1) NOT NULL DEFAULT 0,
+            TermsAcceptedAt DATETIME NULL,
+            PRIMARY KEY (UserID),
+            UNIQUE KEY UX_users_Email (Email)
+        )
+        """);
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS dining_tables (
+            TableID INT NOT NULL AUTO_INCREMENT,
+            TableNumber VARCHAR(10) NOT NULL,
+            Capacity INT NOT NULL,
+            IsActive TINYINT(1) NOT NULL DEFAULT 1,
+            PRIMARY KEY (TableID),
+            UNIQUE KEY UX_dining_tables_TableNumber (TableNumber)
+        )
+        """);
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS menus (
+            MenuID INT NOT NULL AUTO_INCREMENT,
+            MenuName VARCHAR(100) NOT NULL,
+            Price DECIMAL(10,2) NOT NULL,
+            Status VARCHAR(20) NOT NULL DEFAULT 'Available',
+            StockQuantity INT NULL,
+            Description VARCHAR(500) NULL,
+            PRIMARY KEY (MenuID)
+        )
+        """);
+
+    using (var menuCountCommand = connection.CreateCommand())
+    {
+        menuCountCommand.CommandText = "SELECT COUNT(*) FROM menus";
+        if (Convert.ToInt32(menuCountCommand.ExecuteScalar()) == 0)
+        {
+            context.Database.ExecuteSqlRaw("""
+                INSERT INTO menus (MenuName, Price, Status, StockQuantity, Description) VALUES
+                ('ส้มตำไทย', 69.00, 'Available', NULL, 'ส้มตำไทยรสชาติเปรี้ยวหวานเผ็ดกำลังดี'),
+                ('ลาบหมู', 89.00, 'Available', NULL, 'ลาบหมูปรุงรสอีสานแท้'),
+                ('ต้มแซ่บกระดูกอ่อน', 129.00, 'Available', NULL, 'ต้มแซ่บกระดูกอ่อนหม้อใหญ่'),
+                ('ไก่ย่างวิเชียรบุรี', 119.00, 'Available', NULL, 'ไก่ย่างหอมเครื่องเทศและน้ำจิ้มแจ่ว'),
+                ('คอหมูย่าง', 109.00, 'Available', NULL, 'คอหมูย่างนุ่มพร้อมน้ำจิ้มแจ่ว'),
+                ('น้ำอัดลม', 25.00, 'Available', NULL, 'เครื่องดื่มเย็นชื่นใจ')
+                """);
+        }
+    }
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS orders (
+            OrderID INT NOT NULL AUTO_INCREMENT,
+            DisplayOrderNumber VARCHAR(20) NULL,
+            UserID INT NOT NULL,
+            TableID INT NULL,
+            OrderDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            OrderType VARCHAR(50) NOT NULL,
+            ArriveTime VARCHAR(20) NOT NULL,
+            PaymentMethod VARCHAR(50) NOT NULL,
+            PaymentStatus VARCHAR(30) NOT NULL DEFAULT 'รอชำระเงิน',
+            BuffetGuestCount INT NULL,
+            BuffetFreeChildCount INT NOT NULL DEFAULT 0,
+            PromoCode VARCHAR(50) NULL,
+            DiscountAmount DECIMAL(10,2) NOT NULL DEFAULT 0,
+            TotalAmount DECIMAL(10,2) NOT NULL,
+            OrderStatus VARCHAR(50) NOT NULL DEFAULT 'รอดำเนินการ',
+            PRIMARY KEY (OrderID),
+            UNIQUE KEY UX_orders_DisplayOrderNumber (DisplayOrderNumber),
+            KEY IX_orders_UserID (UserID),
+            KEY IX_orders_TableID (TableID)
+        )
+        """);
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS order_items (
+            OrderItemID INT NOT NULL AUTO_INCREMENT,
+            OrderID INT NOT NULL,
+            MenuID INT NOT NULL,
+            Quantity INT NOT NULL,
+            Price DECIMAL(10,2) NOT NULL,
+            StockDeducted TINYINT(1) NOT NULL DEFAULT 0,
+            SpecialRequest VARCHAR(500) NULL,
+            PRIMARY KEY (OrderItemID),
+            KEY IX_order_items_OrderID (OrderID),
+            KEY IX_order_items_MenuID (MenuID)
+        )
+        """);
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS home_promotions (
+            PromotionID INT NOT NULL AUTO_INCREMENT,
+            SlotKey VARCHAR(40) NOT NULL,
+            Kicker VARCHAR(100) NOT NULL,
+            Headline VARCHAR(200) NOT NULL,
+            Description VARCHAR(500) NOT NULL,
+            LinkText VARCHAR(100) NOT NULL,
+            IsActive TINYINT(1) NOT NULL DEFAULT 1,
+            SortOrder INT NOT NULL DEFAULT 0,
+            PRIMARY KEY (PromotionID),
+            UNIQUE KEY UX_home_promotions_SlotKey (SlotKey)
+        )
+        """);
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS buffet_child_promotions (
+            PromotionID TINYINT UNSIGNED NOT NULL,
+            Code VARCHAR(50) NULL,
+            StartDate DATE NULL,
+            EndDate DATE NULL,
+            IsActive TINYINT(1) NOT NULL DEFAULT 0,
+            MaxFreeChildren INT NOT NULL DEFAULT 1,
+            MaxChildAge INT NOT NULL DEFAULT 10,
+            MaxChildHeightCm INT NOT NULL DEFAULT 120,
+            PRIMARY KEY (PromotionID)
+        )
+        """);
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS table_reservations (
+            ReservationID INT NOT NULL AUTO_INCREMENT,
+            UserID INT NOT NULL,
+            TableID INT NOT NULL,
+            Package VARCHAR(20) NOT NULL,
+            ReservationDateTime DATETIME NOT NULL,
+            ReservationEndTime DATETIME NOT NULL,
+            GuestCount INT NOT NULL,
+            CustomerName VARCHAR(100) NOT NULL,
+            CustomerEmail VARCHAR(100) NOT NULL,
+            CustomerPhone VARCHAR(20) NOT NULL,
+            Note VARCHAR(500) NULL,
+            Status VARCHAR(30) NOT NULL DEFAULT 'รอยืนยัน',
+            CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (ReservationID),
+            KEY IX_table_reservations_TableID (TableID),
+            KEY IX_table_reservations_UserID (UserID)
+        )
+        """);
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS general_promotions (
+            PromotionID INT NOT NULL AUTO_INCREMENT,
+            Code VARCHAR(50) NOT NULL,
+            Name VARCHAR(200) NOT NULL,
+            Description VARCHAR(500) NULL,
+            DiscountType VARCHAR(20) NOT NULL DEFAULT 'Percent',
+            DiscountValue DECIMAL(10,2) NOT NULL DEFAULT 0,
+            AppliesTo VARCHAR(20) NOT NULL DEFAULT 'Both',
+            BirthMonthOnly TINYINT(1) NOT NULL DEFAULT 0,
+            FirstOrderOnly TINYINT(1) NOT NULL DEFAULT 0,
+            MaxUsesPerUser INT NULL,
+            TargetMenuId INT NULL,
+            RequiresThemeApproval TINYINT(1) NOT NULL DEFAULT 0,
+            MinSubtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
+            StartDate DATE NULL,
+            EndDate DATE NULL,
+            MaxUses INT NULL,
+            UsedCount INT NOT NULL DEFAULT 0,
+            IsActive TINYINT(1) NOT NULL DEFAULT 1,
+            PRIMARY KEY (PromotionID),
+            UNIQUE KEY UX_general_promotions_Code (Code)
+        )
+        """);
+
+    context.Database.ExecuteSqlRaw("""
+        CREATE TABLE IF NOT EXISTS general_promotion_usages (
+            UsageID INT NOT NULL AUTO_INCREMENT,
+            PromotionID INT NOT NULL,
+            UserID INT NOT NULL,
+            OrderID INT NOT NULL,
+            UsedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            RequiresThemeApproval TINYINT(1) NOT NULL DEFAULT 0,
+            ThemeApprovalStatus VARCHAR(30) NOT NULL DEFAULT '',
+            PRIMARY KEY (UsageID),
+            UNIQUE KEY UX_promotion_usage_order (OrderID),
+            KEY IX_promotion_usage_promotion_user (PromotionID, UserID)
+        )
+        """);
+
     using (var displayOrderNumberColumnCommand = connection.CreateCommand())
     {
         displayOrderNumberColumnCommand.CommandText = """
