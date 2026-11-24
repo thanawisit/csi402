@@ -1,0 +1,422 @@
+@model IsanDer.Models.HomePageViewModel
+@{
+    ViewData["Title"] = "โปรโมชั่น";
+    var totalCount = Model.Promotions.Count + Model.GeneralPromotions.Count;
+}
+
+<style>
+    .public-promotions-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 2.5rem 1.25rem 4rem;
+    }
+
+    .public-promotions-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .public-promotions-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        color: #c92a2a;
+        font-size: .8rem;
+        font-weight: 800;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        background: #fff5f5;
+        padding: .25rem .75rem;
+        border-radius: 999px;
+        border: 1px solid #ffe3e3;
+    }
+
+    .public-promotions-header h1 {
+        margin: .6rem 0 0;
+        color: #1f1d1d;
+        font-family: 'Kanit', sans-serif;
+        font-size: clamp(1.85rem, 4vw, 2.5rem);
+        font-weight: 800;
+    }
+
+    .public-promotions-header p {
+        margin: .35rem 0 0;
+        color: #6b6360;
+        font-size: .95rem;
+    }
+
+    .promotion-filter-bar {
+        display: flex;
+        gap: .65rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: .25rem;
+    }
+
+    .promotion-filter-btn {
+        flex: 0 0 auto;
+        border: 1.5px solid #f0ebe6;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #4a423f;
+        padding: .5rem 1.15rem;
+        font-family: 'Kanit', sans-serif;
+        font-size: .88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all .2s ease;
+    }
+
+    .promotion-filter-btn:hover {
+        border-color: #c92a2a;
+        color: #c92a2a;
+    }
+
+    .promotion-filter-btn.active {
+        border-color: #c92a2a;
+        background: #c92a2a;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(201, 42, 42, .25);
+    }
+
+    .public-promotion-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.25rem;
+    }
+
+    .public-promotion-card {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1.5px solid #f0ebe6;
+        border-radius: 20px;
+        background: #ffffff;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, .04);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .public-promotion-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(201, 42, 42, .3);
+        box-shadow: 0 18px 36px rgba(201, 42, 42, .12);
+    }
+
+    .public-promotion-visual {
+        position: relative;
+        height: 160px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 78% 18%, rgba(255, 255, 255, .25), transparent 5rem),
+            linear-gradient(135deg, #a61e1e 0%, #c92a2a 60%, #e03131 100%);
+        color: #ffffff;
+    }
+
+    .public-promotion-card.member .public-promotion-visual {
+        background:
+            radial-gradient(circle at 78% 18%, rgba(245, 158, 11, .3), transparent 6rem),
+            linear-gradient(135deg, #771414 0%, #a61e1e 60%, #c92a2a 100%);
+    }
+
+    .public-promotion-visual::after {
+        content: "";
+        position: absolute;
+        right: -35px;
+        bottom: -52px;
+        width: 140px;
+        height: 140px;
+        border: 22px solid rgba(255, 255, 255, .1);
+        border-radius: 50%;
+    }
+
+    .public-promotion-icon {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        width: 70px;
+        height: 70px;
+        place-items: center;
+        border: 2px solid rgba(255, 255, 255, .6);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, .18);
+        backdrop-filter: blur(4px);
+        font-size: 2rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, .15);
+    }
+
+    .public-promotion-body {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        padding: 1.25rem;
+    }
+
+    .public-promotion-label {
+        color: #c92a2a;
+        font-family: 'Kanit', sans-serif;
+        font-size: .78rem;
+        font-weight: 800;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .public-promotion-title {
+        margin: .4rem 0 .5rem;
+        color: #1f1d1d;
+        font-family: 'Kanit', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 800;
+        line-height: 1.35;
+        white-space: pre-line;
+    }
+
+    .public-promotion-description {
+        min-height: 42px;
+        color: #6b6360;
+        font-size: .86rem;
+        line-height: 1.55;
+    }
+
+    .public-promotion-code {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        margin: .35rem 0 .75rem;
+        border: 1.5px dashed #f3baba;
+        border-radius: 10px;
+        background: #fff5f5;
+        color: #c92a2a;
+        padding: .4rem .65rem;
+        font-family: 'Kanit', sans-serif;
+        font-size: .82rem;
+        font-weight: 800;
+    }
+
+    .public-promotion-code code {
+        color: #a61e1e;
+        font-size: .9rem;
+    }
+
+    .public-promotion-meta {
+        display: grid;
+        gap: .3rem;
+        color: #8c827a;
+        font-size: .78rem;
+        margin-bottom: 1rem;
+    }
+
+    .public-promotion-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        width: 100%;
+        min-height: 44px;
+        margin-top: auto;
+        border: 1.5px solid #ffe3e3;
+        border-radius: 12px;
+        background: #fff5f5;
+        color: #c92a2a;
+        font-family: 'Kanit', sans-serif;
+        font-size: .88rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all .2s ease;
+    }
+
+    .public-promotion-action:hover {
+        border-color: #c92a2a;
+        background: #c92a2a;
+        color: #ffffff;
+        box-shadow: 0 6px 16px rgba(201, 42, 42, .25);
+    }
+
+    .public-promotion-empty {
+        border: 2px dashed #f0ebe6;
+        border-radius: 20px;
+        background: #ffffff;
+        text-align: center;
+        padding: 4rem 1.5rem;
+    }
+
+    @@media (max-width: 991.98px) {
+        .public-promotion-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .public-promotions-page {
+            padding: 1.25rem .75rem 3rem;
+        }
+
+        .public-promotions-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .public-promotion-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .public-promotion-body {
+            min-height: 0;
+        }
+    }
+</style>
+
+<div class="public-promotions-page">
+    <header class="public-promotions-header">
+        <div>
+            <span class="public-promotions-kicker"><i class="bi bi-tag-fill me-1"></i> ข้อเสนอสุดพิเศษ</span>
+            <h1>โปรโมชั่น & สิทธิพิเศษ</h1>
+            <p>เลือกรับความคุ้มค่า โค้ดส่วนลด และสิทธิประโยชน์พิเศษสำหรับมื้อแซ่บของคุณ</p>
+        </div>
+    </header>
+
+    @if (totalCount == 0)
+    {
+        <div class="public-promotion-empty">
+            <i class="bi bi-ticket-perforated fs-1 d-block mb-3 text-danger"></i>
+            <h2 class="h5 fw-bold mb-1" style="font-family: 'Kanit', sans-serif;">ยังไม่มีโปรโมชั่นที่เปิดใช้งานในขณะนี้</h2>
+            <p class="text-muted mb-0">โปรดติดตามข้อเสนอสุดแซ่บจากทางร้านเร็วๆ นี้</p>
+        </div>
+    }
+    else
+    {
+        <div class="promotion-filter-bar" aria-label="กรองโปรโมชั่น">
+            <button type="button" class="promotion-filter-btn active" data-filter="all">ทั้งหมด (@totalCount)</button>
+            <button type="button" class="promotion-filter-btn" data-filter="member">สมาชิกพิเศษ</button>
+            <button type="button" class="promotion-filter-btn" data-filter="buffet">บุฟเฟต์ 299.-</button>
+            <button type="button" class="promotion-filter-btn" data-filter="alacarte">อาหารตามสั่ง</button>
+        </div>
+
+        <div class="public-promotion-grid" id="publicPromotionGrid">
+            @foreach (var promotion in Model.Promotions)
+            {
+                var isMember = promotion.SlotKey == "membership";
+                var isBuffet = promotion.SlotKey == "buffet";
+                <article class="public-promotion-card @(isMember ? "member" : "")"
+                         data-filter="@(isBuffet ? "buffet" : isMember ? "member" : "alacarte")">
+                    <div class="public-promotion-visual">
+                        <span class="public-promotion-icon">
+                            <i class="bi @(isMember ? "bi-person-heart" : "bi-basket2-fill")"></i>
+                        </span>
+                    </div>
+                    <div class="public-promotion-body">
+                        <span class="public-promotion-label">@promotion.Kicker</span>
+                        <h2 class="public-promotion-title">@promotion.Headline</h2>
+                        <p class="public-promotion-description">@promotion.Description</p>
+                        @if (isBuffet && Model.CurrentBuffetPromotion != null)
+                        {
+                            <span class="public-promotion-code">
+                                <i class="bi bi-ticket-perforated"></i><code>@Model.CurrentBuffetPromotion.Code</code>
+                            </span>
+                        }
+                        <div class="public-promotion-meta">
+                            @if (isBuffet && Model.CurrentBuffetPromotion?.EndDate != null)
+                            {
+                                <span><i class="bi bi-clock me-1"></i> ใช้โค้ดได้ถึง @Model.CurrentBuffetPromotion.EndDate?.ToString("dd/MM/yyyy")</span>
+                            }
+                        </div>
+                        <a asp-controller="@(isMember ? "Account" : "Home")"
+                           asp-action="@(isMember ? (User.Identity?.IsAuthenticated == true ? "Profile" : "Register") : "Buffet")"
+                           asp-fragment="@(isMember ? null : "promotions")"
+                           class="public-promotion-action">
+                            @(isMember && User.Identity?.IsAuthenticated == true ? "ดูสิทธิ์สมาชิก" : promotion.LinkText)
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </article>
+            }
+
+            @foreach (var promotion in Model.GeneralPromotions)
+            {
+                var discountText = promotion.DiscountType == "Percent"
+                    ? $"ลด {promotion.DiscountValue:N0}%"
+                    : $"ลด ฿{promotion.DiscountValue:N2}";
+                var filterType = promotion.AppliesTo == "Both"
+                    ? "both"
+                    : promotion.AppliesTo == "Buffet"
+                        ? "buffet"
+                        : "alacarte";
+                <article class="public-promotion-card" data-filter="@filterType">
+                    <div class="public-promotion-visual">
+                        <span class="public-promotion-icon">
+                            <i class="bi @(promotion.AppliesTo == "Buffet" ? "bi-basket2-fill" : "bi-ticket-perforated")"></i>
+                        </span>
+                    </div>
+                    <div class="public-promotion-body">
+                        <span class="public-promotion-label">@discountText · @(
+                            promotion.AppliesTo == "Both" ? "ทุกแพ็กเกจ"
+                            : promotion.AppliesTo == "Buffet" ? "เฉพาะบุฟเฟต์"
+                            : "เฉพาะอาหารตามสั่ง")</span>
+                        <h2 class="public-promotion-title">@promotion.Name</h2>
+                        <p class="public-promotion-description">
+                            @(string.IsNullOrWhiteSpace(promotion.Description)
+                                ? "สิทธิพิเศษสำหรับลูกค้าร้านอีสาน เด้อ"
+                                : promotion.Description)
+                        </p>
+                        <span class="public-promotion-code">
+                            <i class="bi bi-ticket-perforated"></i><code>@promotion.Code</code>
+                        </span>
+                        <div class="public-promotion-meta">
+                            @if (promotion.MinSubtotal > 0m)
+                            {
+                                <span><i class="bi bi-info-circle me-1"></i> ยอดขั้นต่ำ ฿@promotion.MinSubtotal.ToString("N2")</span>
+                            }
+                            @if (promotion.FirstOrderOnly)
+                            {
+                                <span><i class="bi bi-star me-1"></i> เฉพาะออเดอร์แรกของสมาชิก</span>
+                            }
+                            else if (promotion.MaxUsesPerUser.HasValue)
+                            {
+                                <span><i class="bi bi-repeat me-1"></i> ใช้ได้ @promotion.MaxUsesPerUser ครั้งต่อสมาชิก</span>
+                            }
+                            @if (promotion.EndDate.HasValue)
+                            {
+                                <span><i class="bi bi-calendar-event me-1"></i> ใช้ได้ถึง @promotion.EndDate.Value.ToString("dd/MM/yyyy")</span>
+                            }
+                            @if (promotion.BirthMonthOnly)
+                            {
+                                <span><i class="bi bi-cake me-1"></i> สิทธิพิเศษเฉพาะเดือนเกิด</span>
+                            }
+                        </div>
+                        <a asp-controller="Home"
+                           asp-action="@(promotion.AppliesTo == "Buffet" ? "Buffet" : "Menu")"
+                           class="public-promotion-action">
+                            ใช้โค้ดเลย <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const buttons = Array.from(document.querySelectorAll('.promotion-filter-btn'));
+            const cards = Array.from(document.querySelectorAll('#publicPromotionGrid .public-promotion-card'));
+            buttons.forEach(button => {
+                button.addEventListener('click', () => {
+                    buttons.forEach(item => item.classList.remove('active'));
+                    button.classList.add('active');
+                    const filter = button.dataset.filter;
+                    cards.forEach(card => {
+                        const cardFilter = card.dataset.filter ?? 'all';
+                        card.hidden = filter !== 'all' &&
+                            cardFilter !== 'both' &&
+                            cardFilter !== filter;
+                    });
+                });
+            });
+        })();
+    </script>
+}

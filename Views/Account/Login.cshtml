@@ -1,40 +1,211 @@
 @model IsanDer.Models.LoginViewModel
 @{
-    ViewData["Title"] = "เข้าสู่ระบบ";
+    ViewData["Title"] = "เข้าสู่ระบบ - อีสาน เด้อ";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow-sm border-0 rounded-4">
-                <div class="card-body p-4">
-                    <h3 class="card-title text-center mb-4">เข้าสู่ระบบ IsanDer</h3>
-                    
-                    <form asp-action="Login" method="post">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<style>
+    .login-shell {
+        min-height: calc(100vh - 155px);
+        display: grid;
+        place-items: center;
+        padding: 2.5rem 1rem;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label">อีเมล</label>
-                            <input asp-for="Email" class="form-control" placeholder="example@email.com" />
-                            <span asp-validation-for="Email" class="text-danger"></span>
-                        </div>
+    .login-card {
+        display: grid;
+        width: min(960px, 100%);
+        grid-template-columns: minmax(0, 1.08fr) minmax(340px, .92fr);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 1.75rem;
+        background: #ffffff;
+        box-shadow: 0 24px 60px rgba(100, 20, 20, 0.12);
+    }
 
-                        <div class="mb-4">
-                            <label asp-for="Password" class="form-label">รหัสผ่าน</label>
-                            <input asp-for="Password" class="form-control" type="password" placeholder="********" />
-                            <span asp-validation-for="Password" class="text-danger"></span>
-                        </div>
+    .login-brand-panel {
+        position: relative;
+        min-height: 520px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+        background:
+            linear-gradient(180deg, rgba(30, 20, 20, .2) 0%, rgba(139, 24, 24, .95) 100%),
+            url('/images/menus/1.jpg') center / cover no-repeat;
+        color: #fff;
+        padding: 2.5rem;
+    }
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">เข้าสู่ระบบ</button>
-                        </div>
-                    </form>
+    .login-brand-mark {
+        display: grid;
+        width: 56px;
+        height: 56px;
+        place-items: center;
+        border-radius: 1.1rem;
+        background: #ffffff;
+        color: var(--brand-red);
+        font-size: 1.6rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
 
-                    <div class="mt-4 text-center">
-                        <p class="mb-0">ยังไม่มีบัญชีใช่หรือไม่? <a asp-action="Register" class="text-decoration-none">สมัครสมาชิกที่นี่</a></p>
-                    </div>
-                </div>
+    .login-brand-copy h2 {
+        max-width: 410px;
+        margin: 1.25rem 0 .5rem;
+        color: #fff;
+        font-size: clamp(2rem, 4vw, 3.25rem);
+        font-weight: 850;
+        line-height: 1.05;
+    }
+
+    .login-brand-copy p {
+        max-width: 390px;
+        margin: 0;
+        color: rgba(255, 255, 255, .82);
+    }
+
+    .login-form-panel {
+        display: flex;
+        align-items: center;
+        padding: 2.5rem;
+    }
+
+    .login-form-wrap {
+        width: 100%;
+    }
+
+    .login-kicker {
+        color: var(--brand-red);
+        font-size: .8rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .login-form-wrap h1 {
+        margin: .35rem 0 .25rem;
+        color: var(--text);
+        font-size: 2.25rem;
+        font-weight: 850;
+    }
+
+    .login-form-subtitle {
+        margin-bottom: 1.75rem;
+        color: var(--text-muted);
+        font-size: .95rem;
+    }
+
+    .login-field {
+        position: relative;
+        margin-bottom: 1.2rem;
+    }
+
+    .login-field-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        z-index: 2;
+        color: var(--brand-red);
+        transform: translateY(-50%);
+        font-size: 1.1rem;
+    }
+
+    .login-field .form-control {
+        min-height: 52px;
+        border: 1.5px solid #e5ded9;
+        border-radius: 0.85rem;
+        background: #ffffff;
+        padding-left: 46px;
+    }
+
+    .login-field .form-control:focus {
+        border-color: var(--brand-red);
+        box-shadow: 0 0 0 .25rem rgba(201, 42, 42, .14);
+    }
+
+    .login-submit {
+        min-height: 52px;
+        border: 0;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--brand-red-vibrant), var(--brand-red-dark));
+        color: #fff;
+        font-weight: 850;
+        font-size: 1.1rem;
+        box-shadow: 0 8px 24px rgba(201, 42, 42, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .login-submit:hover {
+        background: linear-gradient(135deg, #f03e3e, #8f1d1d);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(201, 42, 42, 0.45);
+    }
+
+    .login-register-link {
+        color: var(--brand-red);
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .login-register-link:hover {
+        color: var(--brand-red-dark);
+        text-decoration: underline;
+    }
+
+    @@media (max-width: 767.98px) {
+        .login-shell { padding: 1.25rem .75rem 2rem; }
+        .login-card { grid-template-columns: 1fr; }
+        .login-brand-panel { min-height: 230px; padding: 1.5rem; }
+        .login-brand-copy h2 { font-size: 1.85rem; }
+        .login-form-panel { padding: 1.5rem; }
+    }
+</style>
+
+<div class="login-shell">
+    <div class="login-card">
+        <aside class="login-brand-panel" aria-label="ร้านอีสาน เด้อ">
+            <div class="login-brand-copy">
+                <span class="login-brand-mark"><i class="bi bi-fire" aria-hidden="true"></i></span>
+                <h2>แซ่บนัวถึงใจ<br />ทุกคำที่อีสาน เด้อ</h2>
+                <p>สัมผัสรสชาติอีสานแท้ สด สะอาด พร้อมบริการสั่งอาหารสะดวกรวดเร็ว</p>
             </div>
-        </div>
+        </aside>
+
+        <section class="login-form-panel">
+            <div class="login-form-wrap">
+                <span class="login-kicker">WELCOME TO ISANDER</span>
+                <h1>เข้าสู่ระบบ</h1>
+                <p class="login-form-subtitle">เข้าสู่ระบบเพื่อสั่งอาหาร จองโต๊ะ และดูประวัติของคุณ</p>
+
+                <form asp-action="Login" method="post">
+                    <input asp-for="ReturnUrl" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="login-field">
+                        <i class="bi bi-envelope login-field-icon" aria-hidden="true"></i>
+                        <label asp-for="Email" class="form-label visually-hidden">อีเมล</label>
+                        <input asp-for="Email" class="form-control" placeholder="example@email.com" autocomplete="email" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="login-field">
+                        <i class="bi bi-lock login-field-icon" aria-hidden="true"></i>
+                        <label asp-for="Password" class="form-label visually-hidden">รหัสผ่าน</label>
+                        <input asp-for="Password" class="form-control" type="password" placeholder="รหัสผ่าน" autocomplete="current-password" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="login-submit w-100">เข้าสู่ระบบ</button>
+                </form>
+
+                <p class="mt-4 mb-0 text-center text-muted">
+                    ยังไม่มีบัญชีใช่หรือไม่?
+                    <a asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl" class="login-register-link">สมัครสมาชิกที่นี่</a>
+                </p>
+            </div>
+        </section>
     </div>
 </div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

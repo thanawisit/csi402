@@ -1,129 +1,456 @@
 @model IEnumerable<IsanDer.Models.Order>
 @{
-    ViewData["Title"] = "ประวัติการสั่งซื้อ";
-    int index = 0; // ตัวแปรสำหรับเช็กรายการแรก
+    ViewData["Title"] = "ประวัติการสั่งซื้อ - อีสาน เด้อ";
+    var orders = Model?.ToList() ?? new List<IsanDer.Models.Order>();
+    var paidCount = orders.Count(order => order.PaymentStatus == PaymentStatuses.Paid);
+    var pendingCount = orders.Count(order => order.PaymentStatus is PaymentStatuses.Unpaid or PaymentStatuses.PendingReview or PaymentStatuses.NeedsResubmission);
 }
 
 <style>
-    .order-card {
-        background-color: white;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 24px 30px;
-        margin-bottom: 20px;
+    .order-history-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 2.25rem 1.25rem 4rem;
+    }
+
+    .order-history-header {
         display: flex;
+        align-items: flex-end;
         justify-content: space-between;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .order-history-kicker {
+        display: inline-flex;
         align-items: center;
-    }
-    /* กรอบสีฟ้าสำหรับรายการแรก */
-    .order-card.selected {
-        border: 2px solid var(--brand-green);
-    }
-    .order-price {
+        gap: .5rem;
         color: var(--brand-red);
-        font-weight: bold;
-        font-size: 1.25rem;
+        font-size: .8rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
     }
-    /* สีสถานะต่างๆ */
-    .status-success { color: #16a34a; font-weight: bold; font-size: 0.9rem; }
-    .status-cancel { color: #dc2626; font-weight: bold; font-size: 0.9rem; }
-    .status-pending { color: #eab308; font-weight: bold; font-size: 0.9rem; }
-    
-    .btn-details {
-        background-color: var(--brand-green);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 8px 24px;
-        font-size: 0.9rem;
-        transition: 0.2s;
+
+    .order-history-kicker::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: var(--brand-red);
     }
-    .btn-details:hover {
-        background-color: var(--brand-green-dark);
-        color: white;
+
+    .order-history-header h1 {
+        margin: .4rem 0 0;
+        color: var(--text);
+        font-size: clamp(1.85rem, 4vw, 2.45rem);
+        font-weight: 900;
+    }
+
+    .order-history-header p {
+        margin: .35rem 0 0;
+        color: var(--text-muted);
+    }
+
+    .order-history-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--brand-red-vibrant), var(--brand-red-dark));
+        color: #fff !important;
+        padding: .65rem 1.45rem;
+        font-weight: 800;
+        text-decoration: none;
+        box-shadow: 0 6px 18px rgba(201, 42, 42, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .order-history-action:hover {
+        background: linear-gradient(135deg, #f03e3e, #8f1d1d);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(201, 42, 42, 0.45);
+    }
+
+    .order-history-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .order-summary-card {
+        position: relative;
+        min-height: 105px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 1.25rem;
+        background: #ffffff;
+        box-shadow: 0 6px 20px rgba(60, 20, 20, 0.05);
+        padding: 1.25rem 1.4rem;
+    }
+
+    .order-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+        background: var(--brand-red);
+    }
+
+    .order-summary-card.paid::before {
+        background: #2b8a3e;
+    }
+
+    .order-summary-card.pending::before {
+        background: #f59e0b;
+    }
+
+    .order-summary-label {
+        color: var(--text-muted);
+        font-size: .85rem;
+        font-weight: 700;
+    }
+
+    .order-summary-value {
+        margin-top: .35rem;
+        color: var(--text);
+        font-size: 2rem;
+        font-weight: 900;
+        font-family: 'Kanit', sans-serif;
+    }
+
+    .order-history-list {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .order-history-card {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1.25rem;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 1.35rem;
+        background: #ffffff;
+        box-shadow: 0 8px 24px rgba(60, 20, 20, 0.05);
+        padding: 1.35rem 1.5rem;
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .order-history-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--brand-red-subtle);
+        box-shadow: 0 14px 32px rgba(201, 42, 42, 0.12);
+    }
+
+    .order-history-card.latest {
+        border-left: 6px solid var(--brand-red);
+    }
+
+    .order-card-id {
+        color: #111827;
+        font-size: 1.15rem;
+        font-weight: 900;
+        font-family: 'Kanit', sans-serif;
+    }
+
+    .order-latest-badge {
+        background: var(--brand-red-soft);
+        color: var(--brand-red);
+        border-radius: 999px;
+        padding: .25rem .65rem;
+        font-size: .75rem;
+        font-weight: 800;
+    }
+
+    .order-status-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: .25rem .75rem;
+        font-size: .75rem;
+        font-weight: 700;
+    }
+
+    .order-status-badge.status-complete {
+        background: #ebfbee;
+        color: #2b8a3e;
+    }
+
+    .order-status-badge.status-cancelled {
+        background: #fff5f5;
+        color: #c92a2a;
+    }
+
+    .order-status-badge.status-progress {
+        background: #fff9db;
+        color: #e67700;
+    }
+
+    .payment-status-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: .25rem .75rem;
+        font-size: .75rem;
+        font-weight: 700;
+    }
+
+    .payment-status-badge.paid {
+        background: #ebfbee;
+        color: #2b8a3e;
+    }
+
+    .payment-status-badge.pending {
+        background: #fff9db;
+        color: #e67700;
+    }
+
+    .payment-status-badge.resubmit,
+    .payment-status-badge.refunded {
+        background: #fff5f5;
+        color: #c92a2a;
+    }
+
+    .order-card-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(150px, 260px));
+        gap: .5rem 1.5rem;
+        color: var(--text-muted);
+        font-size: .9rem;
+        margin-top: .65rem;
+    }
+
+    .order-card-meta i {
+        color: var(--brand-red);
+        margin-right: .35rem;
+    }
+
+    .order-card-discount {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        margin-top: .65rem;
+        border-radius: 8px;
+        background: var(--brand-red-soft);
+        color: var(--brand-red);
+        padding: .35rem .65rem;
+        font-size: .8rem;
+        font-weight: 700;
+    }
+
+    .order-card-side {
+        display: flex;
+        min-width: 200px;
+        align-items: flex-end;
+        justify-content: space-between;
+        flex-direction: column;
+        gap: .8rem;
+    }
+
+    .order-card-date {
+        color: var(--text-muted);
+        font-size: .8rem;
+        text-align: right;
+    }
+
+    .order-card-total {
+        color: var(--brand-red);
+        font-size: 1.65rem;
+        font-weight: 900;
+        font-family: 'Kanit', sans-serif;
+        text-align: right;
+        line-height: 1.1;
+    }
+
+    .order-card-total small {
+        display: block;
+        color: var(--text-muted);
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .order-detail-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .42rem;
+        border: 2px solid var(--brand-red);
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--brand-red) !important;
+        padding: .5rem 1.15rem;
+        font-size: .85rem;
+        font-weight: 800;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .order-detail-link:hover {
+        background: var(--brand-red);
+        color: #ffffff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(201, 42, 42, 0.3);
+    }
+
+    .order-history-empty {
+        border: 1px solid var(--border);
+        border-radius: 1.5rem;
+        background: #ffffff;
+        box-shadow: 0 10px 30px rgba(60, 20, 20, 0.06);
+        text-align: center;
+        padding: 3.5rem 1.5rem;
+    }
+
+    @@media (max-width: 575.98px) {
+        .order-history-summary { grid-template-columns: 1fr; }
+        .order-history-card { grid-template-columns: 1fr; }
+        .order-card-meta { grid-template-columns: 1fr; }
+        .order-card-side { align-items: stretch; border-top: 1px solid var(--border); padding-top: 1rem; }
+        .order-card-date, .order-card-total { text-align: left; }
     }
 </style>
 
-<div class="container mt-5 pb-5" style="max-width: 1000px;">
-    <h2 class="fw-bold mb-4">ประวัติการสั่งซื้อ</h2>
+<div class="order-history-page">
+    <header class="order-history-header">
+        <div>
+            <span class="order-history-kicker">Order history</span>
+            <h1>ประวัติการสั่งซื้อ</h1>
+            <p>ติดตามสถานะ ชำระเงิน และดูรายละเอียดออเดอร์ทั้งหมดของคุณ</p>
+        </div>
+    </header>
 
-    @if (Model != null && Model.Any())
+    @if (orders.Count > 0)
     {
-        @foreach (var order in Model)
-        {
-            // ให้รายการแรก (ออเดอร์ล่าสุด) มีคลาส selected (กรอบสีฟ้า)
-            string selectedClass = (index == 0) ? "selected" : "";
-            
-            <div class="order-card @selectedClass shadow-sm">
-                <!-- ข้อมูลฝั่งซ้าย -->
-                <div>
-                    <!-- แสดงเลขบิลแบบมี 0 นำหน้าให้ดูสวยงาม เช่น ORD0001 -->
-                    <h5 class="fw-bold mb-2">#ORD@(order.OrderID.ToString("D4"))</h5>
-                    <p class="text-dark fw-bold mb-1" style="font-size: 0.9rem;">ร้าน: อีสาน เด้อ</p>
-                    
-                    <!-- แสดงรูปแบบการรับอาหารและวิธีชำระเงิน แทนรายการอาหารก่อน (รายการอาหารค่อยไปดูในปุ่มรายละเอียด) -->
-                    <p class="text-muted mb-0" style="font-size: 0.85rem;">
-                        @order.OrderType | ชำระเงิน: @order.PaymentMethod
-                    </p>
-                    <p class="text-muted mb-0" style="font-size: 0.85rem;">
-                        สถานะชำระเงิน: @order.PaymentStatus
-                    </p>
-                    @if (order.OrderType == "สั่งล่วงหน้า รับที่ร้าน")
-                    {
-                        <p class="text-muted mb-0" style="font-size: 0.85rem;">เวลารับอาหาร: @order.ArriveTime น.</p>
-                    }
-                    @if (order.DiningTable != null)
-                    {
-                        <p class="text-muted mb-0" style="font-size: 0.85rem;">โต๊ะ @order.DiningTable.TableNumber</p>
-                    }
-                    @if (order.BuffetGuestCount is int guestCount)
-                    {
-                        <p class="text-muted mb-0" style="font-size: 0.85rem;">บุฟเฟต์ @guestCount คน</p>
-                    }
-                    @if (order.BuffetFreeChildCount > 0)
-                    {
-                        <p class="text-success mb-0" style="font-size: 0.85rem;">เด็กฟรี @order.BuffetFreeChildCount คน · ส่วนลด ฿@order.DiscountAmount.ToString("N2")</p>
-                    }
-                </div>
-                
-                <!-- ข้อมูลฝั่งขวา -->
-                <div class="d-flex align-items-center gap-5">
-                    <div class="text-start">
-                        <p class="text-muted mb-2" style="font-size: 0.85rem;">@order.OrderDate.ToString("dd MMM yyyy HH:mm")</p>
-                        <p class="order-price mb-0">฿@order.TotalAmount.ToString("N2")</p>
-                    </div>
-                    
-                    <div class="text-center" style="min-width: 110px;">
-                        <!-- เช็กสถานะเพื่อเปลี่ยนสีข้อความ -->
-                        @if (order.OrderStatus == "ยกเลิก")
-                        {
-                            <p class="status-cancel mb-2 text-start">@order.OrderStatus</p>
-                        }
-                        else if (order.OrderStatus == "เสร็จแล้ว" || order.OrderStatus == "สำเร็จ")
-                        {
-                            <p class="status-success mb-2 text-start">@OrderStatusLabels.Display(order.OrderStatus) ✓</p>
-                        }
-                        else
-                        {
-                            <p class="status-pending mb-2 text-start">@OrderStatusLabels.Display(order.OrderStatus) ⏳</p>
-                        }
-                        
-                        <!-- ปุ่มดูรายละเอียด (เตรียมส่ง OrderID ไปยังหน้า OrderDetails) -->
-                        <a asp-controller="Home" asp-action="OrderDetails" asp-route-id="@order.OrderID" class="btn btn-details text-decoration-none d-inline-block">ดูรายละเอียด</a>
-                    </div>
-                </div>
+        <section class="order-history-summary" aria-label="สรุปประวัติออเดอร์">
+            <article class="order-summary-card">
+                <div class="order-summary-label">ออเดอร์ทั้งหมด</div>
+                <div class="order-summary-value text-danger">@orders.Count</div>
+            </article>
+            <article class="order-summary-card paid">
+                <div class="order-summary-label">ชำระเงินเรียบร้อย</div>
+                <div class="order-summary-value text-success">@paidCount</div>
+            </article>
+            <article class="order-summary-card pending">
+                <div class="order-summary-label">รอดำเนินการ / ชำระเงิน</div>
+                <div class="order-summary-value text-warning">@pendingCount</div>
+            </article>
+        </section>
+    }
+
+    @if (orders.Count == 0)
+    {
+        <div class="order-history-empty">
+            <div class="bg-danger bg-opacity-10 text-danger rounded-circle d-grid place-items-center mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2rem;">
+                <i class="bi bi-receipt"></i>
             </div>
-            
-            index++;
-        }
+            <h3 class="fw-bold text-dark mb-2">ยังไม่มีประวัติการสั่งอาหาร</h3>
+            <p class="text-muted mb-4">เริ่มสั่งเมนูโปรดหรือเลือกแพ็กเกจบุฟเฟต์สุดแซ่บได้เลย</p>
+            <a asp-controller="Home" asp-action="Menu" class="order-history-action">
+                <i class="bi bi-journal-text me-1"></i> ไปเลือกดูเมนูอาหาร
+            </a>
+        </div>
     }
     else
     {
-        <!-- กรณีที่ยังไม่เคยสั่งอาหารเลย -->
-        <div class="alert bg-white text-center py-5 border border-light rounded-4 shadow-sm">
-            <h5 class="text-muted mb-4">คุณยังไม่มีประวัติการสั่งอาหาร</h5>
-            <a asp-controller="Home" asp-action="Menu" class="btn text-white px-5 py-3 rounded-pill fw-bold" style="background-color: var(--brand-red);">ไปสั่งอาหารกันเลย!</a>
+        <div class="order-history-list" id="orderHistoryList">
+            @for (var index = 0; index < orders.Count; index++)
+            {
+                var order = orders[index];
+                var statusClass = order.OrderStatus == "ยกเลิก"
+                    ? "status-cancelled"
+                    : order.OrderStatus == "เสร็จแล้ว" || order.OrderStatus == "สำเร็จ"
+                        ? "status-complete"
+                        : "status-progress";
+                var paymentStatusClass = order.PaymentStatus switch
+                {
+                    PaymentStatuses.Paid => "paid",
+                    PaymentStatuses.Unpaid => "pending",
+                    PaymentStatuses.PendingReview => "pending",
+                    PaymentStatuses.NeedsResubmission => "resubmit",
+                    PaymentStatuses.Refunded => "refunded",
+                    _ => ""
+                };
+
+                <article class="order-history-card @(index == 0 ? "latest" : "")">
+                    <div>
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                            <span class="order-card-id">เลขที่คำสั่งซื้อ @order.DisplayNumber</span>
+                            @if (index == 0)
+                            {
+                                <span class="order-latest-badge">ออเดอร์ล่าสุด</span>
+                            }
+                            <span class="order-status-badge @statusClass">
+                                @OrderStatusLabels.Display(order.OrderStatus)
+                            </span>
+                            <span class="payment-status-badge @paymentStatusClass">
+                                @order.PaymentStatus
+                            </span>
+                        </div>
+
+                        <div class="order-card-meta">
+                            <span><i class="bi bi-bag-check-fill"></i>@order.OrderType</span>
+                            <span><i class="bi bi-credit-card-fill"></i>@order.PaymentMethod</span>
+                            @if (order.DiningTable != null)
+                            {
+                                <span><i class="bi bi-grid-fill"></i>โต๊ะ @order.DiningTable.TableNumber</span>
+                            }
+                            @if (order.OrderType == "สั่งล่วงหน้า รับที่ร้าน")
+                            {
+                                <span><i class="bi bi-clock-fill"></i>รับเวลา @order.ArriveTime น.</span>
+                            }
+                            @if (order.BuffetGuestCount is int guestCount)
+                            {
+                                <span><i class="bi bi-people-fill"></i>บุฟเฟต์ @guestCount คน</span>
+                            }
+                        </div>
+
+                        @if (order.DiscountAmount > 0m)
+                        {
+                            <span class="order-card-discount">
+                                <i class="bi bi-tag-fill me-1"></i>
+                                ได้รับส่วนลด ฿@order.DiscountAmount.ToString("N2")
+                                @if (!string.IsNullOrWhiteSpace(order.PromoCode))
+                                {
+                                    <span>· @order.PromoCode</span>
+                                }
+                            </span>
+                        }
+                    </div>
+
+                    <div class="order-card-side">
+                        <div>
+                            <div class="order-card-date">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                @order.OrderDate.ToString("dd MMM yyyy · HH:mm")
+                            </div>
+                            <div class="order-card-total">
+                                <small>ยอดสุทธิ</small>
+                                ฿@order.TotalAmount.ToString("N2")
+                            </div>
+                        </div>
+                        <a asp-controller="Home" asp-action="OrderDetails" asp-route-id="@order.OrderID"
+                           class="order-detail-link">
+                            ดูรายละเอียด <i class="bi bi-arrow-right"></i>
+                        </a>
+                        @if (order.OrderStatus is "รอดำเนินการ" or "ยืนยันแล้ว")
+                        {
+                            <form asp-controller="Home" asp-action="CancelOrder" method="post"
+                                  onsubmit="return confirm('ยืนยันการยกเลิกออเดอร์นี้?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@order.OrderID" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill w-100">
+                                    <i class="bi bi-x-circle me-1"></i> ยกเลิกออเดอร์
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </article>
+            }
         </div>
     }
-
 </div>

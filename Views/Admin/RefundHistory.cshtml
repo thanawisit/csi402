@@ -1,0 +1,318 @@
+@model IReadOnlyList<Order>
+@{
+    ViewData["Title"] = "ประวัติยกเลิกออเดอร์";
+    var cancelledCount = Model.Count(order => order.OrderStatus == "ยกเลิก");
+    var cancelledAmount = Model
+        .Where(order => order.OrderStatus == "ยกเลิก")
+        .Sum(order => order.TotalAmount);
+    var cancelledOrderLines = (Dictionary<int, List<OrderListItemViewModel>>)ViewBag.CancelledOrderLines;
+}
+
+<style>
+    .refund-history-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+    }
+
+    .refund-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .refund-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #bd3124;
+        font-size: .78rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .refund-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .refund-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .refund-summary-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 104px;
+        border: 1px solid #dde5d9;
+        border-radius: 17px;
+        background: linear-gradient(145deg, #fffef9 0%, #edf3e8 100%);
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .08);
+        padding: 1.05rem 1.1rem;
+    }
+
+    .refund-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #bd3124;
+    }
+
+    .refund-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .refund-summary-value {
+        margin-top: .35rem;
+        color: #263029;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+
+    .refund-toolbar {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 18px;
+        background: linear-gradient(90deg, rgba(255, 255, 255, .82), rgba(235, 241, 229, .92));
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .07);
+        margin-bottom: .85rem;
+        padding: .65rem;
+    }
+
+    .refund-search {
+        max-width: 380px;
+    }
+
+    .refund-card {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 20px;
+        background: #fbfaf5;
+        box-shadow: 0 14px 32px rgba(58, 76, 61, .09);
+    }
+
+    .refund-card thead th {
+        border-bottom: 1px solid #dde5d9;
+        background: linear-gradient(90deg, #e4ecdf 0%, #edf2e9 100%);
+        color: #405146;
+        font-size: .78rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+
+    .refund-row:nth-child(even) {
+        background: #f7f7f0;
+    }
+
+    .refund-row td {
+        border-bottom-color: #e8ebe3;
+        padding-block: .88rem;
+    }
+
+    .refund-order-id {
+        color: #263029;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    .refund-status {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: .34rem .62rem;
+        font-size: .72rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .refund-status.refunded {
+        background: #fff1cc;
+        color: #956800;
+    }
+
+    .refund-status.cancelled {
+        background: #ffe9e6;
+        color: #a3392f;
+    }
+
+    @@media (max-width: 575.98px) {
+        .refund-history-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .refund-header,
+        .refund-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .refund-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .refund-search {
+            max-width: none;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="refund-history-page">
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
+    }
+    @if (TempData["AdminError"] != null)
+    {
+        <div class="alert alert-danger rounded-3">@TempData["AdminError"]</div>
+    }
+
+    <header class="refund-header">
+        <div>
+            <span class="refund-eyebrow">Finance history</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">ประวัติยกเลิกออเดอร์</h1>
+            <p class="text-muted mb-0">รายการออเดอร์ที่ยกเลิกทั้งหมด</p>
+        </div>
+        <a asp-action="Orders" class="btn btn-outline-secondary rounded-3">
+            <i class="bi bi-arrow-left me-1"></i>กลับออเดอร์
+        </a>
+    </header>
+
+    <section class="refund-summary" aria-label="สรุปประวัติยกเลิกออเดอร์">
+        <article class="refund-summary-card">
+            <div class="refund-summary-label">ออเดอร์ยกเลิก</div>
+            <div class="refund-summary-value">@cancelledCount</div>
+        </article>
+        <article class="refund-summary-card">
+            <div class="refund-summary-label">ยอดออเดอร์ที่ยกเลิก</div>
+            <div class="refund-summary-value">฿@cancelledAmount.ToString("N2")</div>
+        </article>
+    </section>
+
+    <div class="refund-toolbar">
+        <div class="input-group refund-search">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="refundSearch" type="search" class="form-control"
+                   placeholder="ค้นหาเลขออเดอร์ ชื่อลูกค้า หรือโต๊ะ"
+                   aria-label="ค้นหาประวัติยกเลิกออเดอร์" />
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="refund-card text-center text-muted py-5">
+            <i class="bi bi-arrow-counterclockwise fs-2 d-block mb-2" aria-hidden="true"></i>
+            ยังไม่มีประวัติยกเลิกออเดอร์
+        </div>
+    }
+    else
+    {
+        <section class="refund-card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="refundHistoryTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ออเดอร์</th>
+                            <th>ลูกค้า</th>
+                            <th>วันที่ออเดอร์</th>
+                            <th>ช่องทางชำระ</th>
+                            <th>เมนูที่ยกเลิก</th>
+                            <th>ยอดเงิน</th>
+                            <th class="pe-4">สถานะ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model)
+                        {
+                            var statusClass = "cancelled";
+                            var statusText = "ยกเลิกออเดอร์";
+                            cancelledOrderLines.TryGetValue(order.OrderID, out var orderLines);
+                            var menuText = order.BuffetGuestCount.HasValue
+                                ? $"บุฟเฟต์ {order.BuffetGuestCount.Value} คน"
+                                : orderLines == null
+                                    ? "-"
+                                    : string.Join(", ", orderLines.Select(line =>
+                                        string.IsNullOrWhiteSpace(line.SpecialRequest)
+                                            ? $"{line.MenuName} ×{line.Quantity}"
+                                            : $"{line.MenuName} ×{line.Quantity} ({line.SpecialRequest})"));
+                            var searchText = $"{order.DisplayNumber} {order.User?.Username} {order.DiningTable?.TableNumber} {menuText}";
+                            <tr class="refund-row" data-search="@searchText">
+                                <td class="ps-4">
+                                    <span class="refund-order-id">เลขที่คำสั่งซื้อ @order.DisplayNumber</span>
+                                </td>
+                                <td>@(order.User?.Username ?? "-")</td>
+                                <td>
+                                    <span>@order.OrderDate.ToString("dd/MM/yyyy")</span>
+                                    <small class="text-muted d-block">@order.OrderDate.ToString("HH:mm") น.</small>
+                                </td>
+                                <td>@order.PaymentMethod</td>
+                                <td>
+                                    @if (order.BuffetGuestCount.HasValue)
+                                    {
+                                        <span class="fw-semibold text-danger">
+                                            บุฟเฟต์ @order.BuffetGuestCount.Value คน
+                                        </span>
+                                    }
+                                    else if (cancelledOrderLines.TryGetValue(order.OrderID, out var lines) && lines.Count > 0)
+                                    {
+                                        <div class="d-grid gap-1">
+                                            @foreach (var line in lines)
+                                            {
+                                                <div>
+                                                    <span class="fw-semibold">@line.MenuName</span>
+                                                    <span class="text-muted">×@line.Quantity</span>
+                                                    @if (!string.IsNullOrWhiteSpace(line.SpecialRequest))
+                                                    {
+                                                        <small class="d-block text-danger">@line.SpecialRequest</small>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="fw-bold">฿@order.TotalAmount.ToString("N2")</td>
+                                <td class="pe-4">
+                                    <span class="refund-status @statusClass">@statusText</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const searchInput = document.getElementById('refundSearch');
+            const rows = Array.from(document.querySelectorAll('#refundHistoryTable tbody .refund-row'));
+
+            searchInput?.addEventListener('input', () => {
+                const term = searchInput.value.trim().toLowerCase();
+                rows.forEach(row => {
+                    row.hidden = term !== '' &&
+                        !(row.dataset.search ?? '').toLowerCase().includes(term);
+                });
+            });
+        })();
+    </script>
+}

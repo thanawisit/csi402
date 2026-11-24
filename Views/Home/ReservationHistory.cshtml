@@ -1,0 +1,98 @@
+@model IReadOnlyList<ReservationHistoryItemViewModel>
+@{
+    ViewData["Title"] = "ประวัติการจอง";
+}
+
+<div class="container py-4 py-md-5">
+    <div class="mb-4">
+        <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2 fw-semibold">
+            <i class="bi bi-calendar2-check-fill me-1"></i> รายการของคุณ
+        </span>
+        <h1 class="fw-bold mt-2 mb-1" style="font-family: 'Kanit', sans-serif;">ประวัติการจองโต๊ะ</h1>
+        <p class="text-muted mb-0">ตรวจสอบสถานะโต๊ะ วันเวลา และประวัติการจองที่ผ่านมาของท่าน</p>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="card border-0 shadow-sm rounded-4" style="background: #ffffff; border: 1.5px solid #f0ebe6 !important;">
+            <div class="card-body text-center py-5">
+                <div class="mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%; background: #fff5f5; display: grid; place-items: center;">
+                    <i class="bi bi-calendar-x text-danger" style="font-size: 2.5rem;" aria-hidden="true"></i>
+                </div>
+                <h2 class="h5 fw-bold mt-2" style="font-family: 'Kanit', sans-serif;">ยังไม่มีประวัติการจอง</h2>
+                <p class="text-muted mb-4">เมื่อคุณจองโต๊ะแล้ว รายการจองจะแสดงที่หน้านี้ทันที</p>
+                <a asp-controller="Home" asp-action="Buffet" class="btn btn-danger rounded-pill px-4 py-2" style="font-family: 'Kanit', sans-serif; font-weight: 700;">
+                    <i class="bi bi-plus-circle me-1"></i> เลือกแพ็กเกจจองโต๊ะ
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var reservation in Model)
+            {
+                var isConfirmed = reservation.Status == ReservationStatuses.Confirmed;
+                var isCancelled = reservation.Status == ReservationStatuses.Cancelled;
+                var statusClass = isConfirmed
+                    ? "bg-success-subtle text-success"
+                    : isCancelled
+                        ? "bg-secondary-subtle text-secondary"
+                        : "bg-warning-subtle text-warning-emphasis";
+
+                <div class="col-12">
+                    <article class="card border-0 shadow-sm rounded-4" style="background: #ffffff; border: 1.5px solid #f0ebe6 !important; border-left: 5px solid @(isConfirmed ? "#c92a2a" : "#ced4da") !important;">
+                        <div class="card-body p-4">
+                            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                                <div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                        <span class="fw-bold fs-5 text-danger" style="font-family: 'Kanit', sans-serif;">#RES@(reservation.ReservationId.ToString("D5"))</span>
+                                        <span class="badge rounded-pill @statusClass px-3 py-2 fw-semibold">@reservation.Status</span>
+                                    </div>
+                                    <div class="h4 fw-bold mb-1" style="font-family: 'Kanit', sans-serif;">โต๊ะ @reservation.TableNumber</div>
+                                    <div class="text-muted">
+                                        <i class="bi bi-calendar-event text-danger me-1" aria-hidden="true"></i>
+                                        @reservation.ReservationDateTime.ToString("dd/MM/yyyy เวลา HH:mm น.")
+                                    </div>
+                                </div>
+                                <div class="text-sm-end">
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 fw-semibold">
+                                        @(reservation.Package == "buffet" ? "บุฟเฟต์ 299.-" : "อาหารตามสั่ง")
+                                    </span>
+                                    <div class="fw-bold mt-2" style="font-family: 'Kanit', sans-serif;"><i class="bi bi-people-fill text-muted me-1"></i>@reservation.GuestCount คน</div>
+                                    <div class="d-flex flex-wrap justify-content-sm-end gap-2 mt-3">
+                                        <a asp-controller="Home" asp-action="ReservationDetail"
+                                           asp-route-id="@reservation.ReservationId"
+                                           class="btn btn-sm btn-outline-danger rounded-pill px-3 py-2 fw-semibold">
+                                            ดูรายละเอียด <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                                        </a>
+                                        @if (reservation.Status == ReservationStatuses.Confirmed)
+                                        {
+                                            @if (reservation.Package == "buffet")
+                                            {
+                                                <a asp-controller="Home" asp-action="ScanQR"
+                                                   asp-route-tableId="@reservation.TableId"
+                                                   asp-route-guestCount="@reservation.GuestCount"
+                                                   class="btn btn-sm btn-danger rounded-pill px-3 py-2 fw-semibold shadow-sm">
+                                                    <i class="bi bi-qr-code-scan me-1"></i> เลือกอาหารบุฟเฟต์
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <a asp-controller="Home" asp-action="Menu"
+                                                   asp-route-tableId="@reservation.TableId"
+                                                   class="btn btn-sm btn-danger rounded-pill px-3 py-2 fw-semibold shadow-sm">
+                                                    <i class="bi bi-book me-1"></i> เลือกอาหาร
+                                                </a>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+</div>

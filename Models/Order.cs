@@ -11,6 +11,9 @@ public partial class Order
     [Key]
     public int OrderID { get; set; }
 
+    [MaxLength(20)]
+    public string? DisplayOrderNumber { get; set; }
+
     public int UserID { get; set; }
 
     public int? TableID { get; set; }
@@ -41,4 +44,10 @@ public partial class Order
     public virtual User? User { get; set; }
 
     public virtual DiningTable? DiningTable { get; set; }
+
+    [NotMapped]
+    public string DisplayNumber =>
+        string.IsNullOrWhiteSpace(DisplayOrderNumber)
+            ? $"ORDER{OrderID:D4}"
+            : DisplayOrderNumber;
 }

@@ -2,21 +2,35 @@
     ViewData["Title"] = "นโยบายความเป็นส่วนตัว";
 }
 
-<div class="container policy-page mt-5 mb-5" style="max-width: 900px;">
-    <h1 class="fw-bold mb-4">@ViewData["Title"]</h1>
-    <p>ร้านอีสาน เด้อใช้ข้อมูลที่ให้ไว้เพื่อจัดการบัญชีและให้บริการสั่งอาหาร</p>
+<div class="container py-5" style="max-width: 880px;">
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5" style="background: #ffffff; border: 1.5px solid #f0ebe6 !important; border-top: 5px solid #c92a2a !important;">
+        <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2 fw-semibold mb-2" style="width: fit-content;">
+            <i class="bi bi-shield-lock-fill me-1"></i> Privacy Policy
+        </span>
+        <h1 class="fw-bold mb-3" style="font-family: 'Kanit', sans-serif;">@ViewData["Title"]</h1>
+        <p class="text-muted lead fs-6">ร้านอีสาน เด้อ ให้ความสำคัญสูงสุดกับความเป็นส่วนตัวและความปลอดภัยของข้อมูลของลูกค้าทุกท่าน</p>
 
-    <h5 class="fw-bold mt-4">ข้อมูลที่เก็บ</h5>
-    <ul>
-        <li>ชื่อและอีเมลสำหรับบัญชีผู้ใช้</li>
-        <li>เบอร์โทรศัพท์และวันเกิด หากผู้ใช้เลือกกรอก</li>
-        <li>ประวัติรายการสั่งซื้อเพื่อให้บริการและแสดงประวัติ</li>
-        <li>สถานะการยินยอมรับข่าวสารและโปรโมชัน</li>
-    </ul>
+        <hr class="my-4" />
 
-    <h5 class="fw-bold mt-4">การใช้ข้อมูล</h5>
-    <p>เราใช้ข้อมูลติดต่อเพื่อดูแลบัญชีและประสานงานเกี่ยวกับรายการสั่งซื้อ ส่วนข่าวสารและโปรโมชันจะส่งเมื่อผู้ใช้เลือกยินยอมเท่านั้น วันเกิดเป็นข้อมูลไม่บังคับและอาจใช้สำหรับสิทธิประโยชน์วันเกิดของร้าน</p>
+        <h5 class="fw-bold text-dark mt-2" style="font-family: 'Kanit', sans-serif;"><i class="bi bi-folder-check text-danger me-2"></i>1. ข้อมูลที่เราเก็บรวบรวม</h5>
+        <ul class="text-muted" style="line-height: 1.8;">
+            <li>ชื่อ-นามสกุล และที่อยู่อีเมลสำหรับสร้างและดูแลบัญชีผู้ใช้</li>
+            <li>หมายเลขโทรศัพท์และวันเกิด (กรณีที่ลูกค้ายินยอมระบุ เพื่อรับสิทธิพิเศษวันเกิด)</li>
+            <li>ประวัติการสั่งอาหาร การจองโต๊ะ และการชำระเงินเพื่อความถูกต้องของการให้บริการ</li>
+            <li>สถานะความยินยอมในการรับข้อมูลข่าวสาร โปรโมชั่น และสิทธิประโยชน์พิเศษ</li>
+        </ul>
 
-    <h5 class="fw-bold mt-4">การดูแลข้อมูล</h5>
-    <p>ข้อมูลบัญชีและรายการสั่งซื้อจัดเก็บในระบบของร้าน ผู้ใช้สามารถติดต่อร้านเพื่อขอแก้ไขข้อมูลหรือเปลี่ยนการยินยอมรับข่าวสารได้</p>
+        <h5 class="fw-bold text-dark mt-4" style="font-family: 'Kanit', sans-serif;"><i class="bi bi-gear-wide-connected text-danger me-2"></i>2. การนำข้อมูลไปใช้</h5>
+        <p class="text-muted" style="line-height: 1.7;">เราใช้ข้อมูลติดต่อเพื่อการบริหารจัดการบัญชี การประสานงานเกี่ยวกับรายการสั่งซื้อและจองโต๊ะอาหาร รวมถึงการส่งมอบสิทธิประโยชน์ตามแพ็กเกจ ทั้งนี้ ข่าวสารและโปรโมชันจะจัดส่งให้เฉพาะลูกค้าที่ได้ให้ความยินยอมไว้เท่านั้น</p>
+
+        <h5 class="fw-bold text-dark mt-4" style="font-family: 'Kanit', sans-serif;"><i class="bi bi-shield-check text-danger me-2"></i>3. การรักษาความปลอดภัยของข้อมูล</h5>
+        <p class="text-muted" style="line-height: 1.7;">ข้อมูลบัญชีและรายการสั่งซื้อทั้งหมดได้รับการจัดเก็บในระบบที่มีมาตรการรักษาความปลอดภัยที่ได้มาตรฐาน สมาชิกสามารถเข้าดู แก้ไขข้อมูลส่วนบุคคล หรือเพิกถอนความยินยอมในการรับข่าวสารได้ตลอดเวลาผ่านหน้าโปรไฟล์หรือติดต่อทางร้านโดยตรง</p>
+
+        <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small">อัปเดตล่าสุด: มกราคม 2026 · ร้านอีสาน เด้อ</span>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-danger rounded-pill px-4 py-2 fw-semibold">
+                <i class="bi bi-house-door me-1"></i> กลับหน้าแรก
+            </a>
+        </div>
+    </div>
 </div>

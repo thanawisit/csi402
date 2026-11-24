@@ -12,9 +12,7 @@ public class AccountsController : Controller
 {
     private static readonly HashSet<string> StaffRoles = new(StringComparer.Ordinal)
     {
-        AppRoles.Receptionist,
-        AppRoles.Chef,
-        AppRoles.StockChecker
+        AppRoles.Staff
     };
 
     private readonly IsanDerDbContext _context;
@@ -82,6 +80,40 @@ public class AccountsController : Controller
         return View(new CreateStaffAccountViewModel());
     }
 
+    [HttpGet]
+    public IActionResult CreateAccountant()
+    {
+        return View(new CreateAccountantAccountViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult CreateAccountant(CreateAccountantAccountViewModel model)
+    {
+        var email = model.Email?.Trim();
+        if (!string.IsNullOrWhiteSpace(email) && _context.Users.Any(user => user.Email == email))
+        {
+            ModelState.AddModelError(nameof(model.Email), "อีเมลนี้มีบัญชีผู้ใช้แล้ว");
+        }
+
+        if (!ModelState.IsValid) return View(model);
+
+        var accountant = new User
+        {
+            Username = model.Username.Trim(),
+            Email = email!,
+            PhoneNumber = string.IsNullOrWhiteSpace(model.PhoneNumber) ? null : model.PhoneNumber.Trim(),
+            Role = AppRoles.Accountant
+        };
+        accountant.PasswordHash = _passwordHasher.HashPassword(accountant, model.Password);
+
+        _context.Users.Add(accountant);
+        _context.SaveChanges();
+
+        TempData["AdminMessage"] = "สร้างบัญชีพนักงานบัญชีเรียบร้อยแล้ว";
+        return RedirectToAction(nameof(Index));
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult CreateStaff(CreateStaffAccountViewModel model)
@@ -119,7 +151,7 @@ public class AccountsController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult UpdateRole(int userId, string? role)
     {
-        if (!AppRoles.IsValid(role)) return BadRequest();
+        if (role == null || !AppRoles.AssignableLabels.ContainsKey(role)) return BadRequest();
 
         var user = _context.Users.SingleOrDefault(account => account.UserId == userId);
         if (user == null) return NotFound();

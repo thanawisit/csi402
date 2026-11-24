@@ -1,0 +1,460 @@
+@model IReadOnlyList<ReservationAdminListItemViewModel>
+@{
+    ViewData["Title"] = "จัดการการจอง";
+    var statuses = (IReadOnlyList<string>)ViewBag.ReservationStatuses;
+    var canManageAllReservationStatuses = User.IsInRole(AppRoles.Admin) ||
+                                         User.IsInRole(AppRoles.Manager) ||
+                                         User.IsInRole(AppRoles.Staff);
+    var pendingCount = Model.Count(item => item.Status == ReservationStatuses.Pending);
+    var confirmedCount = Model.Count(item => item.Status == ReservationStatuses.Confirmed);
+    var completedCount = Model.Count(item => item.Status == ReservationStatuses.Completed);
+    var cancelledCount = Model.Count(item => item.Status == ReservationStatuses.Cancelled);
+}
+
+<style>
+    .admin-main {
+        background:
+            radial-gradient(circle at 92% 5%, rgba(189, 49, 36, .08), transparent 22rem),
+            linear-gradient(135deg, #f4f1e8 0%, #edf2e9 100%);
+    }
+
+    .reservations-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+    }
+
+    .reservations-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .reservations-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #2f6b3b;
+        font-size: .78rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .reservations-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .reservation-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .reservation-summary-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 104px;
+        border: 1px solid #dde5d9;
+        border-radius: 16px;
+        background: rgba(255, 254, 249, .92);
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .08);
+        padding: 1rem 1.05rem;
+    }
+
+    .reservation-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #91a98e;
+    }
+
+    .reservation-summary-card.pending {
+        border-color: #dec66d;
+        background: linear-gradient(135deg, #fffdf4 0%, #fff1bd 100%);
+    }
+
+    .reservation-summary-card.pending::before {
+        background: #d7a91c;
+    }
+
+    .reservation-summary-card.confirmed::before {
+        background: #4f8757;
+    }
+
+    .reservation-summary-card.completed {
+        background: linear-gradient(135deg, #fafdff 0%, #e5edf4 100%);
+    }
+
+    .reservation-summary-card.completed::before {
+        background: #4f718e;
+    }
+
+    .reservation-summary-card.cancelled {
+        background: linear-gradient(135deg, #fffdf7 0%, #fff0e9 100%);
+    }
+
+    .reservation-summary-card.cancelled::before {
+        background: #bd3124;
+    }
+
+    .reservation-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .reservation-summary-value {
+        margin-top: .35rem;
+        color: #263029;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+
+    .reservation-toolbar {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 16px;
+        background: rgba(225, 234, 220, .72);
+        box-shadow: 0 8px 20px rgba(58, 76, 61, .055);
+        margin-bottom: .85rem;
+        padding: .65rem;
+    }
+
+    .reservation-search {
+        max-width: 380px;
+    }
+
+    .reservation-search .input-group-text,
+    .reservation-search .form-control,
+    .reservation-filter {
+        border-color: #dce4da;
+        background-color: #fffef9;
+    }
+
+    .reservation-filter {
+        min-width: 170px;
+    }
+
+    .reservation-card {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 18px;
+        background: #fbfaf5;
+        box-shadow: 0 14px 32px rgba(58, 76, 61, .09);
+    }
+
+    .reservation-card thead th {
+        border-bottom: 1px solid #dde5d9;
+        background: #e8eee5;
+        color: #566159;
+        font-size: .78rem;
+        letter-spacing: .02em;
+    }
+
+    .reservation-row {
+        transition: background-color .15s ease;
+    }
+
+    .reservation-row:nth-child(even) {
+        background: #f7f7f0;
+    }
+
+    .reservation-row:hover {
+        background: #eef4e9;
+    }
+
+    .reservation-id {
+        color: #263029;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    .reservation-table {
+        display: inline-flex;
+        align-items: center;
+        gap: .42rem;
+        border-radius: 999px;
+        background: #edf3eb;
+        color: #38633f;
+        padding: .38rem .62rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .reservation-package {
+        display: inline-flex;
+        border-radius: 999px;
+        background: #f1f3ed;
+        color: #5d665f;
+        padding: .28rem .54rem;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .reservation-status {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: .34rem .62rem;
+        font-size: .72rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .reservation-status.pending {
+        background: #fff1cc;
+        color: #956800;
+    }
+
+    .reservation-status.confirmed,
+    .reservation-status.completed {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .reservation-status.cancelled {
+        background: #ffe9e6;
+        color: #a3392f;
+    }
+
+    .reservation-actions {
+        min-width: 190px;
+    }
+
+    .reservation-confirm-btn {
+        min-height: 38px;
+    }
+
+    @@media (max-width: 991.98px) {
+        .reservation-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .reservations-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .reservations-header,
+        .reservation-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .reservation-search,
+        .reservation-filter {
+            max-width: none;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="reservations-page">
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
+    }
+
+    <header class="reservations-header">
+        <div>
+            <span class="reservations-eyebrow">งานโต๊ะและลูกค้า</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">จัดการการจองโต๊ะ</h1>
+            <p class="text-muted mb-0">ตรวจสอบรายการจองและยืนยันโต๊ะให้ลูกค้า</p>
+        </div>
+    </header>
+
+    <section class="reservation-summary" aria-label="สรุปการจอง">
+        <article class="reservation-summary-card pending">
+            <div class="reservation-summary-label">รอยืนยัน</div>
+            <div class="reservation-summary-value">@pendingCount</div>
+        </article>
+        <article class="reservation-summary-card confirmed">
+            <div class="reservation-summary-label">ยืนยันแล้ว</div>
+            <div class="reservation-summary-value">@confirmedCount</div>
+        </article>
+        <article class="reservation-summary-card completed">
+            <div class="reservation-summary-label">เสร็จสิ้น</div>
+            <div class="reservation-summary-value">@completedCount</div>
+        </article>
+        <article class="reservation-summary-card cancelled">
+            <div class="reservation-summary-label">ยกเลิก</div>
+            <div class="reservation-summary-value">@cancelledCount</div>
+        </article>
+    </section>
+
+    <div class="reservation-toolbar">
+        <div class="input-group reservation-search">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="reservationSearch" type="search" class="form-control"
+                   placeholder="ค้นหาชื่อ ลูกค้า โต๊ะ หรือรหัสจอง"
+                   aria-label="ค้นหาการจอง" />
+        </div>
+        <select id="reservationStatusFilter" class="form-select reservation-filter"
+                aria-label="กรองสถานะการจอง">
+            <option value="all">ทุกสถานะ</option>
+            @foreach (var status in statuses)
+            {
+                <option value="@status">@status</option>
+            }
+        </select>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="reservation-card text-center text-muted py-5">
+            <i class="bi bi-calendar-x fs-2 d-block mb-2" aria-hidden="true"></i>
+            ยังไม่มีรายการจอง
+        </div>
+    }
+    else
+    {
+        <section class="reservation-card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="reservationsTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">รหัส / วันเวลา</th>
+                            <th>โต๊ะ</th>
+                            <th>แพ็กเกจ</th>
+                            <th>ผู้จอง</th>
+                            <th>เบอร์โทร</th>
+                            <th>หมายเหตุ</th>
+                            <th class="pe-4">สถานะ / ดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var reservation in Model)
+                        {
+                            var statusClass = reservation.Status switch
+                            {
+                                ReservationStatuses.Pending => "pending",
+                                ReservationStatuses.Confirmed => "confirmed",
+                                ReservationStatuses.Completed => "completed",
+                                ReservationStatuses.Cancelled => "cancelled",
+                                _ => ""
+                            };
+                            var searchText = $"#RES{reservation.ReservationId.ToString("D5")} {reservation.CustomerName} {reservation.CustomerEmail} โต๊ะ {reservation.TableNumber}";
+
+                            <tr class="reservation-row"
+                                data-status="@reservation.Status"
+                                data-search="@searchText">
+                                <td class="ps-4">
+                                    <span class="reservation-id">#RES@(reservation.ReservationId.ToString("D5"))</span>
+                                    <span class="text-muted small d-block mt-1">
+                                        <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>
+                                        @reservation.ReservationDateTime.ToString("dd/MM/yyyy HH:mm")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="reservation-table">
+                                        <i class="bi bi-grid" aria-hidden="true"></i>โต๊ะ @reservation.TableNumber
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="reservation-package">
+                                        @(reservation.Package == "buffet" ? "บุฟเฟต์" : "อาหารตามสั่ง")
+                                    </span>
+                                    <span class="text-muted small d-block mt-1">@reservation.GuestCount คน</span>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold">@reservation.CustomerName</span>
+                                    <span class="text-muted small d-block">@reservation.CustomerEmail</span>
+                                </td>
+                                <td>@reservation.CustomerPhone</td>
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(reservation.Note) ? "-" : reservation.Note)
+                                </td>
+                                <td class="pe-4 reservation-actions">
+                                    <span class="reservation-status @statusClass d-block mb-2">
+                                        @reservation.Status
+                                    </span>
+                                    @if (canManageAllReservationStatuses)
+                                    {
+                                        <form asp-action="UpdateReservationStatus" method="post" class="d-flex gap-2 mb-2">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="reservationId" value="@reservation.ReservationId" />
+                                            <select name="status" class="form-select form-select-sm"
+                                                    aria-label="สถานะการจอง">
+                                                @foreach (var status in statuses)
+                                                {
+                                                    <option value="@status" selected="@(status == reservation.Status)">@status</option>
+                                                }
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-success text-nowrap">บันทึก</button>
+                                        </form>
+                                    }
+                                    @if (reservation.Status == ReservationStatuses.Pending)
+                                    {
+                                        <form asp-action="UpdateReservationStatus" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="reservationId" value="@reservation.ReservationId" />
+                                            <input type="hidden" name="status" value="@ReservationStatuses.Confirmed" />
+                                            <button type="submit" class="btn btn-sm btn-success w-100 reservation-confirm-btn">
+                                                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>ยืนยันการจอง
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (reservation.Status == ReservationStatuses.Confirmed)
+                                    {
+                                        <div class="d-flex gap-2">
+                                            <form asp-action="UpdateReservationStatus" method="post" class="flex-fill">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="reservationId" value="@reservation.ReservationId" />
+                                                <input type="hidden" name="status" value="@ReservationStatuses.Completed" />
+                                                <button type="submit" class="btn btn-sm btn-success w-100">เสร็จสิ้น</button>
+                                            </form>
+                                            <form asp-action="UpdateReservationStatus" method="post" class="flex-fill">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="reservationId" value="@reservation.ReservationId" />
+                                                <input type="hidden" name="status" value="@ReservationStatuses.Cancelled" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">ยกเลิก</button>
+                                            </form>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const searchInput = document.getElementById('reservationSearch');
+            const statusFilter = document.getElementById('reservationStatusFilter');
+            const rows = Array.from(document.querySelectorAll('#reservationsTable tbody .reservation-row'));
+
+            const filterReservations = () => {
+                const term = (searchInput?.value ?? '').trim().toLowerCase();
+                const status = statusFilter?.value ?? 'all';
+
+                rows.forEach(row => {
+                    const matchesSearch = term === '' ||
+                        (row.dataset.search ?? '').toLowerCase().includes(term);
+                    const matchesStatus = status === 'all' ||
+                        row.dataset.status === status;
+                    row.hidden = !(matchesSearch && matchesStatus);
+                });
+            };
+
+            searchInput?.addEventListener('input', filterReservations);
+            statusFilter?.addEventListener('change', filterReservations);
+        })();
+    </script>
+}

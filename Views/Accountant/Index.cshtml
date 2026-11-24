@@ -1,0 +1,248 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "แดชบอร์ดพนักงานบัญชี";
+}
+
+<style>
+    .accountant-dashboard-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+    }
+
+    .accountant-dashboard-hero {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        min-height: 176px;
+        border: 1px solid rgba(255, 255, 255, .14);
+        border-radius: 22px;
+        background:
+            radial-gradient(circle at 88% 15%, rgba(240, 161, 61, .20), transparent 12rem),
+            linear-gradient(135deg, #173d2c 0%, #2f6b3b 58%, #5e7d50 100%);
+        color: #fff;
+        box-shadow: 0 18px 44px rgba(23, 61, 44, .16);
+        padding: 1.65rem 1.75rem;
+    }
+
+    .accountant-dashboard-hero::after {
+        content: "";
+        position: absolute;
+        right: -58px;
+        bottom: -96px;
+        width: 230px;
+        height: 230px;
+        border: 30px solid rgba(255, 255, 255, .06);
+        border-radius: 50%;
+    }
+
+    .accountant-hero-copy {
+        position: relative;
+        z-index: 1;
+    }
+
+    .accountant-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .09);
+        color: #ffe2aa;
+        padding: .32rem .68rem;
+        font-size: .72rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .accountant-hero-copy h1 {
+        margin: .7rem 0 .35rem;
+        color: #fff;
+        font-size: clamp(1.65rem, 4vw, 2.35rem);
+        font-weight: 850;
+    }
+
+    .accountant-hero-copy p {
+        margin: 0;
+        color: rgba(255, 255, 255, .72);
+    }
+
+    .accountant-stat-grid,
+    .accountant-tool-grid {
+        display: grid;
+        gap: .8rem;
+    }
+
+    .accountant-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 1.25rem;
+    }
+
+    .accountant-stat-card,
+    .accountant-tool-card {
+        border: 1px solid #e4e8df;
+        border-radius: 18px;
+        background: #fffef9;
+        box-shadow: 0 10px 26px rgba(58, 76, 61, .07);
+    }
+
+    .accountant-stat-card {
+        min-height: 132px;
+        padding: 1.15rem;
+    }
+
+    .accountant-stat-card.alert {
+        border-color: #edcf72;
+        background: linear-gradient(135deg, #fffdf5 0%, #fff1bd 100%);
+    }
+
+    .accountant-stat-label {
+        color: #79827a;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .accountant-stat-value {
+        margin-top: .65rem;
+        color: #263029;
+        font-size: 1.85rem;
+        font-weight: 850;
+        line-height: 1;
+    }
+
+    .accountant-stat-detail {
+        margin-top: .48rem;
+        color: #879087;
+        font-size: .76rem;
+    }
+
+    .accountant-tool-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 1.25rem;
+    }
+
+    .accountant-tool-card {
+        display: flex;
+        min-height: 92px;
+        align-items: center;
+        gap: .85rem;
+        color: #29322b;
+        padding: .9rem;
+        text-decoration: none;
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .accountant-tool-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 28px rgba(58, 76, 61, .11);
+        color: #29322b;
+    }
+
+    .accountant-tool-icon {
+        display: grid;
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        place-items: center;
+        border-radius: 14px;
+        background: #fff4ce;
+        color: #9a790f;
+        font-size: 1.1rem;
+    }
+
+    .accountant-tool-copy {
+        display: grid;
+    }
+
+    .accountant-tool-copy strong {
+        font-size: .92rem;
+    }
+
+    .accountant-tool-copy small {
+        margin-top: .18rem;
+        color: #879087;
+    }
+
+    @@media (max-width: 991.98px) {
+        .accountant-stat-grid,
+        .accountant-tool-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .accountant-dashboard-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .accountant-stat-grid,
+        .accountant-tool-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="accountant-dashboard-page">
+    <header class="accountant-dashboard-hero">
+        <div class="accountant-hero-copy">
+            <span class="accountant-eyebrow">
+                <i class="bi bi-calculator" aria-hidden="true"></i> Accountant console
+            </span>
+            <h1>ภาพรวมการเงิน</h1>
+            <p>ตรวจออเดอร์ สลิปการชำระเงิน และรายงานยอดขาย</p>
+        </div>
+    </header>
+
+    <section class="accountant-stat-grid" aria-label="สรุปงานบัญชี">
+        <article class="accountant-stat-card alert">
+            <div class="accountant-stat-label">สลิปรอตรวจสอบ</div>
+            <div class="accountant-stat-value">@Model.PendingPaymentCount</div>
+            <div class="accountant-stat-detail">รายการที่ต้องยืนยันหรือขอสลิปใหม่</div>
+        </article>
+        <article class="accountant-stat-card">
+            <div class="accountant-stat-label">ยอดรับชำระวันนี้</div>
+            <div class="accountant-stat-value">฿@Model.TodayPaidTotal.ToString("N2")</div>
+            <div class="accountant-stat-detail">ออเดอร์วันนี้ @Model.TodayOrderCount รายการ</div>
+        </article>
+        <article class="accountant-stat-card">
+            <div class="accountant-stat-label">ออเดอร์ทั้งหมดวันนี้</div>
+            <div class="accountant-stat-value">@Model.TodayOrderCount</div>
+            <div class="accountant-stat-detail">ยอดรวม ฿@Model.TodayOrderTotal.ToString("N2")</div>
+        </article>
+    </section>
+
+    <section class="accountant-tool-grid" aria-label="เมนูพนักงานบัญชี">
+        <a asp-controller="Admin" asp-action="Orders" class="accountant-tool-card">
+            <span class="accountant-tool-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+            <span class="accountant-tool-copy">
+                <strong>ออเดอร์/ชำระเงิน</strong>
+                <small>ดูสลิป ยืนยันเงินสด และ PromptPay</small>
+            </span>
+        </a>
+        <a asp-controller="Admin" asp-action="Reports" class="accountant-tool-card">
+            <span class="accountant-tool-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span>
+            <span class="accountant-tool-copy">
+                <strong>รายงานยอดขาย</strong>
+                <small>ดูยอดขายและออเดอร์ที่เสร็จสิ้น</small>
+            </span>
+        </a>
+        <a asp-controller="Admin" asp-action="RefundHistory" class="accountant-tool-card">
+            <span class="accountant-tool-icon"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></span>
+            <span class="accountant-tool-copy">
+                <strong>ประวัติยกเลิกออเดอร์</strong>
+                <small>ดูออเดอร์ที่ถูกยกเลิกทั้งหมด</small>
+            </span>
+        </a>
+        <a asp-controller="Home" asp-action="Index" class="accountant-tool-card">
+            <span class="accountant-tool-icon"><i class="bi bi-shop-window" aria-hidden="true"></i></span>
+            <span class="accountant-tool-copy">
+                <strong>หน้าร้าน</strong>
+                <small>กลับไปดูหน้าใช้งานลูกค้า</small>
+            </span>
+        </a>
+    </section>
+</div>

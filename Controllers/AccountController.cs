@@ -24,15 +24,27 @@ namespace IsanDer.Controllers
         }
 
         [HttpGet]
-        public IActionResult Register()
+        public IActionResult Register(string? returnUrl)
         {
-            return View();
+            return View(new RegisterViewModel
+            {
+                ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null
+            });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Register(RegisterViewModel model)
         {
+            if (!model.DateOfBirth.HasValue)
+            {
+                ModelState.AddModelError(nameof(model.DateOfBirth), "กรุณากรอกวันเกิด");
+            }
+            else if (model.DateOfBirth.Value.Date > DateTime.Today)
+            {
+                ModelState.AddModelError(nameof(model.DateOfBirth), "วันเกิดต้องไม่เป็นวันที่ในอนาคต");
+            }
+
             if (_context.Users.Any(user => user.Email == model.Email))
             {
                 ModelState.AddModelError(nameof(model.Email), "อีเมลนี้มีบัญชีผู้ใช้แล้ว");
@@ -55,19 +67,32 @@ namespace IsanDer.Controllers
             _context.Users.Add(newUser);
             _context.SaveChanges();
 
+            if (Url.IsLocalUrl(model.ReturnUrl))
+            {
+                return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl });
+            }
+
             return RedirectToAction("Index", "Home");
         }
 
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl)
         {
-            return View();
+            return View(new LoginViewModel
+            {
+                ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null
+            });
         }
 
         // *** เปลี่ยนให้รองรับ async Task เพื่อสร้าง Cookie ***
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            if (!Url.IsLocalUrl(model.ReturnUrl))
+            {
+                model.ReturnUrl = null;
+            }
+
             if (ModelState.IsValid)
             {
                 var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
@@ -91,10 +116,15 @@ namespace IsanDer.Controllers
                         CookieAuthenticationDefaults.AuthenticationScheme, 
                         new ClaimsPrincipal(claimsIdentity));
 
-                    return user.Role != AppRoles.Customer
-                        ? RedirectToAction(
+                    if (user.Role != AppRoles.Customer)
+                    {
+                        return RedirectToAction(
                             user.Role == AppRoles.Manager ? "Manager" : "Index",
-                            "Admin")
+                            "Admin");
+                    }
+
+                    return model.ReturnUrl != null
+                        ? LocalRedirect(model.ReturnUrl)
                         : RedirectToAction("Index", "Home");
                 }
                 else

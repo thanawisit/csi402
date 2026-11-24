@@ -1,0 +1,64 @@
+@model ReservationConfirmationViewModel
+@{
+    ViewData["Title"] = "ส่งคำขอจองสำเร็จแล้ว";
+    var packageName = Model.Package == "buffet" ? "บุฟเฟต์ 299.-" : "อาหารตามสั่ง";
+}
+
+<div class="container py-5">
+    <div class="mx-auto" style="max-width: 760px;">
+        <section class="card border-0 shadow-sm rounded-4 text-center" style="background: #ffffff; border: 1.5px solid #f0ebe6 !important;">
+            <div class="card-body p-4 p-md-5">
+                <div class="mx-auto mb-3" style="width: 88px; height: 88px; border-radius: 50%; background: #fff5f5; border: 2px solid #ffe3e3; display: grid; place-items: center;">
+                    <i class="bi bi-check-circle-fill text-danger" style="font-size: 3.5rem;"></i>
+                </div>
+                <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2 fw-semibold mb-3">
+                    <i class="bi bi-stars me-1"></i> RESERVATION RECEIVED
+                </span>
+                <h1 class="h2 fw-bold mb-2" style="font-family: 'Kanit', sans-serif;">ส่งคำขอจองสำเร็จแล้ว</h1>
+                <p class="text-muted mb-4">บันทึกข้อมูลการจองเรียบร้อยแล้ว ร้านกำลังเตรียมต้อนรับท่านอย่างอบอุ่น</p>
+
+                <div class="row g-3 text-start mb-4">
+                    <div class="col-sm-6">
+                        <div class="rounded-3 p-3 h-100" style="background: #fffbfb; border: 1.5px solid #ffe3e3;">
+                            <div class="small text-muted">หมายเลขการจอง</div>
+                            <div class="fw-bold fs-5 text-danger" style="font-family: 'Kanit', sans-serif;">#RES@(Model.ReservationId.ToString("D5"))</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="rounded-3 p-3 h-100" style="background: #faf8f7; border: 1.5px solid #f0ebe6;">
+                            <div class="small text-muted">โต๊ะ</div>
+                            <div class="fw-bold fs-5" style="font-family: 'Kanit', sans-serif;">โต๊ะ @Model.TableNumber</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="rounded-3 p-3 h-100" style="background: #faf8f7; border: 1.5px solid #f0ebe6;">
+                            <div class="small text-muted">วันและเวลาที่จอง</div>
+                            <div class="fw-bold">@Model.ReservationDateTime.ToString("dd/MM/yyyy HH:mm") น.</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="rounded-3 p-3 h-100" style="background: #faf8f7; border: 1.5px solid #f0ebe6;">
+                            <div class="small text-muted">จำนวนผู้ใช้บริการ & แพ็กเกจ</div>
+                            <div class="fw-bold">@Model.GuestCount คน · @packageName</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning text-start mb-4 rounded-3" role="status">
+                    <i class="bi bi-info-circle-fill me-1"></i> สถานะ: <strong>@Model.Status</strong> — ร้านจะตรวจสอบและยืนยันการจอง หากมีข้อสงสัยสามารถติดต่อเราได้ทันที
+                </div>
+
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a asp-controller="Home" asp-action="ReservationDetail" asp-route-id="@Model.ReservationId"
+                       class="btn btn-danger rounded-pill px-4 py-2 fw-bold shadow-sm" style="font-family: 'Kanit', sans-serif;">
+                        <i class="bi bi-receipt me-1"></i> ดูรายละเอียดการจอง
+                    </a>
+                    <a asp-controller="Home" asp-action="Index"
+                       class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                        กลับหน้าแรก
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

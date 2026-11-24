@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Pomelo.EntityFrameworkCore.MySql.Scaffolding.Internal;
 
 namespace IsanDer.Models;
 
 public partial class IsanDerDbContext : DbContext
 {
-    public IsanDerDbContext()
-    {
-    }
-
     public IsanDerDbContext(DbContextOptions<IsanDerDbContext> options)
         : base(options)
     {
@@ -31,9 +26,13 @@ public partial class IsanDerDbContext : DbContext
 
     public virtual DbSet<BuffetChildPromotion> BuffetChildPromotions { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseMySql("server=localhost;database=isanderdb;user=root;password=!Urozx147", Microsoft.EntityFrameworkCore.ServerVersion.Parse("26.7.0-mysql"));
+    public virtual DbSet<GeneralPromotion> GeneralPromotions { get; set; }
+
+    public virtual DbSet<GeneralPromotionUsage> GeneralPromotionUsages { get; set; }
+
+    public virtual DbSet<TableReservation> TableReservations { get; set; }
+
+    public virtual DbSet<OrderReview> OrderReviews { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +51,7 @@ public partial class IsanDerDbContext : DbContext
                 .HasMaxLength(20)
                 .HasDefaultValueSql("'Available'");
             entity.Property(e => e.StockQuantity);
+            entity.Property(e => e.Description).HasMaxLength(500);
         });
 
         modelBuilder.Entity<DiningTable>(entity =>
@@ -74,6 +74,9 @@ public partial class IsanDerDbContext : DbContext
             entity.HasIndex(e => e.TableID, "IX_orders_TableID");
 
             entity.Property(e => e.OrderID).HasColumnName("OrderID");
+            entity.Property(e => e.DisplayOrderNumber)
+                .HasColumnName("DisplayOrderNumber")
+                .HasMaxLength(20);
             entity.Property(e => e.UserID).HasColumnName("UserID");
             entity.Property(e => e.TableID).HasColumnName("TableID");
             
@@ -118,6 +121,7 @@ public partial class IsanDerDbContext : DbContext
             entity.Property(e => e.MenuID).HasColumnName("MenuID");
             entity.Property(e => e.Price).HasPrecision(10, 2);
             entity.Property(e => e.StockDeducted).HasDefaultValue(false);
+            entity.Property(e => e.SpecialRequest).HasMaxLength(500);
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -161,6 +165,98 @@ public partial class IsanDerDbContext : DbContext
             entity.Property(promotion => promotion.StartDate).HasColumnType("date");
             entity.Property(promotion => promotion.EndDate).HasColumnType("date");
             entity.Property(promotion => promotion.IsActive).HasDefaultValue(false);
+            entity.Property(promotion => promotion.MaxFreeChildren).HasDefaultValue(1);
+            entity.Property(promotion => promotion.MaxChildAge).HasDefaultValue(10);
+            entity.Property(promotion => promotion.MaxChildHeightCm).HasDefaultValue(120);
+        });
+
+        modelBuilder.Entity<GeneralPromotion>(entity =>
+        {
+            entity.HasKey(promotion => promotion.PromotionId).HasName("PRIMARY");
+            entity.ToTable("general_promotions");
+            entity.Property(promotion => promotion.PromotionId).HasColumnName("PromotionID");
+            entity.Property(promotion => promotion.Code).HasMaxLength(50).IsRequired();
+            entity.HasIndex(promotion => promotion.Code).IsUnique();
+            entity.Property(promotion => promotion.Name).HasMaxLength(200).IsRequired();
+            entity.Property(promotion => promotion.Description).HasMaxLength(500);
+            entity.Property(promotion => promotion.DiscountType).HasMaxLength(20).IsRequired();
+            entity.Property(promotion => promotion.DiscountValue).HasPrecision(10, 2).HasDefaultValue(0m);
+            entity.Property(promotion => promotion.AppliesTo).HasMaxLength(20).IsRequired();
+            entity.Property(promotion => promotion.BirthMonthOnly).HasDefaultValue(false);
+            entity.Property(promotion => promotion.MinSubtotal).HasPrecision(10, 2).HasDefaultValue(0m);
+            entity.Property(promotion => promotion.StartDate).HasColumnType("date");
+            entity.Property(promotion => promotion.EndDate).HasColumnType("date");
+            entity.Property(promotion => promotion.MaxUses);
+            entity.Property(promotion => promotion.FirstOrderOnly).HasDefaultValue(false);
+            entity.Property(promotion => promotion.MaxUsesPerUser);
+            entity.Property(promotion => promotion.TargetMenuId);
+            entity.Property(promotion => promotion.RequiresThemeApproval).HasDefaultValue(false);
+            entity.Property(promotion => promotion.RequiresThemeApproval).HasDefaultValue(false);
+            entity.Property(promotion => promotion.UsedCount).HasDefaultValue(0);
+            entity.Property(promotion => promotion.IsActive).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<GeneralPromotionUsage>(entity =>
+        {
+            entity.HasKey(usage => usage.UsageId).HasName("PRIMARY");
+            entity.ToTable("general_promotion_usages");
+            entity.Property(usage => usage.UsageId).HasColumnName("UsageID");
+            entity.Property(usage => usage.PromotionId).HasColumnName("PromotionID");
+            entity.Property(usage => usage.UserId).HasColumnName("UserID");
+            entity.Property(usage => usage.OrderId).HasColumnName("OrderID");
+            entity.Property(usage => usage.UsedAt).HasColumnType("datetime");
+            entity.Property(usage => usage.RequiresThemeApproval).HasDefaultValue(false);
+            entity.Property(usage => usage.ThemeApprovalStatus).HasMaxLength(30).HasDefaultValue("");
+            entity.HasIndex(usage => new { usage.PromotionId, usage.UserId });
+            entity.HasIndex(usage => usage.OrderId).IsUnique();
+        });
+
+        modelBuilder.Entity<TableReservation>(entity =>
+        {
+            entity.HasKey(reservation => reservation.ReservationID).HasName("PRIMARY");
+            entity.ToTable("table_reservations");
+            entity.HasIndex(reservation => new
+            {
+                reservation.TableID,
+                reservation.ReservationDateTime
+            });
+            entity.HasIndex(reservation => reservation.UserID);
+            entity.Property(reservation => reservation.Package).HasMaxLength(20);
+            entity.Property(reservation => reservation.ReservationDateTime).HasColumnType("datetime");
+            entity.Property(reservation => reservation.ReservationEndTime).HasColumnType("datetime");
+            entity.Property(reservation => reservation.CustomerName).HasMaxLength(50);
+            entity.Property(reservation => reservation.CustomerEmail).HasMaxLength(100);
+            entity.Property(reservation => reservation.CustomerPhone).HasMaxLength(20);
+            entity.Property(reservation => reservation.Note).HasMaxLength(500);
+            entity.Property(reservation => reservation.Status)
+                .HasMaxLength(30)
+                .HasDefaultValueSql("'รอยืนยัน'");
+            entity.Property(reservation => reservation.CreatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        modelBuilder.Entity<OrderReview>(entity =>
+        {
+            entity.HasKey(review => review.ReviewId).HasName("PRIMARY");
+            entity.ToTable("order_reviews");
+            entity.Property(review => review.ReviewId).HasColumnName("ReviewId");
+            entity.Property(review => review.OrderId).HasColumnName("OrderID");
+            entity.Property(review => review.UserId).HasColumnName("UserID");
+            entity.Property(review => review.Comment).HasMaxLength(1000);
+            entity.Property(review => review.CreatedAt).HasColumnType("datetime");
+            entity.Property(review => review.UpdatedAt).HasColumnType("datetime");
+            entity.Property(review => review.IsHidden).HasDefaultValue(false);
+            entity.HasIndex(review => review.OrderId).IsUnique();
+            entity.HasIndex(review => review.UserId);
+            entity.HasOne(review => review.Order)
+                .WithMany()
+                .HasForeignKey(review => review.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(review => review.User)
+                .WithMany()
+                .HasForeignKey(review => review.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -31,12 +31,16 @@ public class AdminController : Controller
         _environment = environment;
     }
 
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Receptionist + "," + AppRoles.Chef + "," + AppRoles.StockChecker)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Staff + "," + AppRoles.Accountant)]
     public IActionResult Index()
     {
         if (User.IsInRole(AppRoles.Manager))
         {
             return RedirectToAction(nameof(Manager));
+        }
+        if (User.IsInRole(AppRoles.Accountant))
+        {
+            return View("~/Views/Accountant/Index.cshtml", BuildDashboard());
         }
 
         var dashboard = BuildDashboard();
@@ -56,9 +60,14 @@ public class AdminController : Controller
         var canManageMenus = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Manager);
         var canManageOrders = User.IsInRole(AppRoles.Admin) ||
                               User.IsInRole(AppRoles.Manager) ||
-                              User.IsInRole(AppRoles.Receptionist) ||
-                              User.IsInRole(AppRoles.Chef);
-        var canManageStock = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.StockChecker);
+                              User.IsInRole(AppRoles.Staff) ||
+                              User.IsInRole(AppRoles.Accountant);
+        var canManageStock = User.IsInRole(AppRoles.Admin) ||
+                             User.IsInRole(AppRoles.Staff);
+        var canReviewPayments = User.IsInRole(AppRoles.Admin) ||
+                                User.IsInRole(AppRoles.Manager) ||
+                                User.IsInRole(AppRoles.Staff) ||
+                                User.IsInRole(AppRoles.Accountant);
         var canManageUsers = canManageMenus;
         var isManager = User.IsInRole(AppRoles.Manager);
         var today = DateTime.Today;
@@ -85,20 +94,22 @@ public class AdminController : Controller
                 ? _context.Users.Count(user => user.Role == AppRoles.Customer)
                 : 0,
             TodayOrderCount = canManageOrders ? todayOrders.Count() : 0,
-            TodayOrderTotal = canManageOrders
+            TodayOrderTotal = canReviewPayments
                 ? todayOrders.Select(order => (decimal?)order.TotalAmount).Sum() ?? 0m
                 : 0m,
-            TodayPaidTotal = canManageOrders
+            TodayPaidTotal = canReviewPayments
                 ? todayOrders
                     .Where(order => order.PaymentStatus == PaymentStatuses.Paid)
                     .Select(order => (decimal?)order.TotalAmount)
                     .Sum() ?? 0m
                 : 0m,
-            PendingPaymentCount = canManageOrders
+            PendingPaymentCount = canReviewPayments
                 ? _context.Orders.Count(order =>
                     order.PaymentStatus == PaymentStatuses.PendingReview ||
                     order.PaymentStatus == PaymentStatuses.NeedsResubmission)
                 : 0,
+            PendingReservationCount = _context.TableReservations.Count(reservation =>
+                reservation.Status == ReservationStatuses.Pending),
             RecentOrders = canManageOrders
                 ? _context.Orders
                     .AsNoTracking()
@@ -159,7 +170,10 @@ public class AdminController : Controller
         {
             MenuName = model.MenuName.Trim(),
             Price = model.Price,
-            Status = model.Status
+            Status = model.Status,
+            Description = string.IsNullOrWhiteSpace(model.Description)
+                ? null
+                : model.Description.Trim()
         };
         _context.Menus.Add(menu);
         _context.SaveChanges();
@@ -191,6 +205,7 @@ public class AdminController : Controller
             MenuName = menu.MenuName,
             Price = menu.Price,
             Status = menu.Status,
+            Description = menu.Description,
             CurrentImagePath = MenuImageStorage.GetPublicPath(_environment.WebRootPath, menu.MenuId)
         });
     }
@@ -226,6 +241,9 @@ public class AdminController : Controller
         menu.MenuName = model.MenuName.Trim();
         menu.Price = model.Price;
         menu.Status = model.Status;
+        menu.Description = string.IsNullOrWhiteSpace(model.Description)
+            ? null
+            : model.Description.Trim();
         _context.SaveChanges();
 
         if (hasImage)
@@ -264,6 +282,11 @@ public class AdminController : Controller
         var childBuffet = _context.BuffetChildPromotions
             .AsNoTracking()
             .Single(promotion => promotion.PromotionId == 1);
+        ViewBag.PromotionMenus = _context.Menus
+            .AsNoTracking()
+            .Where(menu => menu.Status == "Available")
+            .OrderBy(menu => menu.MenuName)
+            .ToList();
 
         return BackOfficeView("Promotions", new PromotionManagementViewModel
         {
@@ -274,9 +297,117 @@ public class AdminController : Controller
                 Code = childBuffet.Code,
                 StartDate = childBuffet.StartDate,
                 EndDate = childBuffet.EndDate,
-                IsActive = childBuffet.IsActive
-            }
+                IsActive = childBuffet.IsActive,
+                MaxFreeChildren = childBuffet.MaxFreeChildren,
+                MaxChildAge = childBuffet.MaxChildAge,
+                MaxChildHeightCm = childBuffet.MaxChildHeightCm
+            },
+            ExtraPromotions = _context.HomePromotions
+                .AsNoTracking()
+                .Where(promotion =>
+                    promotion.SlotKey != "membership" &&
+                    promotion.SlotKey != "buffet")
+                .OrderBy(promotion => promotion.SortOrder)
+                .ToList(),
+            GeneralPromotions = _context.GeneralPromotions
+                .AsNoTracking()
+                .OrderBy(promotion => promotion.PromotionId)
+                .ToList()
         });
+    }
+
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult CreateGeneralPromotion(GeneralPromotionInputViewModel model)
+    {
+        var code = model.Code?.Trim().ToUpperInvariant();
+        if (!string.IsNullOrWhiteSpace(code) &&
+            !Regex.IsMatch(code, "^[A-Za-z0-9_-]{3,50}$"))
+        {
+            ModelState.AddModelError(nameof(model.Code),
+                "โค้ดใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ ตัวเลข ขีดกลาง หรือขีดล่าง (3-50 ตัว)");
+        }
+        if (model.DiscountType == "Percent" && model.DiscountValue > 100m)
+        {
+            ModelState.AddModelError(nameof(model.DiscountValue),
+                "ส่วนลดแบบเปอร์เซ็นต์ต้องไม่เกิน 100%");
+        }
+        if (model.StartDate.HasValue && model.EndDate.HasValue &&
+            model.EndDate.Value.Date < model.StartDate.Value.Date)
+        {
+            ModelState.AddModelError(nameof(model.EndDate),
+                "วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม");
+        }
+        if (model.AppliesTo is not ("Both" or "Buffet" or "Alacarte"))
+        {
+            ModelState.AddModelError(nameof(model.AppliesTo),
+                "กรุณาเลือกแพ็กเกจที่โค้ดใช้ได้");
+        }
+        if (model.DiscountType == "Fixed" && model.TargetMenuId.HasValue)
+        {
+            var targetMenu = _context.Menus.AsNoTracking()
+                .SingleOrDefault(menu => menu.MenuId == model.TargetMenuId.Value);
+            if (targetMenu == null)
+            {
+                ModelState.AddModelError(nameof(model.TargetMenuId),
+                    "ไม่พบเมนูเป้าหมายที่เลือก");
+            }
+        }
+        if (!ModelState.IsValid)
+        {
+            TempData["AdminError"] = "กรุณาตรวจสอบข้อมูลโปรโมชั่นและกรอกข้อมูลให้ครบถ้วน";
+            return RedirectToAction(nameof(Promotions));
+        }
+
+        if (_context.GeneralPromotions.Any(promotion =>
+            promotion.Code.ToUpper() == code))
+        {
+            TempData["AdminError"] = "โค้ดโปรโมชั่นนี้ถูกใช้งานแล้ว";
+            return RedirectToAction(nameof(Promotions));
+        }
+
+        _context.GeneralPromotions.Add(new GeneralPromotion
+        {
+            Code = code!,
+            Name = model.Name.Trim(),
+            Description = string.IsNullOrWhiteSpace(model.Description)
+                ? null
+                : model.Description.Trim(),
+            DiscountType = model.DiscountType,
+            DiscountValue = model.DiscountValue,
+            AppliesTo = model.AppliesTo,
+            BirthMonthOnly = model.BirthMonthOnly,
+            MinSubtotal = model.MinSubtotal,
+            StartDate = model.StartDate?.Date,
+            EndDate = model.EndDate?.Date,
+            MaxUses = model.MaxUses,
+            FirstOrderOnly = model.FirstOrderOnly,
+            MaxUsesPerUser = model.MaxUsesPerUser,
+            TargetMenuId = model.DiscountType == "Fixed" ? model.TargetMenuId : null,
+            RequiresThemeApproval = model.RequiresThemeApproval,
+            UsedCount = 0,
+            IsActive = model.IsActive
+        });
+        _context.SaveChanges();
+
+        TempData["AdminMessage"] = $"สร้างโค้ดโปรโมชั่น {code} เรียบร้อยแล้ว";
+        return RedirectToAction(nameof(Promotions));
+    }
+
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeleteGeneralPromotion(int promotionId)
+    {
+        var promotion = _context.GeneralPromotions
+            .SingleOrDefault(item => item.PromotionId == promotionId);
+        if (promotion == null) return NotFound();
+
+        _context.GeneralPromotions.Remove(promotion);
+        _context.SaveChanges();
+        TempData["AdminMessage"] = $"ลบโค้ดโปรโมชั่น {promotion.Code} เรียบร้อยแล้ว";
+        return RedirectToAction(nameof(Promotions));
     }
 
     [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
@@ -305,6 +436,18 @@ public class AdminController : Controller
         {
             ModelState.AddModelError("ChildBuffet.Code", "รหัสใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ ตัวเลข ขีดกลาง หรือขีดล่าง (3-50 ตัว)");
         }
+        if (model.ChildBuffet.MaxFreeChildren < 1 || model.ChildBuffet.MaxFreeChildren > 20)
+        {
+            ModelState.AddModelError("ChildBuffet.MaxFreeChildren", "จำนวนเด็กฟรีต้องอยู่ระหว่าง 1–20 คน");
+        }
+        if (model.ChildBuffet.MaxChildAge < 1 || model.ChildBuffet.MaxChildAge > 18)
+        {
+            ModelState.AddModelError("ChildBuffet.MaxChildAge", "อายุเด็กสูงสุดต้องอยู่ระหว่าง 1–18 ปี");
+        }
+        if (model.ChildBuffet.MaxChildHeightCm < 50 || model.ChildBuffet.MaxChildHeightCm > 200)
+        {
+            ModelState.AddModelError("ChildBuffet.MaxChildHeightCm", "ส่วนสูงสูงสุดต้องอยู่ระหว่าง 50–200 ซม.");
+        }
 
         if (!ModelState.IsValid) return BackOfficeView("Promotions", model);
 
@@ -318,23 +461,143 @@ public class AdminController : Controller
         childPromotion.StartDate = model.ChildBuffet.StartDate?.Date;
         childPromotion.EndDate = model.ChildBuffet.EndDate?.Date;
         childPromotion.IsActive = model.ChildBuffet.IsActive;
+        childPromotion.MaxFreeChildren = model.ChildBuffet.MaxFreeChildren;
+        childPromotion.MaxChildAge = model.ChildBuffet.MaxChildAge;
+        childPromotion.MaxChildHeightCm = model.ChildBuffet.MaxChildHeightCm;
 
         _context.SaveChanges();
         TempData["AdminMessage"] = "บันทึกโปรโมชั่นเรียบร้อยแล้ว";
         return RedirectToAction(nameof(Promotions));
     }
 
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Receptionist + "," + AppRoles.Chef)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult CreatePromotion(PromotionCreateViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["AdminError"] = "กรุณากรอกข้อมูลโปรโมชั่นให้ครบถ้วน";
+            return RedirectToAction(nameof(Promotions));
+        }
+
+        var maxSortOrder = _context.HomePromotions
+            .AsNoTracking()
+            .Max(promotion => (int?)promotion.SortOrder) ?? 0;
+
+        _context.HomePromotions.Add(new HomePromotion
+        {
+            SlotKey = $"custom-{Guid.NewGuid():N}",
+            Kicker = model.Kicker.Trim(),
+            Headline = model.Headline.Trim(),
+            Description = model.Description.Trim(),
+            LinkText = model.LinkText.Trim(),
+            IsActive = model.IsActive,
+            SortOrder = maxSortOrder + 1
+        });
+        _context.SaveChanges();
+
+        TempData["AdminMessage"] = "เพิ่มโปรโมชั่นเรียบร้อยแล้ว";
+        return RedirectToAction(nameof(Promotions), "Admin");
+    }
+
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeletePromotion(int promotionId)
+    {
+        var promotion = _context.HomePromotions
+            .SingleOrDefault(item => item.PromotionId == promotionId);
+        if (promotion == null) return NotFound();
+        if (promotion.SlotKey is "membership" or "buffet")
+        {
+            return BadRequest();
+        }
+
+        _context.HomePromotions.Remove(promotion);
+        _context.SaveChanges();
+        TempData["AdminMessage"] = "ลบโปรโมชั่นเรียบร้อยแล้ว";
+        return RedirectToAction(nameof(Promotions));
+    }
+
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Staff)]
+    public IActionResult Reservations()
+    {
+        var reservations = (from reservation in _context.TableReservations.AsNoTracking()
+                           join table in _context.DiningTables.AsNoTracking()
+                               on reservation.TableID equals table.TableID
+                           orderby reservation.ReservationDateTime descending
+                           select new ReservationAdminListItemViewModel
+                           {
+                               ReservationId = reservation.ReservationID,
+                               TableNumber = table.TableNumber,
+                               ReservationDateTime = reservation.ReservationDateTime,
+                               GuestCount = reservation.GuestCount,
+                               CustomerName = reservation.CustomerName,
+                               CustomerEmail = reservation.CustomerEmail,
+                               CustomerPhone = reservation.CustomerPhone,
+                               Note = reservation.Note,
+                               Package = reservation.Package,
+                               Status = reservation.Status
+                           })
+            .Take(100)
+            .ToList();
+
+        ViewBag.ReservationStatuses = ReservationStatuses.Values;
+        return View("~/Views/Admin/Reservations.cshtml", reservations);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Staff)]
+    public IActionResult UpdateReservationStatus(int reservationId, string? status)
+    {
+        if (!ReservationStatuses.IsValid(status)) return BadRequest();
+
+        var reservation = _context.TableReservations
+            .SingleOrDefault(item => item.ReservationID == reservationId);
+        if (reservation == null) return NotFound();
+
+        if (User.IsInRole(AppRoles.Staff) &&
+            !IsStaffReservationStatusChangeAllowed(reservation.Status, status))
+        {
+            return Forbid();
+        }
+
+        reservation.Status = status!;
+        _context.SaveChanges();
+        if (status == ReservationStatuses.Confirmed)
+        {
+            TempData["AdminMessage"] = "ยืนยันการจองเรียบร้อยแล้ว";
+            return RedirectToAction(nameof(Reservations));
+        }
+
+        TempData["AdminMessage"] = status == ReservationStatuses.Completed
+            ? "บันทึกว่าใช้บริการสำเร็จแล้ว"
+            : status == ReservationStatuses.Cancelled
+                ? "ยกเลิกการจองแล้ว"
+                : "อัปเดตสถานะการจองเรียบร้อยแล้ว";
+        return RedirectToAction(nameof(Reservations));
+    }
+
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Staff + "," + AppRoles.Accountant)]
     public IActionResult Orders()
     {
         ViewBag.AllowedOrderStatuses = GetAllowedOrderStatuses();
         ViewBag.CanReviewPayments = User.IsInRole(AppRoles.Admin) ||
                                    User.IsInRole(AppRoles.Manager) ||
-                                   User.IsInRole(AppRoles.Receptionist);
-        ViewBag.IsChef = User.IsInRole(AppRoles.Chef);
+                                   User.IsInRole(AppRoles.Staff) ||
+                                   User.IsInRole(AppRoles.Accountant);
+        ViewBag.CanConfirmCashPayments = User.IsInRole(AppRoles.Admin) ||
+                                         User.IsInRole(AppRoles.Manager) ||
+                                         User.IsInRole(AppRoles.Staff);
+        ViewBag.CanConfirmPromptPayments = User.IsInRole(AppRoles.Admin) ||
+                                           User.IsInRole(AppRoles.Manager) ||
+                                           User.IsInRole(AppRoles.Accountant);
+        ViewBag.CanRejectPromptPayments = ViewBag.CanConfirmPromptPayments;
+        ViewBag.IsChef = User.IsInRole(AppRoles.Staff);
         ViewBag.CanEditOrders = User.IsInRole(AppRoles.Admin) ||
-                                User.IsInRole(AppRoles.Manager) ||
-                                User.IsInRole(AppRoles.Chef);
+                                User.IsInRole(AppRoles.Manager);
         var orders = _context.Orders
             .AsNoTracking()
             .Include(order => order.User)
@@ -352,7 +615,8 @@ public class AdminController : Controller
                 {
                     OrderId = orderItem.OrderID,
                     MenuName = menu.MenuName,
-                    Quantity = orderItem.Quantity
+                    Quantity = orderItem.Quantity,
+                    SpecialRequest = orderItem.SpecialRequest
                 })
             .Where(item => orderIds.Contains(item.OrderId))
             .ToList()
@@ -362,7 +626,7 @@ public class AdminController : Controller
         return BackOfficeView("Orders", orders);
     }
 
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Chef)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
     public IActionResult EditOrder(int id)
     {
         var order = _context.Orders.AsNoTracking().SingleOrDefault(item => item.OrderID == id);
@@ -376,6 +640,7 @@ public class AdminController : Controller
         var model = new OrderEditViewModel
         {
             OrderId = order.OrderID,
+            DisplayNumber = order.DisplayNumber,
             OrderStatus = order.OrderStatus,
             PaymentStatus = order.PaymentStatus,
             CurrentTotalAmount = order.TotalAmount,
@@ -386,7 +651,8 @@ public class AdminController : Controller
                 .Select(item => new OrderEditLineViewModel
                 {
                     MenuId = item.MenuID,
-                    Quantity = item.Quantity
+                    Quantity = item.Quantity,
+                    SpecialRequest = item.SpecialRequest
                 })
                 .ToList(),
             Menus = GetOrderMenuOptions()
@@ -397,7 +663,7 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Chef)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
     public IActionResult EditOrder(OrderEditViewModel model)
     {
         using var transaction = _context.Database.BeginTransaction();
@@ -530,18 +796,53 @@ public class AdminController : Controller
                 MenuID = menu.MenuId,
                 Quantity = requested.Value,
                 Price = menu.Price,
-                StockDeducted = menu.StockQuantity.HasValue
+                StockDeducted = menu.StockQuantity.HasValue,
+                SpecialRequest = postedItems
+                    .Where(existing => existing.MenuId == menu.MenuId)
+                    .Select(existing => existing.SpecialRequest)
+                    .FirstOrDefault()
             });
         }
 
         _context.SaveChanges();
         transaction.Commit();
 
-        TempData["AdminMessage"] = $"แก้ไขออเดอร์ #ORD{order.OrderID:D4} เรียบร้อยแล้ว";
+        TempData["AdminMessage"] = $"แก้ไขคำสั่งซื้อ {order.DisplayNumber} เรียบร้อยแล้ว";
         return RedirectToAction(nameof(Orders));
     }
 
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Receptionist)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
+    public IActionResult Reviews()
+    {
+        var reviews = _context.OrderReviews
+            .AsNoTracking()
+            .Include(review => review.Order)
+            .Include(review => review.User)
+            .OrderByDescending(review => review.CreatedAt)
+            .ToList();
+        return View("~/Views/Admin/Reviews.cshtml", reviews);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
+    public IActionResult SetReviewVisibility(int id, bool isHidden)
+    {
+        var review = _context.OrderReviews.SingleOrDefault(item => item.ReviewId == id);
+        if (review == null)
+        {
+            return NotFound();
+        }
+        review.IsHidden = isHidden;
+        review.UpdatedAt = DateTime.Now;
+        _context.SaveChanges();
+        TempData["AdminMessage"] = isHidden
+            ? "ซ่อนรีวิวเรียบร้อยแล้ว"
+            : "แสดงรีวิวเรียบร้อยแล้ว";
+        return RedirectToAction(nameof(Reviews));
+    }
+
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Accountant)]
     public IActionResult PaymentProof(int id)
     {
         var order = _context.Orders.AsNoTracking().SingleOrDefault(item => item.OrderID == id);
@@ -557,19 +858,32 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Receptionist)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Staff + "," + AppRoles.Accountant)]
     public IActionResult ConfirmPayment(int id)
     {
         var order = _context.Orders.SingleOrDefault(item => item.OrderID == id);
         if (order == null) return NotFound();
+
+        var isCash = order.PaymentMethod == "เงินสด (ชำระที่หน้าร้าน)";
+        var isPromptPay = order.PaymentMethod == "PromptPay";
+        var canConfirmCash = User.IsInRole(AppRoles.Admin) ||
+                             User.IsInRole(AppRoles.Manager) ||
+                             User.IsInRole(AppRoles.Staff);
+        var canConfirmPrompt = User.IsInRole(AppRoles.Admin) ||
+                               User.IsInRole(AppRoles.Manager) ||
+                               User.IsInRole(AppRoles.Accountant);
+
+        if ((isCash && !canConfirmCash) || (isPromptPay && !canConfirmPrompt))
+        {
+            return Forbid();
+        }
+
         if (order.OrderStatus == "ยกเลิก" || order.PaymentStatus == PaymentStatuses.Paid)
         {
             TempData["AdminError"] = "ออเดอร์นี้ยกเลิกหรือยืนยันการชำระเงินแล้ว";
             return RedirectToAction(nameof(Orders));
         }
 
-        var isCash = order.PaymentMethod == "เงินสด (ชำระที่หน้าร้าน)";
-        var isPromptPay = order.PaymentMethod == "PromptPay";
         if (!isCash && !isPromptPay)
         {
             TempData["AdminError"] = "ไม่รองรับการยืนยันช่องทางชำระเงินนี้";
@@ -585,13 +899,13 @@ public class AdminController : Controller
 
         order.PaymentStatus = PaymentStatuses.Paid;
         _context.SaveChanges();
-        TempData["AdminMessage"] = $"ยืนยันรับชำระเงินออเดอร์ #ORD{id:D4} แล้ว";
+        TempData["AdminMessage"] = $"ยืนยันรับชำระเงินคำสั่งซื้อ {order.DisplayNumber} แล้ว";
         return RedirectToAction(nameof(Orders));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Receptionist)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Accountant)]
     public IActionResult RejectPayment(int id)
     {
         var order = _context.Orders.SingleOrDefault(item => item.OrderID == id);
@@ -605,11 +919,11 @@ public class AdminController : Controller
 
         order.PaymentStatus = PaymentStatuses.NeedsResubmission;
         _context.SaveChanges();
-        TempData["AdminMessage"] = $"ปฏิเสธสลิปออเดอร์ #ORD{id:D4} แล้ว ลูกค้าส่งสลิปใหม่ได้";
+        TempData["AdminMessage"] = $"ปฏิเสธสลิปคำสั่งซื้อ {order.DisplayNumber} แล้ว ลูกค้าส่งสลิปใหม่ได้";
         return RedirectToAction(nameof(Orders));
     }
 
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Accountant)]
     public IActionResult Reports(DateTime? fromDate, DateTime? toDate)
     {
         var today = DateTime.Today;
@@ -638,15 +952,14 @@ public class AdminController : Controller
         }
 
         var endExclusive = endDate.AddDays(1);
-        var completedOrders = _context.Orders
+        var paidOrders = _context.Orders
             .AsNoTracking()
             .Where(order =>
-                order.OrderStatus == "เสร็จแล้ว" &&
                 order.PaymentStatus == PaymentStatuses.Paid &&
                 order.OrderDate >= startDate &&
                 order.OrderDate < endExclusive);
-        var completedOrderCount = completedOrders.Count();
-        var totalSales = completedOrders
+        var completedOrderCount = paidOrders.Count();
+        var totalSales = paidOrders
             .Select(order => (decimal?)order.TotalAmount)
             .Sum() ?? 0m;
 
@@ -657,7 +970,7 @@ public class AdminController : Controller
             CompletedOrderCount = completedOrderCount,
             TotalSales = totalSales,
             AverageOrderAmount = completedOrderCount == 0 ? 0m : totalSales / completedOrderCount,
-            CompletedOrders = completedOrders
+            CompletedOrders = paidOrders
                 .Include(order => order.User)
                 .Include(order => order.DiningTable)
                 .OrderByDescending(order => order.OrderDate)
@@ -666,9 +979,43 @@ public class AdminController : Controller
         });
     }
 
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Accountant)]
+    public IActionResult RefundHistory()
+    {
+        var history = _context.Orders
+            .AsNoTracking()
+            .Include(order => order.User)
+            .Include(order => order.DiningTable)
+            .Where(order => order.OrderStatus == "ยกเลิก")
+            .OrderByDescending(order => order.OrderDate)
+            .Take(100)
+            .ToList();
+
+        var orderIds = history.Select(order => order.OrderID).ToList();
+        ViewBag.CancelledOrderLines = _context.OrderItems
+            .AsNoTracking()
+            .Join(
+                _context.Menus.AsNoTracking(),
+                orderItem => orderItem.MenuID,
+                menu => menu.MenuId,
+                (orderItem, menu) => new OrderListItemViewModel
+                {
+                    OrderId = orderItem.OrderID,
+                    MenuName = menu.MenuName,
+                    Quantity = orderItem.Quantity,
+                    SpecialRequest = orderItem.SpecialRequest
+                })
+            .Where(item => orderIds.Contains(item.OrderId))
+            .ToList()
+            .GroupBy(item => item.OrderId)
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        return View("~/Views/Admin/RefundHistory.cshtml", history);
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist + "," + AppRoles.Chef)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Manager + "," + AppRoles.Staff)]
     public IActionResult UpdateOrderStatus(int id, string? status)
     {
         if (string.IsNullOrWhiteSpace(status)) return BadRequest();
@@ -678,9 +1025,10 @@ public class AdminController : Controller
         if (order == null) return NotFound();
         if (order.OrderStatus == status) return RedirectToAction(nameof(Orders));
         if (!GetAllowedOrderStatuses().Contains(status)) return Forbid();
-        if (User.IsInRole(AppRoles.Chef) && !IsAllowedChefStatusTransition(order, status))
+        if (User.IsInRole(AppRoles.Staff) &&
+            !IsAllowedStaffStatusTransition(order, status))
         {
-            TempData["AdminError"] = "เชฟสามารถเริ่มเตรียมออเดอร์ที่รอดำเนินการ หรือทำเครื่องหมายพร้อมรับหลังเตรียมเสร็จได้เท่านั้น";
+            TempData["AdminError"] = "Staff ไม่สามารถเปลี่ยนสถานะออเดอร์ในขั้นตอนนี้ได้";
             return RedirectToAction(nameof(Orders));
         }
         if (order.OrderStatus == "ยกเลิก" && status != "ยกเลิก")
@@ -713,6 +1061,19 @@ public class AdminController : Controller
                 }
                 item.StockDeducted = false;
             }
+
+            var usage = _context.GeneralPromotionUsages
+                .SingleOrDefault(item => item.OrderId == order.OrderID);
+            if (usage != null)
+            {
+                var usedPromotion = _context.GeneralPromotions
+                    .SingleOrDefault(promotion => promotion.PromotionId == usage.PromotionId);
+                if (usedPromotion is { UsedCount: > 0 })
+                {
+                    usedPromotion.UsedCount--;
+                }
+                _context.GeneralPromotionUsages.Remove(usage);
+            }
         }
 
         order.OrderStatus = status;
@@ -723,10 +1084,10 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Orders));
     }
 
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.StockChecker)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Staff)]
     public IActionResult Stock()
     {
-        return BackOfficeView("Stock", _context.Menus
+        var menus = _context.Menus
             .AsNoTracking()
             .OrderBy(menu => menu.MenuName)
             .Select(menu => new StockMenuViewModel
@@ -734,14 +1095,24 @@ public class AdminController : Controller
                 MenuId = menu.MenuId,
                 MenuName = menu.MenuName,
                 StockQuantity = menu.StockQuantity,
-                Status = menu.Status
+                Status = menu.Status,
+                ImagePath = null
             })
-            .ToList());
+            .ToList();
+
+        foreach (var menu in menus)
+        {
+            menu.ImagePath = MenuImageStorage.GetPublicPath(
+                _environment.WebRootPath,
+                menu.MenuId);
+        }
+
+        return BackOfficeView("Stock", menus);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.StockChecker)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Staff)]
     public IActionResult UpdateStock(int id, int? stockQuantity, string? status)
     {
         if (stockQuantity < 0 || !MenuStatuses.Contains(status ?? string.Empty))
@@ -749,14 +1120,28 @@ public class AdminController : Controller
             return BadRequest();
         }
 
-        var menu = _context.Menus.SingleOrDefault(item => item.MenuId == id);
+        using var transaction = _context.Database.BeginTransaction();
+        var menu = _context.Menus
+            .FromSqlInterpolated($"SELECT * FROM `menus` WHERE `MenuID` = {id} FOR UPDATE")
+            .AsEnumerable()
+            .SingleOrDefault();
         if (menu == null) return NotFound();
 
-        menu.StockQuantity = stockQuantity;
-        menu.Status = status!;
-        _context.SaveChanges();
+        var normalizedStatus = status!;
+        var stockWasSetToZero = stockQuantity is 0;
+        if (stockWasSetToZero)
+        {
+            normalizedStatus = "Unavailable";
+        }
 
-        TempData["AdminMessage"] = "บันทึกสต๊อกและสถานะเมนูแล้ว";
+        menu.StockQuantity = stockQuantity;
+        menu.Status = normalizedStatus;
+        _context.SaveChanges();
+        transaction.Commit();
+
+        TempData["AdminMessage"] = stockWasSetToZero
+            ? $"บันทึกสต๊อก {menu.MenuName} แล้วระบบปิดขายอัตโนมัติเมื่อจำนวนเหลือ 0"
+            : $"บันทึกสต๊อกและสถานะเมนู {menu.MenuName} แล้ว";
         return RedirectToAction(nameof(Stock));
     }
 
@@ -789,10 +1174,12 @@ public class AdminController : Controller
         {
             return View($"~/Views/Manager/{viewName}.cshtml", model);
         }
+        if (User.IsInRole(AppRoles.Accountant))
+        {
+            return View(viewName, model);
+        }
 
-        var isStaff = User.IsInRole(AppRoles.Receptionist) ||
-                      User.IsInRole(AppRoles.Chef) ||
-                      User.IsInRole(AppRoles.StockChecker);
+        var isStaff = User.IsInRole(AppRoles.Staff);
         return isStaff
             ? View($"~/Views/Staff/{viewName}.cshtml", model)
             : View(viewName, model);
@@ -803,10 +1190,26 @@ public class AdminController : Controller
         order.PaymentStatus != PaymentStatuses.Paid &&
         (order.OrderStatus == "รอดำเนินการ" || order.OrderStatus == "ยืนยันแล้ว");
 
-    private static bool IsAllowedChefStatusTransition(Order order, string status) =>
-        (order.OrderStatus == "รอดำเนินการ" || order.OrderStatus == "ยืนยันแล้ว") &&
-            status == "กำลังเตรียม" ||
-        order.OrderStatus == "กำลังเตรียม" && status == "พร้อมรับ";
+    private static bool IsAllowedStaffStatusTransition(Order order, string status) =>
+        order.OrderStatus switch
+        {
+            "รอดำเนินการ" => status is "ยืนยันแล้ว" or "กำลังเตรียม" or "ยกเลิก",
+            "ยืนยันแล้ว" => status is "กำลังเตรียม" or "เสร็จแล้ว" or "ยกเลิก",
+            "กำลังเตรียม" => status is "พร้อมรับ" or "เสร็จแล้ว" or "ยกเลิก",
+            "พร้อมรับ" => status is "เสร็จแล้ว" or "ยกเลิก",
+            "เสร็จแล้ว" or "ยกเลิก" => false,
+            _ => false
+        };
+
+    private static bool IsStaffReservationStatusChangeAllowed(string currentStatus, string? nextStatus) =>
+        currentStatus switch
+        {
+            ReservationStatuses.Pending =>
+                nextStatus is ReservationStatuses.Confirmed or ReservationStatuses.Cancelled,
+            ReservationStatuses.Confirmed =>
+                nextStatus is ReservationStatuses.Completed or ReservationStatuses.Cancelled,
+            _ => false
+        };
 
     private IActionResult RenderOrderEdit(OrderEditViewModel model, Order order)
     {
@@ -863,14 +1266,19 @@ public class AdminController : Controller
             return AllOrderStatuses;
         }
 
-        if (User.IsInRole(AppRoles.Chef))
+        if (User.IsInRole(AppRoles.Manager))
         {
-            return ["กำลังเตรียม", "พร้อมรับ"];
+            return AllOrderStatuses;
         }
 
-        if (User.IsInRole(AppRoles.Receptionist))
+        if (User.IsInRole(AppRoles.Staff))
         {
-            return ["ยืนยันแล้ว", "เสร็จแล้ว", "ยกเลิก"];
+            return ["ยืนยันแล้ว", "กำลังเตรียม", "พร้อมรับ", "เสร็จแล้ว", "ยกเลิก"];
+        }
+
+        if (User.IsInRole(AppRoles.Accountant))
+        {
+            return [];
         }
 
         return [];

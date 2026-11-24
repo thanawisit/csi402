@@ -1,0 +1,95 @@
+@model ReservationDetailsDisplayViewModel
+@{
+    ViewData["Title"] = "รายละเอียดการจอง";
+    var packageName = Model.Package == "buffet" ? "บุฟเฟต์ 299.-" : "อาหารตามสั่ง";
+    var isConfirmed = Model.Status == ReservationStatuses.Confirmed;
+    var isCancelled = Model.Status == ReservationStatuses.Cancelled;
+    var statusClass = isConfirmed
+        ? "bg-success-subtle text-success"
+        : isCancelled
+            ? "bg-secondary-subtle text-secondary"
+            : "bg-warning-subtle text-warning-emphasis";
+}
+
+<div class="container py-4 py-md-5">
+    <div class="mx-auto" style="max-width: 820px;">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2 fw-semibold">
+                    <i class="bi bi-calendar2-check-fill me-1"></i> ประวัติการจอง
+                </span>
+                <h1 class="fw-bold mt-2 mb-1" style="font-family: 'Kanit', sans-serif;">รายละเอียดการจองโต๊ะ</h1>
+                <span class="text-danger fw-bold fs-5" style="font-family: 'Kanit', sans-serif;">#RES@(Model.ReservationId.ToString("D5"))</span>
+            </div>
+            <span class="badge rounded-pill @statusClass fs-6 px-3 py-2 fw-semibold">@Model.Status</span>
+        </div>
+
+        <section class="card border-0 shadow-sm rounded-4" style="background: #ffffff; border: 1.5px solid #f0ebe6 !important;">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                    <i class="bi bi-calendar-event text-danger fs-5"></i>
+                    <h2 class="h5 fw-bold mb-0" style="font-family: 'Kanit', sans-serif;">ข้อมูลการจอง</h2>
+                </div>
+                <dl class="row mb-4 gy-2">
+                    <dt class="col-sm-4 text-muted">โต๊ะ</dt>
+                    <dd class="col-sm-8 fw-bold fs-5 text-dark" style="font-family: 'Kanit', sans-serif;">โต๊ะ @Model.TableNumber</dd>
+
+                    <dt class="col-sm-4 text-muted">วันและเวลา</dt>
+                    <dd class="col-sm-8 fw-semibold text-danger">@Model.ReservationDateTime.ToString("dd/MM/yyyy เวลา HH:mm น.")</dd>
+
+                    <dt class="col-sm-4 text-muted">จำนวนผู้ใช้บริการ</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.GuestCount คน</dd>
+
+                    <dt class="col-sm-4 text-muted">แพ็กเกจ</dt>
+                    <dd class="col-sm-8"><span class="badge bg-danger rounded-pill px-3 py-1">@packageName</span></dd>
+
+                    <dt class="col-sm-4 text-muted">หมายเหตุ</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Note) ? "-" : Model.Note)</dd>
+                </dl>
+
+                <hr class="my-4" />
+
+                <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                    <i class="bi bi-person-circle text-danger fs-5"></i>
+                    <h2 class="h5 fw-bold mb-0" style="font-family: 'Kanit', sans-serif;">ข้อมูลผู้จอง</h2>
+                </div>
+                <dl class="row mb-0 gy-2">
+                    <dt class="col-sm-4 text-muted">ชื่อผู้จอง</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.CustomerName</dd>
+
+                    <dt class="col-sm-4 text-muted">เบอร์โทรศัพท์</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.CustomerPhone</dd>
+
+                    <dt class="col-sm-4 text-muted">อีเมล</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.CustomerEmail</dd>
+                </dl>
+            </div>
+            <div class="card-footer bg-white border-0 px-4 px-md-5 pb-4 d-flex flex-wrap gap-2">
+                @if (Model.Status == ReservationStatuses.Confirmed)
+                {
+                    @if (Model.Package == "buffet")
+                    {
+                        <a asp-controller="Home" asp-action="ScanQR"
+                           asp-route-tableId="@Model.TableId"
+                           asp-route-guestCount="@Model.GuestCount"
+                           class="btn btn-danger rounded-pill px-4 py-2 fw-bold shadow-sm" style="font-family: 'Kanit', sans-serif;">
+                            <i class="bi bi-qr-code-scan me-1"></i> เลือกอาหารบุฟเฟต์
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Home" asp-action="Menu"
+                           asp-route-tableId="@Model.TableId"
+                           class="btn btn-danger rounded-pill px-4 py-2 fw-bold shadow-sm" style="font-family: 'Kanit', sans-serif;">
+                            <i class="bi bi-book me-1"></i> เลือกอาหาร
+                        </a>
+                    }
+                }
+                <a asp-controller="Home" asp-action="ReservationHistory"
+                   class="btn btn-outline-danger rounded-pill px-4 py-2 fw-semibold">
+                    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i> กลับประวัติการจอง
+                </a>
+            </div>
+        </section>
+    </div>
+</div>

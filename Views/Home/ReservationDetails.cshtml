@@ -1,0 +1,156 @@
+@model ReservationDetailsViewModel
+@{
+    ViewData["Title"] = "รายละเอียดการจอง";
+    var packageName = Model.Package == "buffet" ? "บุฟเฟต์ 299.-" : "อาหารตามสั่ง";
+}
+
+<div class="container py-4 py-md-5">
+    <div class="mx-auto" style="max-width: 860px;">
+        <div class="mb-4">
+            <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2 fw-semibold mb-2">
+                <i class="bi bi-clipboard2-check me-1"></i> ขั้นตอนที่ 2 · ระบุข้อมูลการจอง
+            </span>
+            <h1 class="fw-bold mt-2" style="font-family: 'Kanit', sans-serif;">กรอกรายละเอียดการจองโต๊ะ</h1>
+            <p class="text-muted mb-0">
+                <span class="badge bg-danger rounded-pill px-3 py-1 me-1">โต๊ะ @Model.TableNumber</span>
+                รองรับไม่เกิน @Model.TableCapacity คน · แพ็กเกจ @packageName
+            </p>
+        </div>
+
+        <form asp-controller="Home" asp-action="ReservationDetails" method="post"
+              class="card border-0 shadow-sm rounded-4" style="background: #ffffff; border: 1.5px solid #f0ebe6 !important;">
+            <div class="card-body p-4 p-md-5">
+                <input asp-for="TableId" type="hidden" />
+                <input asp-for="Package" type="hidden" />
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
+
+                <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                    <i class="bi bi-calendar-event text-danger fs-5"></i>
+                    <h2 class="h5 fw-bold mb-0" style="font-family: 'Kanit', sans-serif;">ข้อมูลการจอง</h2>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="ReservationDate" class="form-label fw-semibold"></label>
+                        <input asp-for="ReservationDate" type="date"
+                               min="@ViewBag.MinReservationDate" class="form-control rounded-3 py-2" style="border: 1.5px solid #f0ebe6;" />
+                        <span asp-validation-for="ReservationDate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ReservationTime" class="form-label fw-semibold"></label>
+                        <input id="ReservationTime" name="ReservationTime" type="time" step="60"
+                               value="@Model.ReservationTime?.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)"
+                               class="form-control rounded-3 py-2" style="border: 1.5px solid #f0ebe6;" required />
+                        <span asp-validation-for="ReservationTime" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <div id="tableAvailabilityWarning" class="alert alert-info rounded-3 mb-0" role="status">
+                            <i class="bi bi-info-circle me-1"></i> ระบบจะกันโต๊ะเป็นเวลา 2 ชั่วโมงหลังเวลาที่เลือก
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="GuestCount" class="form-label fw-semibold"></label>
+                        <div class="input-group">
+                            <input asp-for="GuestCount" type="number" min="1" max="@Model.TableCapacity"
+                                   class="form-control rounded-start-3 py-2" style="border: 1.5px solid #f0ebe6;" />
+                            <span class="input-group-text bg-light rounded-end-3">คน</span>
+                        </div>
+                        <div class="form-text">โต๊ะนี้รองรับได้ไม่เกิน @Model.TableCapacity คน</div>
+                        <span asp-validation-for="GuestCount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Note" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Note" class="form-control rounded-3" rows="3" style="border: 1.5px solid #f0ebe6;"
+                                  placeholder="เช่น ต้องการเก้าอี้เด็ก หรือมีข้อจำกัดด้านอาหาร"></textarea>
+                        <span asp-validation-for="Note" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                    <i class="bi bi-person-circle text-danger fs-5"></i>
+                    <h2 class="h5 fw-bold mb-0" style="font-family: 'Kanit', sans-serif;">ข้อมูลผู้จอง</h2>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="CustomerName" class="form-label fw-semibold"></label>
+                        <input asp-for="CustomerName" class="form-control rounded-3 py-2" style="border: 1.5px solid #f0ebe6;" autocomplete="name" />
+                        <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="CustomerPhone" class="form-label fw-semibold"></label>
+                        <input asp-for="CustomerPhone" type="tel" class="form-control rounded-3 py-2" style="border: 1.5px solid #f0ebe6;" autocomplete="tel" />
+                        <span asp-validation-for="CustomerPhone" class="text-danger small"></span>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">อีเมลบัญชีผู้ใช้</label>
+                        <input value="@Model.CustomerEmail" type="email" class="form-control rounded-3 py-2 bg-light" readonly />
+                        <div class="form-text">ใช้บัญชีที่เข้าสู่ระบบสำหรับยืนยันการจอง</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-danger-subtle text-danger rounded-3 mt-4 mb-0 border border-danger-subtle">
+                    <i class="bi bi-shield-check me-2" aria-hidden="true"></i>
+                    ระบบจะตรวจสอบความว่างของโต๊ะและยืนยันการจองอัตโนมัติ กรุณามาถึงก่อนเวลา 15 นาที
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 px-4 px-md-5 pb-4 d-flex flex-column-reverse flex-sm-row justify-content-between gap-2">
+                <a asp-controller="Home" asp-action="ReserveTable"
+                   asp-route-package="@Model.Package"
+                   asp-route-date="@Model.ReservationDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)"
+                   asp-route-time="@Model.ReservationTime?.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)"
+                   class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                    <i class="bi bi-arrow-left me-1"></i> ย้อนกลับไปเลือกโต๊ะ
+                </a>
+                <button id="confirmReservationButton" type="submit" class="btn btn-danger rounded-pill px-4 py-2 fw-bold shadow-sm" style="font-family: 'Kanit', sans-serif;">
+                    ยืนยันการจองและไปต่อ <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const dateInput = document.getElementById('ReservationDate');
+            const timeInput = document.getElementById('ReservationTime');
+            const tableIdInput = document.querySelector('input[name="TableId"]');
+            const warning = document.getElementById('tableAvailabilityWarning');
+            const submitButton = document.getElementById('confirmReservationButton');
+            let requestSequence = 0;
+
+            const checkAvailability = async () => {
+                if (!dateInput?.value || !timeInput?.value || !tableIdInput?.value) return;
+                const sequence = ++requestSequence;
+                warning.className = 'alert alert-info rounded-3 mb-0';
+                warning.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> กำลังตรวจสอบความว่างของโต๊ะ...';
+                submitButton.disabled = true;
+
+                try {
+                    const response = await fetch(
+                        `/Home/CheckTableAvailability?tableId=${encodeURIComponent(tableIdInput.value)}&date=${encodeURIComponent(dateInput.value)}&time=${encodeURIComponent(timeInput.value)}`,
+                        { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    const result = await response.json();
+                    if (sequence !== requestSequence) return;
+
+                    warning.className = result.available
+                        ? 'alert alert-success rounded-3 mb-0'
+                        : 'alert alert-danger rounded-3 mb-0';
+                    warning.innerHTML = (result.available ? '<i class="bi bi-check-circle me-1"></i> ' : '<i class="bi bi-exclamation-triangle me-1"></i> ') + result.message;
+                    submitButton.disabled = !result.available;
+                } catch {
+                    warning.className = 'alert alert-warning rounded-3 mb-0';
+                    warning.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> ไม่สามารถตรวจสอบความว่างได้ กรุณาลองอีกครั้ง';
+                    submitButton.disabled = true;
+                }
+            };
+
+            dateInput?.addEventListener('change', checkAvailability);
+            timeInput?.addEventListener('change', checkAvailability);
+            checkAvailability();
+        })();
+    </script>
+}

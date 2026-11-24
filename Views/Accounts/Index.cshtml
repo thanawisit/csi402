@@ -1,91 +1,484 @@
 @model IEnumerable<AdminUserListItemViewModel>
 @{
     ViewData["Title"] = "จัดการบัญชีและบทบาท";
+    var accounts = Model.ToList();
+    var customerCount = accounts.Count(account => account.Role == AppRoles.Customer);
+    var staffCount = accounts.Count(account =>
+        account.Role == AppRoles.Staff ||
+        account.Role == "Receptionist" ||
+        account.Role == "Chef" ||
+        account.Role == "StockChecker");
+    var managerCount = accounts.Count(account => account.Role == AppRoles.Manager);
+    var adminCount = accounts.Count(account => account.Role == AppRoles.Admin);
+    var accountantCount = accounts.Count(account => account.Role == AppRoles.Accountant);
 }
 
-<div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div>
-            <span class="badge rounded-pill bg-danger-subtle text-danger mb-2">ACCOUNT MANAGEMENT</span>
-            <h1 class="fw-bold mb-1">จัดการบัญชีและบทบาท</h1>
-            <p class="text-muted mb-0">กำหนดสิทธิ์การใช้งานของบัญชีในระบบ</p>
-        </div>
-        <div class="d-flex gap-2">
-            <a asp-action="CreateStaff" class="btn btn-success rounded-3">
-                <i class="bi bi-person-plus me-2"></i>สร้างบัญชี Staff
-            </a>
-            <a asp-action="CreateManager" class="btn btn-danger rounded-3">
-                <i class="bi bi-person-plus me-2"></i>สร้างบัญชี Manager
-            </a>
-            <a asp-controller="Admin" asp-action="Index" class="btn btn-outline-secondary rounded-3">
-                <i class="bi bi-arrow-left me-2"></i>กลับหน้าระบบหลังบ้าน
-            </a>
-        </div>
-    </div>
+<style>
+    .account-admin-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+    }
 
+    .account-admin-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .account-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #bd3124;
+        font-size: .78rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .account-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .account-header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: .55rem;
+    }
+
+    .account-summary {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .account-summary-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 112px;
+        border: 1px solid #e1e6dc;
+        border-radius: 16px;
+        background: linear-gradient(145deg, #fffef9 0%, #edf3e8 100%);
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .08);
+        padding: 1rem 1.05rem;
+    }
+
+    .account-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #91a98e;
+    }
+
+    .account-summary-card.customer::before {
+        background: #4470a1;
+    }
+
+    .account-summary-card.staff::before {
+        background: #4f8757;
+    }
+
+    .account-summary-card.manager::before {
+        background: #d7a91c;
+    }
+
+    .account-summary-card.admin::before {
+        background: #bd3124;
+    }
+
+    .account-summary-card.accountant::before {
+        background: #d7a91c;
+    }
+
+    .account-summary-card::after {
+        content: "";
+        position: absolute;
+        right: -30px;
+        bottom: -38px;
+        width: 92px;
+        height: 92px;
+        border: 14px solid rgba(47, 107, 59, .055);
+        border-radius: 50%;
+    }
+
+    .account-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .account-summary-value {
+        margin-top: .35rem;
+        color: #263029;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+
+    .account-toolbar {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 16px;
+        background: rgba(225, 234, 220, .72);
+        box-shadow: 0 8px 20px rgba(58, 76, 61, .055);
+        margin-bottom: .85rem;
+        padding: .65rem;
+    }
+
+    .account-search {
+        max-width: 420px;
+    }
+
+    .account-search .input-group-text,
+    .account-search .form-control,
+    .account-role-filter {
+        border-color: #dce4da;
+        background-color: #fffef9;
+    }
+
+    .account-role-filter {
+        min-width: 180px;
+    }
+
+    .account-card {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 20px;
+        background: #fbfaf5;
+        box-shadow: 0 14px 32px rgba(58, 76, 61, .09);
+    }
+
+    .account-card thead th {
+        border-bottom: 1px solid #dde5d9;
+        background: linear-gradient(90deg, #e4ecdf 0%, #edf2e9 100%);
+        color: #405146;
+        font-size: .78rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+
+    .account-row {
+        transition: background-color .15s ease;
+    }
+
+    .account-row:nth-child(even) {
+        background: #f7f7f0;
+    }
+
+    .account-row:hover {
+        background: #eef4e9;
+    }
+
+    .account-row td {
+        border-bottom-color: #e8ebe3;
+        padding-block: .88rem;
+    }
+
+    .account-identity {
+        display: flex;
+        align-items: center;
+        gap: .72rem;
+        min-width: 155px;
+    }
+
+    .account-avatar {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        place-items: center;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 13px;
+        background: linear-gradient(145deg, #fff9ed 0%, #e7f0df 100%);
+        color: #8f251c;
+        font-weight: 850;
+        box-shadow: 0 6px 14px rgba(58, 76, 61, .08);
+    }
+
+    .account-role-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        background: #f1f3ed;
+        color: #5d665f;
+        padding: .32rem .58rem;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .account-role-badge.staff {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .account-role-badge.manager {
+        background: #fff1cc;
+        color: #956800;
+    }
+
+    .account-role-badge.admin {
+        background: #ffe9e6;
+        color: #a3392f;
+    }
+
+    .account-role-badge.customer {
+        background: #edf3fb;
+        color: #4470a1;
+    }
+
+    .account-role-badge.accountant {
+        background: #fff1cc;
+        color: #956800;
+    }
+
+    .account-role-select {
+        min-width: 150px;
+        border-color: #dce4da;
+        background: #fffef9;
+        font-size: .82rem;
+        font-weight: 700;
+    }
+
+    .account-save-btn {
+        min-width: 118px;
+    }
+
+    @@media (max-width: 991.98px) {
+        .account-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .account-admin-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .account-admin-header,
+        .account-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .account-header-actions {
+            justify-content: flex-start;
+        }
+
+        .account-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .account-search,
+        .account-role-filter {
+            max-width: none;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="account-admin-page">
     @if (TempData["AdminMessage"] != null)
     {
-        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
     }
     @if (TempData["AdminError"] != null)
     {
-        <div class="alert alert-danger">@TempData["AdminError"]</div>
+        <div class="alert alert-danger rounded-3">@TempData["AdminError"]</div>
     }
 
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-header bg-white border-0 px-4 pt-4">
-            <h2 class="h5 fw-bold mb-1">บัญชีผู้ใช้</h2>
-            <p class="small text-muted mb-0">เพื่อความปลอดภัย ไม่สามารถเปลี่ยนบทบาทบัญชีที่กำลังเข้าสู่ระบบได้</p>
+    <header class="account-admin-header">
+        <div>
+            <span class="account-eyebrow">Account management</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">จัดการบัญชีและบทบาท</h1>
+            <p class="text-muted mb-0">กำหนดสิทธิ์การใช้งานและสร้างบัญชีพนักงาน</p>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th class="ps-4">ชื่อผู้ใช้</th>
-                        <th>อีเมล</th>
-                        <th>โทรศัพท์</th>
-                        <th>บทบาท</th>
-                        <th class="text-end pe-4">บันทึก</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var account in Model)
-                    {
-                        var isCurrentAccount = string.Equals(
-                            account.Email,
-                            User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value,
-                            StringComparison.OrdinalIgnoreCase);
-                        <tr>
-                            <td class="ps-4 fw-semibold">@account.Username</td>
-                            <td>@account.Email</td>
-                            <td>@(account.PhoneNumber ?? "-")</td>
-                            <td>
-                                <form asp-action="UpdateRole" method="post" id="role-@account.UserId" class="d-flex gap-2">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="userId" value="@account.UserId" />
-                                    <select name="role" class="form-select form-select-sm" aria-label="บทบาทของ @account.Username" disabled="@isCurrentAccount">
-                                        @foreach (var role in AppRoles.Labels)
-                                        {
-                                            <option value="@role.Key" selected="@(role.Key == account.Role)">@role.Value</option>
-                                        }
-                                    </select>
-                                </form>
-                            </td>
-                            <td class="text-end pe-4">
-                                <button type="submit" form="role-@account.UserId" class="btn btn-sm btn-outline-success" disabled="@isCurrentAccount">
-                                    <i class="bi bi-check2 me-1"></i>บันทึกบทบาท
-                                </button>
-                            </td>
-                        </tr>
-                    }
-                    @if (!Model.Any())
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-5">ยังไม่มีบัญชีผู้ใช้</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="account-header-actions">
+            <a asp-action="CreateStaff" class="btn btn-success rounded-3">
+                <i class="bi bi-person-plus me-1"></i>สร้างบัญชี Staff
+            </a>
+            <a asp-action="CreateManager" class="btn btn-danger rounded-3">
+                <i class="bi bi-person-plus me-1"></i>สร้างบัญชี Manager
+            </a>
+            <a asp-action="CreateAccountant" class="btn btn-warning rounded-3">
+                <i class="bi bi-calculator me-1"></i>สร้างบัญชี Accountant
+            </a>
+            <a asp-controller="Admin" asp-action="Index" class="btn btn-outline-secondary rounded-3">
+                <i class="bi bi-arrow-left me-1"></i>กลับหลังบ้าน
+            </a>
         </div>
+    </header>
+
+    <section class="account-summary" aria-label="สรุปบัญชี">
+        <article class="account-summary-card customer">
+            <div class="account-summary-label">ลูกค้า</div>
+            <div class="account-summary-value">@customerCount</div>
+        </article>
+        <article class="account-summary-card staff">
+            <div class="account-summary-label">พนักงาน Staff</div>
+            <div class="account-summary-value">@staffCount</div>
+        </article>
+        <article class="account-summary-card manager">
+            <div class="account-summary-label">ผู้จัดการ</div>
+            <div class="account-summary-value">@managerCount</div>
+        </article>
+        <article class="account-summary-card admin">
+            <div class="account-summary-label">ผู้ดูแลระบบ</div>
+            <div class="account-summary-value">@adminCount</div>
+        </article>
+        <article class="account-summary-card accountant">
+            <div class="account-summary-label">พนักงานบัญชี</div>
+            <div class="account-summary-value">@accountantCount</div>
+        </article>
+    </section>
+
+    <div class="account-toolbar">
+        <div class="input-group account-search">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="accountSearch" type="search" class="form-control"
+                   placeholder="ค้นหาชื่อผู้ใช้ หรืออีเมล"
+                   aria-label="ค้นหาบัญชี" />
+        </div>
+        <select id="accountRoleFilter" class="form-select account-role-filter" aria-label="กรองบทบาท">
+            <option value="all">ทุกบทบาท</option>
+            @foreach (var role in AppRoles.AssignableLabels)
+            {
+                <option value="@role.Key">@role.Value</option>
+            }
+        </select>
     </div>
+
+    @if (accounts.Count == 0)
+    {
+        <div class="account-card text-center text-muted py-5">
+            <i class="bi bi-people fs-2 d-block mb-2" aria-hidden="true"></i>
+            ยังไม่มีบัญชีผู้ใช้
+        </div>
+    }
+    else
+    {
+        <section class="account-card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="accountTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ชื่อผู้ใช้</th>
+                            <th>อีเมล</th>
+                            <th>โทรศัพท์</th>
+                            <th>บทบาทปัจจุบัน</th>
+                            <th>เปลี่ยนบทบาท</th>
+                            <th class="text-end pe-4">บันทึก</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var account in accounts)
+                        {
+                            var isCurrentAccount = string.Equals(
+                                account.Email,
+                                User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value,
+                                StringComparison.OrdinalIgnoreCase);
+                            var selectedRole = account.Role == "Receptionist" ||
+                                               account.Role == "Chef" ||
+                                               account.Role == "StockChecker"
+                                ? AppRoles.Staff
+                                : account.Role;
+                            var roleClass = selectedRole switch
+                            {
+                                AppRoles.Staff => "staff",
+                                AppRoles.Accountant => "accountant",
+                                AppRoles.Manager => "manager",
+                                AppRoles.Admin => "admin",
+                                _ => "customer"
+                            };
+
+                            <tr class="account-row"
+                                data-search="@account.Username @account.Email"
+                                data-role="@selectedRole">
+                                <td class="ps-4">
+                                    <div class="account-identity">
+                                        <span class="account-avatar" aria-hidden="true">
+                                            @(string.IsNullOrWhiteSpace(account.Username)
+                                                ? "?"
+                                                : account.Username.Trim().Substring(0, 1).ToUpperInvariant())
+                                        </span>
+                                        <div>
+                                            <span class="fw-bold">@account.Username</span>
+                                            @if (isCurrentAccount)
+                                            {
+                                                <span class="text-success small d-block">บัญชีที่กำลังใช้</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@account.Email</td>
+                                <td>@(account.PhoneNumber ?? "-")</td>
+                                <td>
+                                    <span class="account-role-badge @roleClass">
+                                        @(AppRoles.Labels.TryGetValue(selectedRole, out var roleLabel) ? roleLabel : selectedRole)
+                                    </span>
+                                </td>
+                                <td>
+                                    <form asp-action="UpdateRole" method="post" id="role-@account.UserId" class="d-flex gap-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@account.UserId" />
+                                        <select name="role" class="form-select form-select-sm account-role-select"
+                                                aria-label="บทบาทของ @account.Username"
+                                                disabled="@isCurrentAccount">
+                                            @foreach (var role in AppRoles.AssignableLabels)
+                                            {
+                                                <option value="@role.Key" selected="@(role.Key == selectedRole)">@role.Value</option>
+                                            }
+                                        </select>
+                                    </form>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button type="submit" form="role-@account.UserId"
+                                            class="btn btn-sm btn-outline-success account-save-btn"
+                                            disabled="@isCurrentAccount">
+                                        <i class="bi bi-check2 me-1"></i>บันทึกบทบาท
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const searchInput = document.getElementById('accountSearch');
+            const roleFilter = document.getElementById('accountRoleFilter');
+            const rows = Array.from(document.querySelectorAll('#accountTable tbody .account-row'));
+
+            const filterAccounts = () => {
+                const term = (searchInput?.value ?? '').trim().toLowerCase();
+                const role = roleFilter?.value ?? 'all';
+
+                rows.forEach(row => {
+                    const matchesSearch = term === '' ||
+                        (row.dataset.search ?? '').toLowerCase().includes(term);
+                    const matchesRole = role === 'all' ||
+                        row.dataset.role === role;
+                    row.hidden = !(matchesSearch && matchesRole);
+                });
+            };
+
+            searchInput?.addEventListener('input', filterAccounts);
+            roleFilter?.addEventListener('change', filterAccounts);
+        })();
+    </script>
+}

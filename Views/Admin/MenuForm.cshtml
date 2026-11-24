@@ -24,6 +24,14 @@
                             <input asp-for="Price" class="form-control" type="number" step="0.01" min="0.01" />
                             <span asp-validation-for="Price" class="text-danger"></span>
                         </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="4"
+                                      maxlength="500"
+                                      placeholder="อธิบายรสชาติ วัตถุดิบหลัก และส่วนประกอบของเมนู"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                            <div class="form-text">สูงสุด 500 ตัวอักษร</div>
+                        </div>
                         <div class="mb-4">
                             <label asp-for="Status" class="form-label"></label>
                             <select asp-for="Status" class="form-select">

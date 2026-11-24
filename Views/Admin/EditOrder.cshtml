@@ -6,7 +6,7 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
-            <h1 class="fw-bold mb-1">แก้ไขออเดอร์ #ORD@Model.OrderId.ToString("D4")</h1>
+            <h1 class="fw-bold mb-1">แก้ไขคำสั่งซื้อ @Model.DisplayNumber</h1>
             <div class="text-muted">
                 สถานะ @OrderStatusLabels.Display(Model.OrderStatus)
                 · ชำระเงิน @Model.PaymentStatus
@@ -41,6 +41,7 @@
                             <tr>
                                 <th>เมนู</th>
                                 <th style="width: 160px">จำนวน</th>
+                                <th style="width: 260px">หมายเหตุ</th>
                                 <th class="text-end" style="width: 100px">นำออก</th>
                             </tr>
                         </thead>
@@ -64,6 +65,11 @@
                                     <td>
                                         <input name="Items[@index].Quantity" data-field="Quantity" type="number" min="1" max="99"
                                                value="@Model.Items[index].Quantity" class="form-control" required />
+                                    </td>
+                                    <td>
+                                        <input name="Items[@index].SpecialRequest" data-field="SpecialRequest" type="text"
+                                               maxlength="500" value="@Model.Items[index].SpecialRequest"
+                                               class="form-control" placeholder="หมายเหตุ เช่น ไม่เผ็ด" />
                                     </td>
                                     <td class="text-end">
                                         <button type="button" class="btn btn-sm btn-outline-danger remove-order-item">นำออก</button>
@@ -103,6 +109,10 @@
         </td>
         <td>
             <input data-field="Quantity" type="number" min="1" max="99" value="1" class="form-control" required />
+        </td>
+        <td>
+            <input data-field="SpecialRequest" type="text" maxlength="500"
+                   class="form-control" placeholder="หมายเหตุ เช่น ไม่เผ็ด" />
         </td>
         <td class="text-end">
             <button type="button" class="btn btn-sm btn-outline-danger remove-order-item">นำออก</button>

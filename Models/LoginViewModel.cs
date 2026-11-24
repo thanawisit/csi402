@@ -11,5 +11,7 @@ namespace IsanDer.Models
         [Required(ErrorMessage = "กรุณากรอกรหัสผ่าน")]
         [DataType(DataType.Password)]
         public string? Password { get; set; }
+
+        public string? ReturnUrl { get; set; }
     }
 }

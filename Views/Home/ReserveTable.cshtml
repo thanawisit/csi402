@@ -4,106 +4,390 @@
     ViewData["Title"] = "เลือกโต๊ะ";
     var largeTables = Model.Where(table => table.Capacity > 2).ToList();
     var smallTables = Model.Where(table => table.Capacity <= 2).ToList();
+    var occupiedTableIds = (HashSet<int>?)ViewBag.OccupiedTableIds ?? new HashSet<int>();
+    var hasRequestedReservationTime = ViewBag.HasRequestedReservationTime == true;
+    var requestedReservationDate = ViewBag.RequestedReservationDate as string;
+    var requestedReservationTime = ViewBag.RequestedReservationTime as string;
 }
 
 <style>
-    .table-card {
-        background-color: white;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 30px 10px;
-        text-align: center;
-        transition: all 0.2s ease-in-out;
+    .table-page {
+        max-width: 1040px;
+        margin-inline: auto;
     }
+
+    .table-page-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .table-page-header h1 {
+        margin: .35rem 0;
+        font-size: clamp(1.7rem, 3vw, 2.25rem);
+        font-weight: 800;
+    }
+
+    .table-page-header p {
+        margin: 0;
+        color: var(--muted);
+    }
+
+
+    .table-group {
+        margin-bottom: 2rem;
+    }
+
+    .table-group-heading {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        margin-bottom: 1rem;
+    }
+
+    .table-group-heading h2 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 800;
+    }
+
+    .table-group-heading span {
+        color: var(--muted);
+        font-size: .85rem;
+    }
+
     .table-option {
+        position: relative;
         display: block;
         height: 100%;
         cursor: pointer;
     }
+
     .table-option input {
         position: absolute;
-        opacity: 0;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        clip-path: inset(50%);
     }
+
+    .table-card {
+        position: relative;
+        display: flex;
+        min-height: 160px;
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: .6rem;
+        padding: 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: var(--surface);
+        box-shadow: 0 5px 16px rgba(45, 70, 47, .06);
+        text-align: center;
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background-color .18s ease;
+    }
+
     .table-option:hover .table-card {
-        border-color: var(--brand-green);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transform: translateY(-3px);
+        border-color: rgba(55, 125, 51, .55);
+        box-shadow: 0 12px 24px rgba(45, 70, 47, .12);
     }
+
     .table-option input:checked + .table-card {
         border: 2px solid var(--brand-green);
-        box-shadow: 0 4px 15px rgba(55, 125, 51, 0.15);
+        background: #f2f8ee;
+        box-shadow: 0 10px 24px rgba(55, 125, 51, .16);
     }
+
     .table-option input:focus-visible + .table-card {
-        outline: 2px solid var(--brand-green);
-        outline-offset: 2px;
+        outline: 3px solid rgba(55, 125, 51, .3);
+        outline-offset: 3px;
     }
-    .btn-confirm {
-        background-color: var(--brand-red);
-        color: white;
-        font-weight: bold;
-        padding: 10px 40px;
-        border-radius: 8px;
-        border: none;
-        transition: 0.2s;
+
+    .table-card-icon {
+        display: grid;
+        width: 3rem;
+        height: 3rem;
+        place-items: center;
+        border-radius: 1rem;
+        background: var(--brand-green-soft);
+        color: var(--brand-green);
+        font-size: 1.35rem;
     }
-    .btn-confirm:hover {
-        background-color: var(--brand-red-dark);
-        color: white;
+
+    .table-name {
+        color: var(--text);
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
+
+    .table-capacity {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        color: var(--muted);
+        font-size: .9rem;
+    }
+
+    .table-availability {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border-radius: 999px;
+        padding: .28rem .55rem;
+        background: #e8f3eb;
+        color: #356d43;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .table-availability.occupied {
+        background: #ffe9e6;
+        color: #a3392f;
+    }
+
+    .table-option.occupied {
+        cursor: not-allowed;
+    }
+
+    .table-option.occupied .table-card {
+        border-style: dashed;
+        background: #faf7f5;
+        box-shadow: none;
+        filter: grayscale(.25);
+        opacity: .72;
+    }
+
+    .table-option.occupied:hover .table-card {
+        transform: none;
+        border-color: var(--border);
+        box-shadow: none;
+    }
+
+    .table-selected-mark {
+        position: absolute;
+        top: .7rem;
+        right: .7rem;
+        color: var(--brand-green);
+        font-size: 1.2rem;
+        opacity: 0;
+        transform: scale(.8);
+        transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .table-option input:checked + .table-card .table-selected-mark {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .table-selection-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: var(--surface);
+        box-shadow: 0 8px 20px rgba(45, 70, 47, .08);
+    }
+
+    .table-selection-label {
+        display: block;
+        color: var(--muted);
+        font-size: .8rem;
+    }
+
+    .table-selection-value {
+        display: block;
+        margin-top: .15rem;
+        font-weight: 800;
+    }
+
+    .btn-table-confirm {
+        min-width: 190px;
+        padding: .8rem 1.4rem;
+        border: 0;
+        border-radius: .7rem;
+        background: var(--brand-red);
+        color: #fff;
+        font-weight: 800;
+        transition: background-color .18s ease, transform .18s ease;
+    }
+
+    .btn-table-confirm:hover {
+        transform: translateY(-1px);
+        background: var(--brand-red-dark);
+    }
+
+    .table-empty-state {
+        padding: 3rem 1.5rem;
+        border: 1px dashed var(--border);
+        border-radius: 1rem;
+        background: var(--surface);
+        color: var(--muted);
+        text-align: center;
+    }
+
+    .table-empty-state i {
+        display: block;
+        margin-bottom: .75rem;
+        color: var(--brand-green);
+        font-size: 2.5rem;
+    }
+
+    @@media (max-width: 575.98px) {
+        .table-page-header {
+            align-items: flex-start;
+        }
+
+
+        .table-card {
+            min-height: 145px;
+            padding: 1rem .5rem;
+        }
+
+        .table-selection-footer {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .btn-table-confirm {
+            width: 100%;
+        }
     }
 </style>
 
-<div class="container mt-5 pb-5">
-    <h2 class="fw-bold mb-2">เลือกโต๊ะ</h2>
-    <p class="text-muted mb-5">เลือกโต๊ะที่ต้องการสำหรับรายการสั่งอาหาร</p>
-
-    @if (!Model.Any())
-    {
-        <div class="alert alert-warning">ขณะนี้ไม่มีโต๊ะที่เปิดให้เลือก</div>
-    }
-    else
-    {
-        <form asp-controller="Home" asp-action="ConfirmTable" method="post">
-            <input type="hidden" name="package" value="@ViewBag.Package" />
-
-            @if (largeTables.Any())
-            {
-                <h5 class="fw-bold mb-3">โต๊ะใหญ่</h5>
-                <div class="row g-4 mb-5">
-                    @foreach (var table in largeTables)
-                    {
-                        <div class="col-md-3">
-                            <label class="table-option">
-                                <input type="radio" name="tableId" value="@table.TableID" required />
-                                <span class="table-card">
-                                    <span class="h4 fw-bold mb-3 d-block">โต๊ะ @table.TableNumber</span>
-                                    <span class="text-muted mb-3 d-block"><i class="bi bi-people-fill text-secondary"></i> @table.Capacity คน</span>
-                                </span>
-                            </label>
-                        </div>
-                    }
-                </div>
-            }
-
-            @if (smallTables.Any())
-            {
-                <h5 class="fw-bold mb-3">โต๊ะเล็ก</h5>
-                <div class="row g-4 mb-4">
-                    @foreach (var table in smallTables)
-                    {
-                        <div class="col-md-3">
-                            <label class="table-option">
-                                <input type="radio" name="tableId" value="@table.TableID" required />
-                                <span class="table-card">
-                                    <span class="h4 fw-bold mb-3 d-block">โต๊ะ @table.TableNumber</span>
-                                    <span class="text-muted mb-3 d-block"><i class="bi bi-people-fill text-secondary"></i> @table.Capacity คน</span>
-                                </span>
-                            </label>
-                        </div>
-                    }
-                </div>
-            }
-
-            <div class="text-end mt-4">
-                <button type="submit" class="btn-confirm">ยืนยันโต๊ะ</button>
+<div class="container py-4 py-md-5 pb-5">
+    <div class="table-page">
+        <header class="table-page-header">
+            <div>
+                <span class="section-kicker">ขั้นตอนถัดไป · เลือกที่นั่ง</span>
+                <h1>เลือกโต๊ะ</h1>
+                <p>เลือกโต๊ะที่รองรับจำนวนผู้ใช้บริการของคุณ</p>
             </div>
-        </form>
-    }
+        </header>
+
+        @if (TempData["TableError"] != null)
+        {
+            <div class="alert alert-danger rounded-3">@TempData["TableError"]</div>
+        }
+
+
+        @if (!Model.Any())
+        {
+            <div class="table-empty-state">
+                <i class="bi bi-emoji-frown" aria-hidden="true"></i>
+                <h2 class="h5 fw-bold text-dark">ขณะนี้ไม่มีโต๊ะให้เลือก</h2>
+                <p class="mb-0">กรุณาติดต่อพนักงานหรือกลับมาลองอีกครั้ง</p>
+            </div>
+        }
+        else
+        {
+            <form asp-controller="Home" asp-action="ConfirmTable" method="post">
+                <input type="hidden" name="package" value="@ViewBag.Package" />
+                <input type="hidden" name="reservationDate" value="@requestedReservationDate" />
+                <input type="hidden" name="reservationTime" value="@requestedReservationTime" />
+
+                @if (largeTables.Any())
+                {
+                    <section class="table-group" aria-labelledby="large-tables-heading">
+                        <div class="table-group-heading">
+                            <h2 id="large-tables-heading">โต๊ะใหญ่</h2>
+                            <span>สำหรับกลุ่ม 3 คนขึ้นไป</span>
+                        </div>
+                        <div class="row g-3 g-lg-4">
+                            @foreach (var table in largeTables)
+                            {
+                                var isOccupied = occupiedTableIds.Contains(table.TableID);
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="table-option @(isOccupied ? "occupied" : "")">
+                                        <input type="radio" name="tableId" value="@table.TableID" required
+                                               disabled="@isOccupied"
+                                               data-table-number="@table.TableNumber" data-capacity="@table.Capacity" />
+                                        <span class="table-card">
+                                            <span class="table-selected-mark" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></span>
+                                            <span class="table-card-icon" aria-hidden="true"><i class="bi bi-table"></i></span>
+                                            <span class="table-name">โต๊ะ @table.TableNumber</span>
+                                            <span class="table-capacity"><i class="bi bi-people-fill"></i>@table.Capacity คน</span>
+                                            <span class="table-availability @(isOccupied ? "occupied" : "")">
+                                                <i class="bi @(isOccupied ? "bi-x-circle-fill" : "bi-check-circle-fill")" aria-hidden="true"></i>
+                                                @(isOccupied ? "ไม่ว่าง" : "ว่าง")
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+                @if (smallTables.Any())
+                {
+                    <section class="table-group" aria-labelledby="small-tables-heading">
+                        <div class="table-group-heading">
+                            <h2 id="small-tables-heading">โต๊ะเล็ก</h2>
+                            <span>สำหรับ 1–2 คน</span>
+                        </div>
+                        <div class="row g-3 g-lg-4">
+                            @foreach (var table in smallTables)
+                            {
+                                var isOccupied = occupiedTableIds.Contains(table.TableID);
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <label class="table-option @(isOccupied ? "occupied" : "")">
+                                        <input type="radio" name="tableId" value="@table.TableID" required
+                                               disabled="@isOccupied"
+                                               data-table-number="@table.TableNumber" data-capacity="@table.Capacity" />
+                                        <span class="table-card">
+                                            <span class="table-selected-mark" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></span>
+                                            <span class="table-card-icon" aria-hidden="true"><i class="bi bi-cup-hot-fill"></i></span>
+                                            <span class="table-name">โต๊ะ @table.TableNumber</span>
+                                            <span class="table-capacity"><i class="bi bi-people-fill"></i>@table.Capacity คน</span>
+                                            <span class="table-availability @(isOccupied ? "occupied" : "")">
+                                                <i class="bi @(isOccupied ? "bi-x-circle-fill" : "bi-check-circle-fill")" aria-hidden="true"></i>
+                                                @(isOccupied ? "ไม่ว่าง" : "ว่าง")
+                                            </span>
+                                        </span>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+                <div class="table-selection-footer">
+                    <div>
+                        <span class="table-selection-label">โต๊ะที่เลือก</span>
+                        <span id="selectedTableLabel" class="table-selection-value" aria-live="polite">ยังไม่ได้เลือกโต๊ะ</span>
+                    </div>
+                    <button type="submit" class="btn-table-confirm">
+                        ยืนยันโต๊ะ <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const selectedTableLabel = document.getElementById('selectedTableLabel');
+            if (selectedTableLabel) {
+                document.querySelectorAll('input[name="tableId"]:not(:disabled)').forEach((radio) => {
+                    radio.addEventListener('change', () => {
+                        selectedTableLabel.textContent =
+                            `โต๊ะ ${radio.dataset.tableNumber} · ${radio.dataset.capacity} คน`;
+                    });
+                });
+            }
+        })();
+    </script>
+}

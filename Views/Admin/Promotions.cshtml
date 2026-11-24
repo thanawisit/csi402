@@ -1,140 +1,749 @@
 @model PromotionManagementViewModel
 @{
     ViewData["Title"] = "จัดการโปรโมชั่น";
+    var activeExtraCount = Model.ExtraPromotions.Count(promotion => promotion.IsActive);
+    var activeGeneralCount = Model.GeneralPromotions.Count(promotion => promotion.IsActive);
 }
 
-<div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div>
-            <span class="badge rounded-pill bg-success-subtle text-success mb-2">PROMOTION MANAGEMENT</span>
-            <h1 class="fw-bold mb-1">จัดการโปรโมชั่น</h1>
-            <p class="text-muted mb-0">แก้ไขแบนเนอร์หน้าแรกและตั้งรหัสส่วนลดสำหรับบุฟเฟต์</p>
-        </div>
-        <a asp-controller="Admin" asp-action="@(User.IsInRole(AppRoles.Manager) ? "Manager" : "Index")" class="btn btn-outline-secondary rounded-3">
-            <i class="bi bi-arrow-left me-2"></i>กลับแดชบอร์ด
-        </a>
-    </div>
+<style>
+    .admin-main {
+        background:
+            radial-gradient(circle at 92% 5%, rgba(189, 49, 36, .08), transparent 22rem),
+            linear-gradient(135deg, #f4f1e8 0%, #edf2e9 100%);
+    }
 
+    .promotion-admin-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+    }
+
+    .promotion-admin-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .promotion-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #bd3124;
+        font-size: .78rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .promotion-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .promotion-summary {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .promotion-summary-card {
+        position: relative;
+        min-height: 104px;
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 17px;
+        background: linear-gradient(145deg, #fffef9 0%, #edf3e8 100%);
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .08);
+        padding: 1.05rem 1.1rem;
+    }
+
+    .promotion-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #91a98e;
+    }
+
+    .promotion-summary-card.member::before {
+        background: #4470a1;
+    }
+
+    .promotion-summary-card.buffet::before {
+        background: #4f8757;
+    }
+
+    .promotion-summary-card.extra {
+        background: linear-gradient(135deg, #fffdf4 0%, #fff1bd 100%);
+    }
+
+    .promotion-summary-card.extra::before {
+        background: #d7a91c;
+    }
+
+    .promotion-summary-card.child {
+        background: linear-gradient(135deg, #fffdf7 0%, #fff0e9 100%);
+    }
+
+    .promotion-summary-card.child::before {
+        background: #bd3124;
+    }
+
+    .promotion-summary-card::after {
+        content: "";
+        position: absolute;
+        right: -28px;
+        bottom: -38px;
+        width: 92px;
+        height: 92px;
+        border: 15px solid rgba(47, 107, 59, .055);
+        border-radius: 50%;
+    }
+
+    .promotion-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .promotion-summary-value {
+        margin-top: .35rem;
+        color: #263029;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+
+    .promotion-editor-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .promotion-panel {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 20px;
+        background: #fbfaf5;
+        box-shadow: 0 14px 32px rgba(58, 76, 61, .09);
+    }
+
+    .promotion-panel-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid #e7ebe3;
+        background: linear-gradient(90deg, #f7faf4 0%, #edf3e8 100%);
+        padding: 1rem 1.15rem;
+    }
+
+    .promotion-panel-header h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 850;
+    }
+
+    .promotion-panel-header p {
+        margin: .18rem 0 0;
+        color: #879087;
+        font-size: .78rem;
+    }
+
+    .promotion-panel-body {
+        padding: 1.15rem;
+    }
+
+    .promotion-panel.member .promotion-panel-header {
+        background: linear-gradient(90deg, #f8fbff 0%, #edf3fb 100%);
+    }
+
+    .promotion-panel.buffet .promotion-panel-header {
+        background: linear-gradient(90deg, #f8fbf5 0%, #edf4e9 100%);
+    }
+
+    .promotion-form-control {
+        border-color: #dce4da;
+        background: #fffef9;
+    }
+
+    .promotion-form-control:focus {
+        border-color: #91a98e;
+        box-shadow: 0 0 0 .25rem rgba(47, 107, 59, .10);
+    }
+
+    .promotion-create-panel {
+        margin-bottom: 1rem;
+    }
+
+    .promotion-create-accent {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 13px;
+        background: #fdebe8;
+        color: #bd3124;
+    }
+
+    .promotion-list-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .promotion-extra-card {
+        position: relative;
+        min-height: 150px;
+        border: 1px solid #e1e6dc;
+        border-radius: 16px;
+        background: #fffef9;
+        box-shadow: 0 8px 20px rgba(58, 76, 61, .055);
+        padding: 1rem;
+    }
+
+    .promotion-extra-card::after {
+        content: "";
+        position: absolute;
+        right: -22px;
+        bottom: -32px;
+        width: 82px;
+        height: 82px;
+        border: 13px solid rgba(47, 107, 59, .055);
+        border-radius: 50%;
+    }
+
+    .promotion-status {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: .32rem .58rem;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .promotion-status.active {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .promotion-status.inactive {
+        background: #f0f1ed;
+        color: #69716b;
+    }
+
+    .child-promotion-panel {
+        border: 1px solid #e3dcca;
+        border-radius: 20px;
+        background:
+            linear-gradient(135deg, rgba(255, 252, 244, .96) 0%, rgba(255, 240, 233, .92) 100%);
+        box-shadow: 0 12px 28px rgba(58, 76, 61, .07);
+    }
+
+    .child-promotion-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid rgba(189, 49, 36, .10);
+        padding: 1rem 1.15rem;
+    }
+
+    .child-promotion-body {
+        padding: 1.15rem;
+    }
+
+    @@media (max-width: 991.98px) {
+        .promotion-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .promotion-editor-grid,
+        .promotion-list-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .promotion-admin-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .promotion-admin-header,
+        .promotion-panel-header,
+        .child-promotion-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .promotion-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+</style>
+
+<div class="promotion-admin-page">
     @if (TempData["AdminMessage"] != null)
     {
-        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
     }
+    @if (TempData["AdminError"] != null)
+    {
+        <div class="alert alert-danger rounded-3">@TempData["AdminError"]</div>
+    }
+
+    <header class="promotion-admin-header">
+        <div>
+            <span class="promotion-eyebrow">Promotion management</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">จัดการโปรโมชั่น</h1>
+            <p class="text-muted mb-0">แก้ไขแบนเนอร์หน้าแรก สร้างโปรโมชันพิเศษ และตั้งโค้ดบุฟเฟต์</p>
+        </div>
+        <a asp-controller="Admin"
+           asp-action="@(User.IsInRole(AppRoles.Manager) ? "Manager" : "Index")"
+           class="btn btn-outline-secondary rounded-3">
+            <i class="bi bi-arrow-left me-1"></i>กลับแดชบอร์ด
+        </a>
+    </header>
+
+    <section class="promotion-summary" aria-label="สรุปโปรโมชั่น">
+        <article class="promotion-summary-card member">
+            <div class="promotion-summary-label">แบนเนอร์สมาชิก</div>
+            <div class="promotion-summary-value">@(Model.Membership.IsActive ? "เปิด" : "ปิด")</div>
+        </article>
+        <article class="promotion-summary-card buffet">
+            <div class="promotion-summary-label">แบนเนอร์บุฟเฟต์</div>
+            <div class="promotion-summary-value">@(Model.Buffet.IsActive ? "เปิด" : "ปิด")</div>
+        </article>
+        <article class="promotion-summary-card extra">
+            <div class="promotion-summary-label">โปรพิเศษที่ใช้งาน</div>
+            <div class="promotion-summary-value">@activeExtraCount</div>
+        </article>
+        <article class="promotion-summary-card member">
+            <div class="promotion-summary-label">โค้ดทั่วไปที่เปิด</div>
+            <div class="promotion-summary-value">@activeGeneralCount</div>
+        </article>
+        <article class="promotion-summary-card child">
+            <div class="promotion-summary-label">โค้ดเด็กบุฟเฟต์</div>
+            <div class="promotion-summary-value">@(Model.ChildBuffet.IsActive ? "เปิด" : "ปิด")</div>
+        </article>
+    </section>
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3"></div>
 
     <form asp-action="Promotions" method="post">
         @Html.AntiForgeryToken()
-        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        <input type="hidden" name="ChildBuffet.Code" value="@Model.ChildBuffet.Code" />
+        <input type="hidden" name="ChildBuffet.StartDate" value="@(Model.ChildBuffet.StartDate?.ToString("yyyy-MM-dd"))" />
+        <input type="hidden" name="ChildBuffet.EndDate" value="@(Model.ChildBuffet.EndDate?.ToString("yyyy-MM-dd"))" />
+        <input type="hidden" name="ChildBuffet.IsActive" value="@(Model.ChildBuffet.IsActive.ToString().ToLowerInvariant())" />
+        <input type="hidden" name="ChildBuffet.MaxFreeChildren" value="@Model.ChildBuffet.MaxFreeChildren" />
+        <input type="hidden" name="ChildBuffet.MaxChildAge" value="@Model.ChildBuffet.MaxChildAge" />
+        <input type="hidden" name="ChildBuffet.MaxChildHeightCm" value="@Model.ChildBuffet.MaxChildHeightCm" />
 
-        <div class="row g-4 mb-4">
-            <div class="col-lg-6">
-                <section class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2 class="h5 fw-bold mb-0">แบนเนอร์สมาชิก</h2>
-                            <div class="form-check form-switch">
-                                <input asp-for="Membership.IsActive" class="form-check-input" />
-                                <label asp-for="Membership.IsActive" class="form-check-label">แสดง</label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Membership.Kicker" class="form-label">ข้อความกำกับ</label>
-                            <input asp-for="Membership.Kicker" class="form-control" />
-                            <span asp-validation-for="Membership.Kicker" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Membership.Headline" class="form-label">หัวข้อ (ขึ้นบรรทัดใหม่ได้)</label>
-                            <textarea asp-for="Membership.Headline" class="form-control" rows="2"></textarea>
-                            <span asp-validation-for="Membership.Headline" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Membership.Description" class="form-label">รายละเอียด</label>
-                            <textarea asp-for="Membership.Description" class="form-control" rows="2"></textarea>
-                            <span asp-validation-for="Membership.Description" class="text-danger"></span>
-                        </div>
-                        <div>
-                            <label asp-for="Membership.LinkText" class="form-label">ข้อความปุ่ม</label>
-                            <input asp-for="Membership.LinkText" class="form-control" />
-                            <span asp-validation-for="Membership.LinkText" class="text-danger"></span>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <div class="col-lg-6">
-                <section class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h2 class="h5 fw-bold mb-0">แบนเนอร์บุฟเฟต์</h2>
-                            <div class="form-check form-switch">
-                                <input asp-for="Buffet.IsActive" class="form-check-input" />
-                                <label asp-for="Buffet.IsActive" class="form-check-label">แสดง</label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Buffet.Kicker" class="form-label">ข้อความกำกับ</label>
-                            <input asp-for="Buffet.Kicker" class="form-control" />
-                            <span asp-validation-for="Buffet.Kicker" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Buffet.Headline" class="form-label">หัวข้อ (ขึ้นบรรทัดใหม่ได้)</label>
-                            <textarea asp-for="Buffet.Headline" class="form-control" rows="2"></textarea>
-                            <span asp-validation-for="Buffet.Headline" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Buffet.Description" class="form-label">รายละเอียด</label>
-                            <textarea asp-for="Buffet.Description" class="form-control" rows="2"></textarea>
-                            <span asp-validation-for="Buffet.Description" class="text-danger"></span>
-                        </div>
-                        <div>
-                            <label asp-for="Buffet.LinkText" class="form-label">ข้อความปุ่ม</label>
-                            <input asp-for="Buffet.LinkText" class="form-control" />
-                            <span asp-validation-for="Buffet.LinkText" class="text-danger"></span>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </div>
-
-        <section class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-body p-4">
-                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+        <section class="promotion-editor-grid">
+            <article class="promotion-panel member">
+                <header class="promotion-panel-header">
                     <div>
-                        <h2 class="h5 fw-bold mb-1">โค้ดเด็กกินฟรีสำหรับบุฟเฟต์</h2>
-                        <p class="text-muted mb-0">ลดค่าบุฟเฟต์ 299 บาทต่อเด็ก 1 คน อายุไม่เกิน 10 ปีและแต่งกายตามธีม</p>
+                        <h2>แบนเนอร์สมาชิก</h2>
+                        <p>แสดงสิทธิพิเศษสำหรับลูกค้าบนหน้าแรก</p>
                     </div>
                     <div class="form-check form-switch">
-                        <input asp-for="ChildBuffet.IsActive" class="form-check-input" />
-                        <label asp-for="ChildBuffet.IsActive" class="form-check-label">เปิดใช้โค้ด</label>
+                        <input asp-for="Membership.IsActive" class="form-check-input" />
+                        <label asp-for="Membership.IsActive" class="form-check-label">แสดง</label>
+                    </div>
+                </header>
+                <div class="promotion-panel-body">
+                    <div class="mb-3">
+                        <label asp-for="Membership.Kicker" class="form-label fw-semibold">ข้อความกำกับ</label>
+                        <input asp-for="Membership.Kicker" class="form-control promotion-form-control" />
+                        <span asp-validation-for="Membership.Kicker" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Membership.Headline" class="form-label fw-semibold">หัวข้อ</label>
+                        <textarea asp-for="Membership.Headline" class="form-control promotion-form-control" rows="2"></textarea>
+                        <span asp-validation-for="Membership.Headline" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Membership.Description" class="form-label fw-semibold">รายละเอียด</label>
+                        <textarea asp-for="Membership.Description" class="form-control promotion-form-control" rows="2"></textarea>
+                        <span asp-validation-for="Membership.Description" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Membership.LinkText" class="form-label fw-semibold">ข้อความปุ่ม</label>
+                        <input asp-for="Membership.LinkText" class="form-control promotion-form-control" />
+                        <span asp-validation-for="Membership.LinkText" class="text-danger"></span>
                     </div>
                 </div>
+            </article>
 
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label asp-for="ChildBuffet.Code" class="form-label">รหัสส่วนลด</label>
-                        <input asp-for="ChildBuffet.Code" class="form-control text-uppercase" autocomplete="off" />
-                        <span asp-validation-for="ChildBuffet.Code" class="text-danger"></span>
-                        <div class="form-text">ตัวอักษรอังกฤษ ตัวเลข ขีดกลาง หรือขีดล่าง 3-50 ตัว</div>
+            <article class="promotion-panel buffet">
+                <header class="promotion-panel-header">
+                    <div>
+                        <h2>แบนเนอร์บุฟเฟต์</h2>
+                        <p>แสดงโค้ดและสิทธิพิเศษบุฟเฟต์</p>
                     </div>
-                    <div class="col-md-4">
-                        <label asp-for="ChildBuffet.StartDate" class="form-label">วันที่เริ่มใช้</label>
-                        <input asp-for="ChildBuffet.StartDate" type="date" class="form-control" />
-                        <span asp-validation-for="ChildBuffet.StartDate" class="text-danger"></span>
+                    <div class="form-check form-switch">
+                        <input asp-for="Buffet.IsActive" class="form-check-input" />
+                        <label asp-for="Buffet.IsActive" class="form-check-label">แสดง</label>
                     </div>
-                    <div class="col-md-4">
-                        <label asp-for="ChildBuffet.EndDate" class="form-label">วันที่สิ้นสุด</label>
-                        <input asp-for="ChildBuffet.EndDate" type="date" class="form-control" />
-                        <span asp-validation-for="ChildBuffet.EndDate" class="text-danger"></span>
+                </header>
+                <div class="promotion-panel-body">
+                    <div class="mb-3">
+                        <label asp-for="Buffet.Kicker" class="form-label fw-semibold">ข้อความกำกับ</label>
+                        <input asp-for="Buffet.Kicker" class="form-control promotion-form-control" />
+                        <span asp-validation-for="Buffet.Kicker" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Buffet.Headline" class="form-label fw-semibold">หัวข้อ</label>
+                        <textarea asp-for="Buffet.Headline" class="form-control promotion-form-control" rows="2"></textarea>
+                        <span asp-validation-for="Buffet.Headline" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Buffet.Description" class="form-label fw-semibold">รายละเอียด</label>
+                        <textarea asp-for="Buffet.Description" class="form-control promotion-form-control" rows="2"></textarea>
+                        <span asp-validation-for="Buffet.Description" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Buffet.LinkText" class="form-label fw-semibold">ข้อความปุ่ม</label>
+                        <input asp-for="Buffet.LinkText" class="form-control promotion-form-control" />
+                        <span asp-validation-for="Buffet.LinkText" class="text-danger"></span>
                     </div>
                 </div>
-                <div class="alert alert-info mt-3 mb-0">
-                    ลูกค้ากรอกรหัสและจำนวนเด็กในหน้าชำระเงินบุฟเฟต์ ระบบตรวจรหัสและวันที่ ส่วนพนักงานตรวจอายุและการแต่งกายที่ร้าน
+            </article>
+        </section>
+
+        <div class="d-flex justify-content-end mb-4">
+            <button type="submit" class="btn btn-success px-4 py-2">
+                <i class="bi bi-check2 me-1"></i>บันทึกแบนเนอร์
+            </button>
+        </div>
+    </form>
+
+    <section id="promotion-create" class="promotion-panel promotion-create-panel">
+        <header class="promotion-panel-header">
+            <div class="d-flex align-items-center gap-3">
+                <span class="promotion-create-accent">
+                    <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                </span>
+                <div>
+                    <h2>เพิ่มโปรโมชั่นใหม่</h2>
+                    <p>สร้างแบนเนอร์พิเศษแสดงบนหน้าแรก</p>
+                </div>
+            </div>
+        </header>
+        <div class="promotion-panel-body">
+            <form asp-action="CreatePromotion" method="post" class="row g-3">
+                @Html.AntiForgeryToken()
+                <div class="col-md-6">
+                    <label for="createKicker" class="form-label fw-semibold">ข้อความกำกับ</label>
+                    <input id="createKicker" name="Kicker" class="form-control promotion-form-control" maxlength="100" required />
+                </div>
+                <div class="col-md-6">
+                    <label for="createLinkText" class="form-label fw-semibold">ข้อความปุ่ม</label>
+                    <input id="createLinkText" name="LinkText" class="form-control promotion-form-control" value="ดูรายละเอียด" maxlength="100" required />
+                </div>
+                <div class="col-12">
+                    <label for="createHeadline" class="form-label fw-semibold">ชื่อโปรโมชั่น</label>
+                    <input id="createHeadline" name="Headline" class="form-control promotion-form-control" maxlength="200" required />
+                </div>
+                <div class="col-12">
+                    <label for="createDescription" class="form-label fw-semibold">รายละเอียด</label>
+                    <textarea id="createDescription" name="Description" class="form-control promotion-form-control" rows="3" maxlength="500" required></textarea>
+                </div>
+                <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="form-check form-switch">
+                        <input id="createIsActive" name="IsActive" type="checkbox" value="true" class="form-check-input" checked />
+                        <label for="createIsActive" class="form-check-label">เปิดใช้งานทันที</label>
+                    </div>
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="bi bi-plus-lg me-1"></i>เพิ่มโปรโมชั่น
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    @if (Model.ExtraPromotions.Count > 0)
+    {
+        <section class="promotion-panel mt-4 mb-4">
+            <header class="promotion-panel-header">
+                <div>
+                    <h2>โปรโมชั่นพิเศษที่เพิ่มไว้</h2>
+                    <p>สถานะและเนื้อหาที่แสดงบนหน้าแรก</p>
+                </div>
+            </header>
+            <div class="promotion-panel-body">
+                <div class="promotion-list-grid">
+                    @foreach (var promotion in Model.ExtraPromotions)
+                    {
+                        <article class="promotion-extra-card">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <span class="promotion-status @(promotion.IsActive ? "active" : "inactive") mb-2">
+                                        @(promotion.IsActive ? "กำลังใช้งาน" : "ปิดใช้งาน")
+                                    </span>
+                                    <div class="small text-danger fw-bold">@promotion.Kicker</div>
+                                    <h3 class="h6 fw-bold mt-1 mb-1" style="white-space: pre-line">@promotion.Headline</h3>
+                                    <p class="text-muted small mb-0">@promotion.Description</p>
+                                </div>
+                                <form asp-action="DeletePromotion" method="post"
+                                      onsubmit="return confirm('ยืนยันการลบโปรโมชั่นนี้?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="promotionId" value="@promotion.PromotionId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="ลบ @promotion.Headline">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </article>
+                    }
                 </div>
             </div>
         </section>
+    }
 
-        <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-success px-4 py-2">
-                <i class="bi bi-check2 me-1"></i>บันทึกโปรโมชั่น
-            </button>
+    <section class="promotion-panel promotion-create-panel mb-4">
+        <header class="promotion-panel-header">
+            <div class="d-flex align-items-center gap-3">
+                <span class="promotion-create-accent">
+                    <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
+                </span>
+                <div>
+                    <h2>สร้างโค้ดส่วนลดใช้งานจริง</h2>
+                    <p>ใช้ได้กับบุฟเฟต์ อาลาคาร์ต หรือทั้งสองแบบตามเงื่อนไขที่กำหนด</p>
+                </div>
+            </div>
+        </header>
+        <div class="promotion-panel-body">
+            <form asp-action="CreateGeneralPromotion" method="post" class="row g-3">
+                @Html.AntiForgeryToken()
+                <div class="col-md-3">
+                    <label for="generalCode" class="form-label fw-semibold">โค้ด</label>
+                    <input id="generalCode" name="Code" class="form-control promotion-form-control text-uppercase"
+                           maxlength="50" minlength="3" autocomplete="off" required />
+                </div>
+                <div class="col-md-5">
+                    <label for="generalName" class="form-label fw-semibold">ชื่อโปรโมชั่น</label>
+                    <input id="generalName" name="Name" class="form-control promotion-form-control"
+                           maxlength="200" required />
+                </div>
+                <div class="col-md-2">
+                    <label for="generalDiscountType" class="form-label fw-semibold">ประเภทส่วนลด</label>
+                    <select id="generalDiscountType" name="DiscountType" class="form-select promotion-form-control">
+                        <option value="Percent">เปอร์เซ็นต์ (%)</option>
+                        <option value="Fixed">จำนวนบาท (฿)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="generalDiscountValue" class="form-label fw-semibold">มูลค่า</label>
+                    <input id="generalDiscountValue" name="DiscountValue" type="number"
+                           class="form-control promotion-form-control" min="0.01" max="100000" step="0.01" value="40" required />
+                </div>
+                <div class="col-md-3">
+                    <label for="generalAppliesTo" class="form-label fw-semibold">ใช้กับแพ็กเกจ</label>
+                    <select id="generalAppliesTo" name="AppliesTo" class="form-select promotion-form-control">
+                        <option value="Both">ทั้งบุฟเฟต์และอาลาคาร์ต</option>
+                        <option value="Buffet">เฉพาะบุฟเฟต์</option>
+                        <option value="Alacarte">เฉพาะอาลาคาร์ต</option>
+                    </select>
+                </div>
+                <div class="col-md-3" id="targetMenuField">
+                    <label for="generalTargetMenuId" class="form-label fw-semibold">เมนูที่ได้รับฟรี</label>
+                    <select id="generalTargetMenuId" name="TargetMenuId" class="form-select promotion-form-control">
+                        <option value="">ไม่ระบุเมนูเฉพาะ</option>
+                        @foreach (var menu in (IReadOnlyList<Menu>)ViewBag.PromotionMenus)
+                        {
+                            <option value="@menu.MenuId">@menu.MenuName (฿@menu.Price.ToString("N2"))</option>
+                        }
+                    </select>
+                    <div class="form-text">ใช้กับโค้ด Fixed เช่น ชามะลิฟรี 1 รายการ</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="generalMinSubtotal" class="form-label fw-semibold">ยอดขั้นต่ำ (บาท)</label>
+                    <input id="generalMinSubtotal" name="MinSubtotal" type="number"
+                           class="form-control promotion-form-control" min="0" max="100000" step="0.01" value="0" />
+                </div>
+                <div class="col-md-3">
+                    <label for="generalStartDate" class="form-label fw-semibold">วันที่เริ่ม</label>
+                    <input id="generalStartDate" name="StartDate" type="date"
+                           class="form-control promotion-form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label for="generalEndDate" class="form-label fw-semibold">วันที่สิ้นสุด</label>
+                    <input id="generalEndDate" name="EndDate" type="date"
+                           class="form-control promotion-form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label for="generalMaxUses" class="form-label fw-semibold">จำนวนครั้งสูงสุด</label>
+                    <input id="generalMaxUses" name="MaxUses" type="number"
+                           class="form-control promotion-form-control" min="1" max="100000"
+                           placeholder="ไม่จำกัด" />
+                </div>
+                <div class="col-md-3">
+                    <label for="generalMaxUsesPerUser" class="form-label fw-semibold">จำนวนครั้งต่อสมาชิก</label>
+                    <input id="generalMaxUsesPerUser" name="MaxUsesPerUser" type="number"
+                           class="form-control promotion-form-control" min="1" max="100000"
+                           value="1" />
+                </div>
+                <div class="col-md-9">
+                    <label for="generalDescription" class="form-label fw-semibold">รายละเอียด</label>
+                    <input id="generalDescription" name="Description" class="form-control promotion-form-control"
+                           maxlength="500" />
+                </div>
+                <div class="col-12 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex flex-wrap gap-4">
+                        <div class="form-check">
+                            <input id="generalBirthMonthOnly" name="BirthMonthOnly" type="checkbox"
+                                   value="true" class="form-check-input" />
+                            <label for="generalBirthMonthOnly" class="form-check-label">เฉพาะเดือนเกิดลูกค้า</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="generalFirstOrderOnly" name="FirstOrderOnly" type="checkbox"
+                                   value="true" class="form-check-input" checked />
+                            <label for="generalFirstOrderOnly" class="form-check-label">เฉพาะออเดอร์แรกของสมาชิก</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="generalIsActive" name="IsActive" type="checkbox"
+                                   value="true" class="form-check-input" checked />
+                            <label for="generalIsActive" class="form-check-label">เปิดใช้งานทันที</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="bi bi-plus-lg me-1"></i>สร้างโค้ด
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    @if (Model.GeneralPromotions.Count > 0)
+    {
+        <section class="promotion-panel mb-4">
+            <header class="promotion-panel-header">
+                <div>
+                    <h2>โค้ดส่วนลดทั่วไป</h2>
+                    <p>โค้ดที่ลูกค้ากรอกได้ระหว่างชำระเงิน</p>
+                </div>
+            </header>
+            <div class="promotion-panel-body">
+                <div class="promotion-list-grid">
+                    @foreach (var promotion in Model.GeneralPromotions)
+                    {
+                        <article class="promotion-extra-card">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <span class="promotion-status @(promotion.IsActive ? "active" : "inactive") mb-2">
+                                        @(promotion.IsActive ? "กำลังใช้งาน" : "ปิดใช้งาน")
+                                    </span>
+                                    <div class="small text-danger fw-bold">@promotion.Code</div>
+                                    <h3 class="h6 fw-bold mt-1 mb-1">@promotion.Name</h3>
+                                    <p class="text-muted small mb-1">
+                                        @(promotion.DiscountType == "Percent"
+                                            ? $"ลด {promotion.DiscountValue:N2}%"
+                                            : $"ลด ฿{promotion.DiscountValue:N2}")
+                                        ·
+                                        @(promotion.AppliesTo == "Both"
+                                            ? "ทั้งบุฟเฟต์และอาลาคาร์ต"
+                                            : promotion.AppliesTo == "Buffet"
+                                                ? "เฉพาะบุฟเฟต์"
+                                                : "เฉพาะอาลาคาร์ต")
+                                    </p>
+                                    <p class="text-muted small mb-0">
+                                        ใช้แล้ว @promotion.UsedCount ครั้ง
+                                        @(promotion.MaxUses.HasValue ? $"จากสูงสุด {promotion.MaxUses.Value} ครั้ง" : "")
+                                        @if (promotion.BirthMonthOnly) { <span>· เฉพาะเดือนเกิด</span> }
+                                        @if (promotion.FirstOrderOnly) { <span>· เฉพาะออเดอร์แรก</span> }
+                                        @if (promotion.MaxUsesPerUser.HasValue) { <span>· @promotion.MaxUsesPerUser ครั้งต่อสมาชิก</span> }
+                                    </p>
+                                </div>
+                                <form asp-action="DeleteGeneralPromotion" method="post"
+                                      onsubmit="return confirm('ยืนยันการลบโค้ดโปรโมชั่นนี้?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="promotionId" value="@promotion.PromotionId" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            aria-label="ลบ @promotion.Code">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <form asp-action="Promotions" method="post" class="child-promotion-panel">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Membership.Kicker" value="@Model.Membership.Kicker" />
+        <input type="hidden" name="Membership.Headline" value="@Model.Membership.Headline" />
+        <input type="hidden" name="Membership.Description" value="@Model.Membership.Description" />
+        <input type="hidden" name="Membership.LinkText" value="@Model.Membership.LinkText" />
+        <input type="hidden" name="Membership.IsActive" value="@(Model.Membership.IsActive.ToString().ToLowerInvariant())" />
+        <input type="hidden" name="Buffet.Kicker" value="@Model.Buffet.Kicker" />
+        <input type="hidden" name="Buffet.Headline" value="@Model.Buffet.Headline" />
+        <input type="hidden" name="Buffet.Description" value="@Model.Buffet.Description" />
+        <input type="hidden" name="Buffet.LinkText" value="@Model.Buffet.LinkText" />
+        <input type="hidden" name="Buffet.IsActive" value="@(Model.Buffet.IsActive.ToString().ToLowerInvariant())" />
+
+        <header class="child-promotion-header">
+            <div>
+                <h2 class="h5 fw-bold mb-1">โค้ดเด็กกินฟรีสำหรับบุฟเฟต์</h2>
+                <p class="text-muted mb-0">
+                    ลดค่าบุฟเฟต์ 299 บาทต่อเด็ก · สูงไม่เกิน @Model.ChildBuffet.MaxChildHeightCm ซม.
+                    · อายุไม่เกิน @Model.ChildBuffet.MaxChildAge ปี
+                    · สูงสุด @Model.ChildBuffet.MaxFreeChildren คนต่อโต๊ะ
+                </p>
+            </div>
+            <div class="form-check form-switch">
+                <input asp-for="ChildBuffet.IsActive" class="form-check-input" />
+                <label asp-for="ChildBuffet.IsActive" class="form-check-label">เปิดใช้โค้ด</label>
+            </div>
+        </header>
+        <div class="child-promotion-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="ChildBuffet.Code" class="form-label fw-semibold">รหัสส่วนลด</label>
+                    <input asp-for="ChildBuffet.Code" class="form-control promotion-form-control text-uppercase" autocomplete="off" />
+                    <span asp-validation-for="ChildBuffet.Code" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ChildBuffet.StartDate" class="form-label fw-semibold">วันที่เริ่มใช้</label>
+                    <input asp-for="ChildBuffet.StartDate" type="date" class="form-control promotion-form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ChildBuffet.EndDate" class="form-label fw-semibold">วันที่สิ้นสุด</label>
+                    <input asp-for="ChildBuffet.EndDate" type="date" class="form-control promotion-form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ChildBuffet.MaxFreeChildren" class="form-label fw-semibold">จำนวนเด็กฟรีสูงสุด</label>
+                    <input asp-for="ChildBuffet.MaxFreeChildren" type="number" min="1" max="20"
+                           class="form-control promotion-form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ChildBuffet.MaxChildAge" class="form-label fw-semibold">อายุเด็กสูงสุด</label>
+                    <input asp-for="ChildBuffet.MaxChildAge" type="number" min="1" max="18"
+                           class="form-control promotion-form-control" />
+                    <div class="form-text">ปี เช่น 10 ปี</div>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ChildBuffet.MaxChildHeightCm" class="form-label fw-semibold">ส่วนสูงสูงสุด (ซม.)</label>
+                    <input asp-for="ChildBuffet.MaxChildHeightCm" type="number" min="50" max="200"
+                           class="form-control promotion-form-control" />
+                    <div class="form-text">เช่น 120 ซม.</div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-success px-4">
+                    <i class="bi bi-check2 me-1"></i>บันทึกโค้ด
+                </button>
+            </div>
         </div>
     </form>
 </div>

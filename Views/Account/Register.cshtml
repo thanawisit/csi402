@@ -4,82 +4,347 @@
     ViewData["Title"] = "สมัครสมาชิก";
 }
 
-<div class="container mt-5 pb-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-7 col-xl-6">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4 p-md-5">
-                    <h2 class="text-danger text-center fw-bold mb-2">สมัครสมาชิก</h2>
-                    <p class="text-muted text-center mb-4">สร้างบัญชีเพื่อสั่งอาหารและติดตามรายการสั่งซื้อ</p>
+<style>
+    .register-shell {
+        min-height: calc(100vh - 155px);
+        display: grid;
+        place-items: center;
+        padding: 2.5rem 1rem;
+        background: radial-gradient(circle at 10% 20%, rgba(201, 42, 42, .04), transparent 40%),
+                    radial-gradient(circle at 90% 80%, rgba(224, 49, 49, .04), transparent 40%);
+    }
 
-                    <form asp-action="Register" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+    .register-card {
+        display: grid;
+        width: min(1120px, 100%);
+        grid-template-columns: minmax(280px, .72fr) minmax(520px, 1.28fr);
+        overflow: hidden;
+        border: 1px solid rgba(201, 42, 42, .14);
+        border-radius: 24px;
+        background: #ffffff;
+        box-shadow: 0 24px 60px rgba(166, 30, 30, .10);
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="FullName" class="form-label fw-semibold"></label>
-                            <input asp-for="FullName" class="form-control" autocomplete="name" placeholder="ชื่อ - นามสกุล" />
-                            <span asp-validation-for="FullName" class="text-danger"></span>
-                        </div>
+    .register-brand-panel {
+        position: relative;
+        min-height: 640px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+        background:
+            linear-gradient(180deg, rgba(30, 15, 15, .2) 0%, rgba(140, 20, 20, .94) 100%),
+            url('/images/menus/2.jpg') center / cover no-repeat;
+        color: #fff;
+        padding: 2.25rem;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label fw-semibold"></label>
-                            <input asp-for="Email" class="form-control" autocomplete="email" placeholder="name@example.com" />
-                            <span asp-validation-for="Email" class="text-danger"></span>
-                        </div>
+    .register-brand-panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 20% 30%, rgba(245, 158, 11, .25), transparent 60%);
+        pointer-events: none;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="PhoneNumber" class="form-label fw-semibold"></label>
-                            <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" inputmode="tel" placeholder="เช่น 08xxxxxxxx" />
-                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                            <div class="form-text">ใช้ติดต่อเกี่ยวกับรายการสั่งซื้อเมื่อจำเป็น</div>
-                        </div>
+    .register-brand-panel::after {
+        content: "";
+        position: absolute;
+        right: -72px;
+        bottom: -105px;
+        width: 240px;
+        height: 240px;
+        border: 30px solid rgba(255, 255, 255, .1);
+        border-radius: 50%;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="DateOfBirth" class="form-label fw-semibold"></label>
-                            <input asp-for="DateOfBirth" class="form-control" autocomplete="bday" />
-                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
-                        </div>
+    .register-brand-copy {
+        position: relative;
+        z-index: 1;
+    }
 
-                        <div class="mb-3">
-                            <label asp-for="Password" class="form-label fw-semibold"></label>
-                            <input asp-for="Password" class="form-control" autocomplete="new-password" />
-                            <span asp-validation-for="Password" class="text-danger"></span>
-                            <div class="form-text">ใช้รหัสผ่านอย่างน้อย 8 ตัวอักษร</div>
-                        </div>
+    .register-brand-mark {
+        display: inline-grid;
+        width: 56px;
+        height: 56px;
+        place-items: center;
+        border-radius: 18px;
+        background: #ffffff;
+        color: #c92a2a;
+        font-size: 1.5rem;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .2);
+    }
 
-                        <div class="mb-4">
-                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
-                            <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
-                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                        </div>
+    .register-brand-copy h2 {
+        margin: 1.25rem 0 .5rem;
+        color: #fff;
+        font-family: 'Kanit', sans-serif;
+        font-size: clamp(1.85rem, 3.5vw, 2.75rem);
+        font-weight: 800;
+        line-height: 1.15;
+    }
 
-                        <div class="form-check mb-2">
-                            <input asp-for="TermsAccepted" class="form-check-input" required />
-                            <label asp-for="TermsAccepted" class="form-check-label">
-                                ยอมรับ<a asp-controller="Home" asp-action="Terms">ข้อกำหนดการใช้บริการ</a>
-                                และรับทราบ<a asp-controller="Home" asp-action="Privacy">นโยบายความเป็นส่วนตัว</a>
-                            </label>
-                            <span asp-validation-for="TermsAccepted" class="text-danger d-block"></span>
-                        </div>
+    .register-brand-copy p {
+        max-width: 340px;
+        margin: 0;
+        color: rgba(255, 255, 255, .88);
+        font-size: .95rem;
+        line-height: 1.6;
+    }
 
-                        <div class="form-check mb-4">
-                            <input asp-for="MarketingConsent" class="form-check-input" />
-                            <label asp-for="MarketingConsent" class="form-check-label">
-                                ยินยอมรับข่าวสารและโปรโมชันทางอีเมลหรือโทรศัพท์ (ไม่บังคับ)
-                            </label>
-                        </div>
+    .register-form-panel {
+        padding: 2.5rem 2.25rem;
+        background: #ffffff;
+    }
 
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-danger btn-lg fw-bold">ยืนยันการสมัครสมาชิก</button>
-                        </div>
-                    </form>
+    .register-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        color: #c92a2a;
+        font-size: .78rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        background: #fff5f5;
+        padding: .25rem .75rem;
+        border-radius: 999px;
+        border: 1px solid #ffe3e3;
+    }
 
-                    <p class="text-center text-muted mt-4 mb-0">
-                        มีบัญชีแล้ว? <a asp-controller="Account" asp-action="Login">เข้าสู่ระบบ</a>
-                    </p>
-                </div>
+    .register-form-panel h1 {
+        margin: .65rem 0 .25rem;
+        color: #1f1d1d;
+        font-family: 'Kanit', sans-serif;
+        font-size: 2.15rem;
+        font-weight: 800;
+    }
+
+    .register-subtitle {
+        margin-bottom: 1.5rem;
+        color: #6b6360;
+        font-size: .92rem;
+    }
+
+    .register-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 1rem;
+    }
+
+    .register-field {
+        margin-bottom: .95rem;
+    }
+
+    .register-field.full {
+        grid-column: 1 / -1;
+    }
+
+    .register-field label {
+        color: #2b2624;
+        font-size: .88rem;
+        font-weight: 600;
+        margin-bottom: .35rem;
+    }
+
+    .register-field .form-control {
+        min-height: 48px;
+        border: 1.5px solid #f0ebe6;
+        border-radius: 12px;
+        background: #faf8f7;
+        font-size: .92rem;
+        color: #1f1d1d;
+        transition: all .2s ease;
+    }
+
+    .register-field .form-control:focus {
+        border-color: #c92a2a;
+        background: #ffffff;
+        box-shadow: 0 0 0 .25rem rgba(201, 42, 42, .12);
+    }
+
+    .register-field .form-text {
+        font-size: .78rem;
+        color: #8c827a;
+    }
+
+    .register-consents {
+        display: grid;
+        gap: .65rem;
+        border: 1px solid #ffe3e3;
+        border-radius: 14px;
+        background: #fffbfb;
+        padding: 1rem;
+        margin-top: .5rem;
+    }
+
+    .register-consents .form-check-input:checked {
+        background-color: #c92a2a;
+        border-color: #c92a2a;
+    }
+
+    .register-consents .form-check-label {
+        font-size: .86rem;
+        color: #4a423f;
+        line-height: 1.5;
+    }
+
+    .register-consents a {
+        color: #c92a2a;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    .register-submit {
+        min-height: 52px;
+        border: 0;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #c92a2a 0%, #e03131 100%);
+        color: #ffffff;
+        font-family: 'Kanit', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+        box-shadow: 0 10px 24px rgba(201, 42, 42, .25);
+        transition: transform .18s ease, box-shadow .18s ease;
+        cursor: pointer;
+    }
+
+    .register-submit:hover {
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #b02525 0%, #c92a2a 100%);
+        box-shadow: 0 14px 28px rgba(201, 42, 42, .32);
+        color: #ffffff;
+    }
+
+    .register-login-link {
+        color: #c92a2a;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .register-login-link:hover {
+        color: #a61e1e;
+        text-decoration: underline;
+    }
+
+    @@media (max-width: 767.98px) {
+        .register-shell {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .register-card {
+            grid-template-columns: 1fr;
+        }
+
+        .register-brand-panel {
+            min-height: 220px;
+            padding: 1.5rem;
+        }
+
+        .register-brand-copy h2 {
+            margin-top: .75rem;
+            font-size: 1.85rem;
+        }
+
+        .register-form-panel {
+            padding: 1.5rem 1.25rem;
+        }
+
+        .register-form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="register-shell">
+    <div class="register-card">
+        <aside class="register-brand-panel" aria-label="สมัครสมาชิกอีสาน เด้อ">
+            <div class="register-brand-copy">
+                <span class="register-brand-mark"><i class="bi bi-person-plus-fill" aria-hidden="true"></i></span>
+                <h2>เข้าร่วมเป็นครอบครัว<br />อีสาน เด้อ</h2>
+                <p>สมัครง่าย รับสิทธิพิเศษ โปรโมชั่นสมาชิก สั่งอาหารและจองโต๊ะสะดวกสบายในที่เดียว</p>
             </div>
-        </div>
+        </aside>
+
+        <section class="register-form-panel">
+            <span class="register-kicker"><i class="bi bi-stars"></i> สมัครสมาชิกใหม่</span>
+            <h1>สร้างบัญชีลูกค้า</h1>
+            <p class="register-subtitle">กรอกข้อมูลเพื่อเริ่มต้นสัมผัสความแซ่บกับเรา</p>
+
+            <form asp-action="Register" method="post">
+                <input asp-for="ReturnUrl" type="hidden" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
+
+                <div class="register-form-grid">
+                    <div class="register-field">
+                        <label asp-for="FullName" class="form-label"></label>
+                        <input asp-for="FullName" class="form-control" autocomplete="name" placeholder="ชื่อ - นามสกุล" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="register-field">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" autocomplete="email" placeholder="name@example.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="register-field">
+                        <label asp-for="PhoneNumber" class="form-label"></label>
+                        <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" inputmode="tel" placeholder="เช่น 08xxxxxxxx" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="register-field">
+                        <label asp-for="DateOfBirth" class="form-label"></label>
+                        <input asp-for="DateOfBirth" class="form-control" autocomplete="bday"
+                               max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                    </div>
+
+                    <div class="register-field">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" autocomplete="new-password" placeholder="ตั้งรหัสผ่าน" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                        <div class="form-text">รหัสผ่านอย่างน้อย 8 ตัวอักษร</div>
+                    </div>
+
+                    <div class="register-field">
+                        <label asp-for="ConfirmPassword" class="form-label"></label>
+                        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="ยืนยันรหัสผ่านอีกครั้ง" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="register-consents mb-4">
+                    <div class="form-check">
+                        <input asp-for="TermsAccepted" class="form-check-input" required />
+                        <label asp-for="TermsAccepted" class="form-check-label">
+                            ฉันยอมรับ<a asp-controller="Home" asp-action="Terms">ข้อกำหนดการใช้บริการ</a>
+                            และรับทราบ<a asp-controller="Home" asp-action="Privacy">นโยบายความเป็นส่วนตัว</a>
+                        </label>
+                        <span asp-validation-for="TermsAccepted" class="text-danger d-block"></span>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="MarketingConsent" class="form-check-input" />
+                        <label asp-for="MarketingConsent" class="form-check-label">
+                            ยินยอมรับข่าวสาร สิทธิพิเศษ และโปรโมชันสุดคุ้มจากร้านอีสาน เด้อ
+                        </label>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="register-submit">
+                        <i class="bi bi-check2-circle me-1"></i> ยืนยันการสมัครสมาชิก
+                    </button>
+                </div>
+            </form>
+
+            <p class="text-center text-muted mt-4 mb-0">
+                มีบัญชีอยู่แล้ว?
+                <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Model.ReturnUrl" class="register-login-link">เข้าสู่ระบบที่นี่</a>
+            </p>
+        </section>
     </div>
 </div>
 

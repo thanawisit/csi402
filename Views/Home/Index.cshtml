@@ -1,107 +1,451 @@
 @model HomePageViewModel
 @{
-    ViewData["Title"] = "หน้าแรก";
+    ViewData["Title"] = "หน้าแรก - ต้นตำรับความแซ่บ ถึงใจทุกคำ";
 }
 
 <style>
-    .text-brand {
+    /* ฮีโร่หน้าแรก ธีม แดง ขาว */
+    .hero-showcase {
+        position: relative;
+        overflow: hidden;
+        border-radius: 2rem;
+        background:
+            radial-gradient(circle at 85% 20%, rgba(255, 255, 255, 0.22), transparent 30%),
+            radial-gradient(circle at 10% 90%, rgba(245, 158, 11, 0.25), transparent 28%),
+            linear-gradient(135deg, #6b0f0f 0%, #991b1b 45%, #c92a2a 100%);
+        box-shadow: 0 20px 48px rgba(107, 15, 15, 0.35);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .hero-kicker-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.4rem 1rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        color: #fff;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    }
+
+    .hero-main-title {
+        font-size: clamp(2.6rem, 5.5vw, 4.3rem);
+        line-height: 1.15;
+        color: #ffffff;
+    }
+
+    .hero-title-accent {
+        color: #ffd8a8;
+    }
+
+    .hero-title-white {
+        color: #ffffff;
+        text-shadow: 0 0 25px rgba(255, 255, 255, 0.5);
+    }
+
+    .btn-hero-white {
+        background: #ffffff;
+        color: var(--brand-red) !important;
+        font-size: 1.1rem;
+        border: 2px solid #ffffff;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        transition: all 0.25s ease;
+    }
+
+    .btn-hero-white:hover {
+        background: #fff0f0;
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .btn-hero-red {
+        background: linear-gradient(135deg, #e03131, #a61e1e);
+        color: #ffffff !important;
+        font-size: 1.1rem;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        transition: all 0.25s ease;
+    }
+
+    .btn-hero-red:hover {
+        background: linear-gradient(135deg, #f03e3e, #8f1d1d);
+        transform: translateY(-3px);
+    }
+
+    .btn-hero-glass {
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff !important;
+        font-size: 1.05rem;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(8px);
+        transition: all 0.25s ease;
+    }
+
+    .btn-hero-glass:hover {
+        background: rgba(255, 255, 255, 0.28);
+        transform: translateY(-2px);
+    }
+
+    .hero-dish-frame {
+        width: min(100%, 360px);
+        aspect-ratio: 1;
+        border-radius: 50%;
+        padding: 12px;
+        background: #ffffff;
+        border: 6px solid var(--brand-red-vibrant);
+        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4);
+        overflow: hidden;
+        transition: transform 0.4s ease;
+    }
+
+    .hero-dish-frame:hover {
+        transform: scale(1.02) rotate(2deg);
+    }
+
+    .hero-dish-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    /* Floating Badges */
+    .floating-badge {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.65rem 1.1rem;
+        border-radius: 999px;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+        z-index: 2;
+        transition: transform 0.25s ease;
+    }
+
+    .floating-badge:hover {
+        transform: translateY(-3px) scale(1.03);
+    }
+
+    .badge-top-right { top: 5%; right: -5%; }
+    .badge-bottom-left { bottom: 8%; left: -5%; }
+    .badge-bottom-right { bottom: -4%; right: 8%; }
+
+    @@media (max-width: 991.98px) {
+        .badge-top-right { top: 0; right: 5%; }
+        .badge-bottom-left { bottom: 5%; left: 5%; }
+    }
+
+    /* 4 Feature Pillars */
+    .feature-pillar-card {
+        background-color: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 1.35rem;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 6px 18px rgba(100, 20, 20, 0.05);
+        transition: all 0.25s ease;
+    }
+
+    .feature-pillar-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--brand-red-vibrant);
+        box-shadow: 0 14px 30px rgba(201, 42, 42, 0.15);
+    }
+
+    .feature-pillar-icon {
+        width: 3.5rem;
+        height: 3.5rem;
+        margin: 0 auto 1rem;
+        border-radius: 1rem;
+        display: grid;
+        place-items: center;
+        font-size: 1.7rem;
+        background: var(--brand-red-soft);
+        color: var(--brand-red);
+        transition: transform 0.25s ease;
+    }
+
+    .feature-pillar-card:hover .feature-pillar-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    /* Section Headings */
+    .section-badge-red {
+        display: inline-flex;
+        align-items: center;
+        background: var(--brand-red-soft);
+        color: var(--brand-red);
+        font-size: 0.85rem;
+        font-weight: 700;
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid var(--brand-red-subtle);
+    }
+
+    .section-main-title {
+        font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+        color: var(--text);
+    }
+
+    /* Promo Tickets */
+    .promo-ticket-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        color: #fff;
+        background: linear-gradient(135deg, #a61e1e 0%, #c92a2a 50%, #e03131 100%);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 10px 25px rgba(166, 30, 30, 0.2);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .promo-ticket-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 36px rgba(166, 30, 30, 0.3) !important;
+    }
+
+    .ticket-cutout {
+        position: absolute;
+        top: 50%;
+        width: 24px;
+        height: 24px;
+        background-color: var(--page-bg);
+        border-radius: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+    }
+    .cutout-left { left: -12px; }
+    .cutout-right { right: -12px; }
+
+    .promo-ticket-icon {
+        width: 3.5rem;
+        height: 3.5rem;
+        flex: 0 0 3.5rem;
+        display: grid;
+        place-items: center;
+        border-radius: 1.1rem;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        font-size: 1.8rem;
+        color: #fff;
+    }
+
+    .btn-ticket-white {
+        background: #ffffff;
+        color: var(--brand-red) !important;
+        font-family: 'Kanit', sans-serif;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+    }
+
+    .btn-ticket-white:hover {
+        background: #fff5f5;
+        color: var(--brand-red-dark) !important;
+        transform: translateY(-2px);
+    }
+
+    /* Buffet Callout */
+    .buffet-callout-card {
+        background: #ffffff;
+        border: 2px solid var(--border);
+        border-left: 8px solid var(--brand-red);
+        box-shadow: 0 10px 30px rgba(166, 30, 30, 0.08);
+        border-radius: 1.35rem;
+    }
+
+    /* Menu Cards */
+    .menu-card-vibrant {
+        background-color: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 1.5rem;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.25s ease;
+    }
+
+    .menu-card-vibrant:hover {
+        transform: translateY(-6px);
+        border-color: var(--brand-red-vibrant);
+        box-shadow: 0 16px 36px rgba(201, 42, 42, 0.15) !important;
+    }
+
+    .menu-image-container {
+        height: 220px;
+        overflow: hidden;
+        background-color: #faf5f5;
+    }
+
+    .menu-img-cover {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+
+    .menu-card-vibrant:hover .menu-img-cover {
+        transform: scale(1.08);
+    }
+
+    .menu-ribbon-tag {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        z-index: 2;
+        background: linear-gradient(135deg, var(--brand-red-vibrant), var(--brand-red-dark));
+        color: #fff;
+        font-family: 'Kanit', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        box-shadow: 0 4px 10px rgba(201, 42, 42, 0.4);
+    }
+
+    .menu-price-text {
+        font-size: 1.6rem;
+        font-weight: 800;
         color: var(--brand-red);
     }
-    .bg-brand {
-        background-color: var(--brand-red);
-        color: white;
-    }
-    .btn-brand {
-        background-color: var(--brand-red);
-        color: white;
+
+    .btn-add-menu {
+        background: linear-gradient(135deg, var(--brand-red-vibrant), var(--brand-red-dark));
+        color: #ffffff !important;
+        font-size: 0.95rem;
         border: none;
-        transition: 0.3s;
+        box-shadow: 0 4px 12px rgba(201, 42, 42, 0.25);
+        transition: all 0.2s ease;
     }
-    .btn-brand:hover {
-        background-color: var(--brand-red-dark);
-        color: white;
-    }
-    
-    .menu-card {
-        background-color: white;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-    }
-    .search-box {
-        background-color: var(--brand-green-soft);
-        border: 1px solid var(--border);
+
+    .btn-add-menu:hover {
+        background: linear-gradient(135deg, #f03e3e, #8f1d1d);
+        transform: translateY(-2px);
     }
 </style>
 
-<div class="container mt-5 pb-5">
-    <section class="mb-5 hero-panel p-4 p-md-5">
+<div class="container py-4 pb-5">
+    <!-- 1. HERO SECTION (แบนเนอร์ใหญ่ ธีม แดงขาว) -->
+    <section class="hero-showcase mb-5 p-4 p-md-5">
         <div class="row align-items-center g-4">
-            <div class="col-lg-7">
-                <span class="hero-kicker"><i class="bi bi-fire"></i> รสอีสานแท้ ทำสดใหม่ทุกวัน</span>
-                <h1 class="hero-title fw-bold">แซ่บนัว<br><span>ถึงใจทุกคำ</span></h1>
-                <p class="text-muted fs-5 mb-4">มื้ออร่อยแบบอีสานแท้ เลือกเมนูโปรดแล้วให้เราจัดความแซ่บถึงโต๊ะ</p>
+            <!-- ฝั่งซ้าย: ข้อความและปุ่มแอ็กชัน -->
+            <div class="col-lg-7 text-white">
+                <div class="hero-kicker-badge mb-3">
+                    <i class="bi bi-fire text-warning"></i>
+                    <span class="fw-bold">รสอีสานแท้ 100% · ทำสดใหม่ทุกวัน</span>
+                </div>
+                
+                <h1 class="hero-main-title fw-bold mb-3">
+                    แซ่บนัว<span class="hero-title-accent">ถึงใจ</span><br>
+                    <span class="hero-title-white">ทุกคำ</span> สไตล์อีสานแท้
+                </h1>
+                
+                <p class="fs-5 mb-4 text-white-50 lh-lg" style="max-width: 600px;">
+                    สัมผัสรสชาติอีสานแท้ ปลาร้าต้มสุกสูตรเด็ด สะอาด นัวลึก ถึงเครื่อง วัตถุดิบสดใหม่ส่งตรงทุกเช้า ปรุงจานต่อจานในบรรยากาศอบอุ่น เลือกอิ่มอร่อยได้ทั้งบุฟเฟต์ 299.- และอาหารจานเดี่ยวสั่งตามใจ
+                </p>
 
-                <div class="d-flex flex-column flex-md-row gap-3 align-items-stretch align-items-md-center">
-                    <a asp-controller="Home" asp-action="Menu" class="btn btn-brand px-4 py-3 rounded-3 fw-bold text-decoration-none">
-                        เลือกเมนู <i class="bi bi-arrow-right ms-2"></i>
+                <!-- ปุ่มแอ็กชันหลัก -->
+                <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+                    <a asp-controller="Home" asp-action="Buffet" class="btn btn-hero-white px-4 py-3 rounded-pill fw-bold text-decoration-none shadow">
+                        <i class="bi bi-fire text-danger me-2"></i>เลือกแพ็กเกจบุฟเฟต์ ฿299
                     </a>
-                    <form asp-controller="Home" asp-action="Menu" method="get" class="flex-grow-1">
-                        <div class="input-group">
-                            <input type="search" name="q" class="form-control form-control-lg search-box py-3 rounded-start-3" placeholder="ค้นหาเมนู เช่น ส้มตำ ลาบ คอหมูย่าง" aria-label="ค้นหาเมนูอาหาร">
-                            <button type="submit" class="btn btn-success px-3" aria-label="ค้นหา">
-                                <i class="bi bi-search"></i>
-                            </button>
-                        </div>
-                    </form>
+                    <a asp-controller="Home" asp-action="Menu" class="btn btn-hero-red px-4 py-3 rounded-pill fw-bold text-decoration-none shadow">
+                        <i class="bi bi-journal-text me-2"></i>เลือกสั่งอาหาร (เมนู)
+                    </a>
+                    <a href="#promotions" class="btn btn-hero-glass px-4 py-3 rounded-pill fw-bold text-decoration-none">
+                        <i class="bi bi-tags-fill me-2 text-warning"></i>ดูโปรโมชั่น
+                    </a>
                 </div>
 
-                <div class="hero-highlights">
-                    <span><i class="bi bi-check-circle-fill"></i> วัตถุดิบสดใหม่</span>
-                    <span><i class="bi bi-check-circle-fill"></i> รสชาติจัดจ้าน</span>
-                    <span><i class="bi bi-check-circle-fill"></i> อิ่มอร่อยทุกมื้อ</span>
-                </div>
             </div>
+
+            <!-- ฝั่งขวา: จานอาหารซิกเนเจอร์พร้อมป้ายลอย (Floating Badges) -->
             <div class="col-lg-5">
-                <div class="hero-art" aria-hidden="true">
-                    <div class="hero-orbit">
-                        <div class="hero-dish"><i class="bi bi-egg-fried"></i></div>
+                <div class="position-relative text-center p-3">
+                    <!-- กรอบจานอาหารใหญ่ -->
+                    <div class="hero-dish-frame mx-auto shadow-lg">
+                        <img src="/images/menus/1.jpg" alt="ส้มตำแซ่บนัว อีสานเด้อ" class="img-fluid hero-dish-img" />
                     </div>
-                    <span class="hero-float hero-float-top"><i class="bi bi-stars"></i> แซ่บสะใจ</span>
-                    <span class="hero-float hero-float-bottom"><i class="bi bi-leaf-fill"></i> สดใหม่ทุกวัน</span>
+
+                    <!-- ป้ายลอยด้านบนขวา (บุฟเฟต์สุดคุ้ม) -->
+                    <div class="floating-badge badge-top-right shadow">
+                        <div class="rounded-circle bg-danger text-white d-grid place-items-center" style="width: 2.3rem; height: 2.3rem;">
+                            <i class="bi bi-fire"></i>
+                        </div>
+                        <div class="text-start">
+                            <small class="text-muted d-block fw-semibold" style="font-size: 0.7rem;">อิ่มไม่อั้น</small>
+                            <span class="fw-bold text-danger">บุฟเฟต์ ฿299.-</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="mb-5">
+    <!-- 3. ส่วนโปรโมชั่นและสิทธิพิเศษ (PROMOTIONS SECTION - RED & WHITE) -->
+    <section id="promotions" class="mb-5">
         @if (Model.Promotions.Count > 0)
         {
-            <div class="section-heading">
-                <div>
-                    <span class="section-kicker">สิทธิพิเศษ</span>
-                    <h3 class="fw-bold mb-0">โปรโมชั่น</h3>
+            <div class="mb-4">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="section-badge-red"><i class="bi bi-gift-fill me-1"></i> สิทธิพิเศษสุดคุ้ม</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+                    <div>
+                        <h2 class="section-main-title fw-bold mb-0">โปรโมชั่นพิเศษวันนี้</h2>
+                        <p class="text-muted mb-0">รับสิทธิประโยชน์ง่ายๆ เพียงสมัครสมาชิกหรือเลือกรับส่วนลด</p>
+                    </div>
                 </div>
             </div>
+
             <div class="row g-4">
                 @foreach (var promotion in Model.Promotions)
                 {
                     var isMembership = promotion.SlotKey == "membership";
+                    var isBuffetPromotion = promotion.SlotKey == "buffet";
                     <div class="col-md-6">
-                        <div class="promo-card @(isMembership ? "promo-red" : "promo-green")">
-                            <span class="promo-icon">
-                                <i class="bi @(isMembership ? "bi-cup-hot" : "bi-emoji-smile")"></i>
-                            </span>
-                            <div class="promo-content">
-                                <span class="promo-label">@promotion.Kicker</span>
-                                <h4 style="white-space: pre-line">@promotion.Headline</h4>
-                                <p class="promo-description">@promotion.Description</p>
-                                <a asp-controller="@(isMembership ? "Account" : "Home")"
-                                   asp-action="@(isMembership ? "Register" : "Buffet")"
-                                   class="promo-action">
-                                    @promotion.LinkText <i class="bi bi-arrow-right"></i>
-                                </a>
+                        <div class="promo-ticket-card shadow-sm">
+                            <div class="ticket-cutout cutout-left"></div>
+                            <div class="ticket-cutout cutout-right"></div>
+                            
+                            <div class="d-flex gap-3 align-items-start position-relative z-1">
+                                <span class="promo-ticket-icon">
+                                    <i class="bi @(isMembership ? "bi-cup-hot-fill" : "bi-ticket-perforated-fill")"></i>
+                                </span>
+                                <div class="flex-grow-1">
+                                    <span class="d-inline-block small text-white-50 fw-bold text-uppercase mb-1">@promotion.Kicker</span>
+                                    <h4 class="fw-bold mb-1 text-white" style="white-space: pre-line">@promotion.Headline</h4>
+                                    <p class="text-white-50 small mb-2">@promotion.Description</p>
+                                    
+                                    @if (isBuffetPromotion && Model.CurrentBuffetPromotion != null)
+                                    {
+                                        <div class="my-2 p-2 rounded-3 bg-black bg-opacity-25 border border-white border-opacity-25">
+                                            <span class="small d-block text-white-50 mb-1">
+                                                <i class="bi bi-clock me-1"></i>ใช้ได้ถึง @Model.CurrentBuffetPromotion.EndDate?.ToString("dd/MM/yyyy")
+                                            </span>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="px-2 py-1 bg-white text-danger rounded fw-bold">
+                                                    <code>@Model.CurrentBuffetPromotion.Code</code>
+                                                </span>
+                                                <span class="small text-white-50">กรอกในหน้าชำระเงิน</span>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="mt-3">
+                                        <a asp-controller="@(isMembership ? "Account" : "Home")"
+                                           asp-action="@(isMembership ? "Register" : "Buffet")"
+                                           class="btn btn-ticket-white rounded-pill px-4 py-2 fw-bold text-decoration-none">
+                                            @promotion.LinkText <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
-                            <i class="bi bi-stars promo-decoration" aria-hidden="true"></i>
                         </div>
                     </div>
                 }
@@ -109,14 +453,45 @@
         }
     </section>
 
-    <section class="mb-4">
-        <div class="section-heading">
-            <div>
-                <span class="section-kicker">จานเด็ดประจำร้าน</span>
-                <h3 class="fw-bold mb-0">เมนูแนะนำ</h3>
+    <!-- 4. แถบไฮไลต์บุฟเฟต์ 299 (BUFFET CALLOUT BANNER) -->
+    <section class="mb-5">
+        <div class="buffet-callout-card p-4 p-md-5">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-8">
+                    <span class="badge bg-danger rounded-pill px-3 py-1 mb-2 fw-semibold">
+                        <i class="bi bi-fire me-1"></i> แพ็กเกจยอดนิยมอันดับ 1
+                    </span>
+                    <h3 class="fw-bold text-dark mb-2">บุฟเฟต์อาหารอีสาน 299.- / คน ทานได้ไม่อั้น!</h3>
+                    <p class="text-muted mb-0">
+                        จัดเต็ม ส้มตำ ลาบ น้ำตก คอหมูย่าง ไก่ย่าง ต้มแซ่บกระดูกอ่อน ข้าวเหนียว ขนมจีน และผักเคียงสดกรอบ ไม่จำกัดเวลา อิ่มอร่อยครบทุกจานในราคาเดียว
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <a asp-controller="Home" asp-action="Buffet" class="btn btn-brand px-4 py-3 rounded-pill fw-bold text-decoration-none shadow">
+                        <i class="bi bi-basket2-fill me-2"></i>เลือกแพ็กเกจเลย
+                    </a>
+                </div>
             </div>
-            <a asp-controller="Home" asp-action="Menu" class="text-decoration-none fw-bold">ดูเมนูทั้งหมด <i class="bi bi-arrow-right"></i></a>
         </div>
+    </section>
+
+    <!-- 5. ส่วนเมนูแนะนำ (FEATURED MENUS SECTION) -->
+    <section class="mb-4">
+        <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="section-badge-red"><i class="bi bi-award-fill me-1"></i> จานเด็ดประจำร้าน</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+                <div>
+                    <h2 class="section-main-title fw-bold mb-0">เมนูแนะนำ แซ่บซิกเนเจอร์</h2>
+                    <p class="text-muted mb-0">คัดสรรเมนูยอดฮิตที่ลูกค้าสั่งซ้ำมากที่สุด</p>
+                </div>
+                <a asp-controller="Home" asp-action="Menu" class="btn btn-outline-danger rounded-pill px-4 py-2 fw-bold text-decoration-none">
+                    ดูเมนูทั้งหมด
+                </a>
+            </div>
+        </div>
+
         <div class="row g-4">
             @for (var index = 0; index < Model.FeaturedMenus.Count; index++)
             {
@@ -126,54 +501,65 @@
                     : index % 3 == 1
                         ? "food-art-larb"
                         : "food-art-pork";
+                var ribbonText = index == 0 ? "ซิกเนเจอร์" : (index == 1 ? "ขายดี" : "แนะนำ");
 
                 <div class="col-md-4">
-                    <div class="menu-card shadow-sm h-100 pb-2">
-                        @if (!string.IsNullOrWhiteSpace(menu.ImagePath))
-                        {
-                            <img src="@menu.ImagePath" alt="รูปเมนู @menu.MenuName"
-                                 class="w-100" style="height: 220px; object-fit: cover;" />
-                        }
-                        else
-                        {
-                            <div class="food-art @fallbackArt" aria-hidden="true">
-                                @if (index % 3 == 0)
-                                {
-                                    <i class="bi bi-flower1"></i>
-                                }
-                                else if (index % 3 == 1)
-                                {
-                                    <i class="bi bi-fire"></i>
-                                }
-                                else
-                                {
+                    <div class="menu-card-vibrant shadow-sm h-100">
+                        <div class="menu-image-container position-relative">
+                            <span class="menu-ribbon-tag">@ribbonText</span>
+
+                            @if (!string.IsNullOrWhiteSpace(menu.ImagePath))
+                            {
+                                <img src="@menu.ImagePath" alt="รูปเมนู @menu.MenuName"
+                                     class="menu-img-cover w-100" />
+                            }
+                            else
+                            {
+                                <div class="food-art @fallbackArt" aria-hidden="true">
                                     <i class="bi bi-egg-fried"></i>
-                                }
+                                </div>
+                            }
+                        </div>
+
+                        <div class="card-body p-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">@menu.MenuName</h5>
+                                <div class="d-flex align-items-center gap-1 text-warning small mb-3">
+                                    <i class="bi bi-star-fill"></i>
+                                    @{
+                                        var featuredReviewStats = ViewBag.FeaturedReviewStats as Dictionary<int, (double Average, int Count)>
+                                            ?? new Dictionary<int, (double Average, int Count)>();
+                                        var hasFeaturedStats = featuredReviewStats.TryGetValue(menu.MenuId, out var featuredStats);
+                                    }
+                                    <span class="text-dark fw-bold">@(hasFeaturedStats ? featuredStats.Average.ToString("0.0") : "-")</span>
+                                    <span class="text-muted ms-1">(@(hasFeaturedStats ? featuredStats.Count : 0) รีวิว)</span>
+                                </div>
                             </div>
-                        }
-                        <div class="card-body p-4">
-                            <h5 class="fw-bold mb-1">@menu.MenuName</h5>
-                            <p class="text-muted small mb-3">⭐ 4.8 · อาหารอีสาน</p>
-                            <div class="d-flex justify-content-between align-items-center mt-4">
-                                <span class="text-brand fs-4 fw-bold">฿@menu.Price.ToString("0.##")</span>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                <div>
+                                    <small class="text-muted d-block lh-1">ราคา</small>
+                                    <span class="menu-price-text">฿@menu.Price.ToString("0.##")</span>
+                                </div>
+
                                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                                 {
                                     <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@menu.MenuId"
-                                       class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                       class="btn btn-add-menu rounded-pill px-4 py-2 fw-bold text-decoration-none">
+                                        <i class="bi bi-plus-lg me-1"></i> เพิ่ม
+                                    </a>
                                 }
                                 else
                                 {
                                     <a asp-controller="Account" asp-action="Login"
-                                       class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                       class="btn btn-add-menu rounded-pill px-4 py-2 fw-bold text-decoration-none">
+                                        <i class="bi bi-plus-lg me-1"></i> เพิ่ม
+                                    </a>
                                 }
                             </div>
                         </div>
                     </div>
                 </div>
-            }
-            @if (Model.FeaturedMenus.Count == 0)
-            {
-                <div class="col-12 text-muted">ยังไม่มีเมนูพร้อมขาย</div>
             }
         </div>
     </section>

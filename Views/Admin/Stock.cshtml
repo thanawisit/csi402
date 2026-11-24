@@ -1,59 +1,503 @@
 @model IEnumerable<StockMenuViewModel>
 @{
-    ViewData["Title"] = "ตรวจสอบสต๊อก";
+    ViewData["Title"] = "ตรวจสอบสต็อก";
+    var menus = Model.ToList();
+    var availableCount = menus.Count(menu =>
+        string.Equals(menu.Status, "Available", StringComparison.OrdinalIgnoreCase));
+    var unavailableCount = menus.Count(menu =>
+        string.Equals(menu.Status, "Unavailable", StringComparison.OrdinalIgnoreCase));
+    var lowStockCount = menus.Count(menu =>
+        menu.StockQuantity.HasValue && menu.StockQuantity.Value <= 5);
 }
 
-<div class="container py-4">
-    <h1 class="fw-bold mb-1">ตรวจสอบสต๊อก</h1>
-    <p class="text-muted mb-4">ใส่จำนวนคงเหลือ หรือเว้นว่างหากยังไม่ติดตามจำนวนสต๊อก</p>
-
-    @if (TempData["AdminMessage"] != null)
-    {
-        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+<style>
+    .admin-main {
+        background:
+            radial-gradient(circle at 92% 5%, rgba(189, 49, 36, .08), transparent 22rem),
+            linear-gradient(135deg, #f4f1e8 0%, #edf2e9 100%);
     }
 
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th class="ps-4">เมนู</th>
-                        <th>คงเหลือ</th>
-                        <th>สถานะขาย</th>
-                        <th class="text-end pe-4">บันทึก</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var menu in Model)
-                    {
-                        <tr>
-                            <td class="ps-4 fw-semibold">@menu.MenuName</td>
-                            <td>
-                                <form asp-action="UpdateStock" method="post" id="stock-@menu.MenuId" class="d-flex gap-2 align-items-center">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@menu.MenuId" />
-                                    <input type="number" name="stockQuantity" min="0" value="@menu.StockQuantity"
-                                           class="form-control form-control-sm" style="max-width: 130px"
-                                           placeholder="ไม่ติดตาม" aria-label="จำนวนคงเหลือ @menu.MenuName" />
-                                </form>
-                            </td>
-                            <td>
-                                <select name="status" form="stock-@menu.MenuId" class="form-select form-select-sm" style="max-width: 150px">
-                                    <option value="Available" selected="@(menu.Status == "Available")">พร้อมขาย</option>
-                                    <option value="Unavailable" selected="@(menu.Status == "Unavailable")">ปิดขาย</option>
-                                </select>
-                            </td>
-                            <td class="text-end pe-4">
-                                <button type="submit" form="stock-@menu.MenuId" class="btn btn-sm btn-success">บันทึก</button>
-                            </td>
-                        </tr>
-                    }
-                    @if (!Model.Any())
-                    {
-                        <tr><td colspan="4" class="text-center text-muted py-5">ยังไม่มีเมนูในระบบ</td></tr>
-                    }
-                </tbody>
-            </table>
+    .stock-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+    }
+
+    .stock-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid rgba(47, 107, 59, .12);
+        padding-bottom: 1.15rem;
+    }
+
+    .stock-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #2f6b3b;
+        font-size: .78rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .stock-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .stock-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .stock-summary-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 104px;
+        border: 0;
+        border-radius: 18px;
+        background: linear-gradient(145deg, #fffef9 0%, #edf3e8 100%);
+        box-shadow: 0 12px 28px rgba(58, 76, 61, .11);
+        padding: 1.15rem 1.05rem 1rem 1.2rem;
+    }
+
+    .stock-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #91a98e;
+    }
+
+    .stock-summary-card.available::before {
+        background: #4f8757;
+    }
+
+    .stock-summary-card.unavailable {
+        background: linear-gradient(135deg, #fffdf7 0%, #fff0e9 100%);
+    }
+
+    .stock-summary-card.unavailable::before {
+        background: #bd3124;
+    }
+
+    .stock-summary-card.low {
+        background: linear-gradient(135deg, #fffdf4 0%, #fff1bd 100%);
+    }
+
+    .stock-summary-card.low::before {
+        background: #d7a91c;
+    }
+
+    .stock-summary-card::after {
+        content: "";
+        position: absolute;
+        right: -28px;
+        bottom: -38px;
+        width: 95px;
+        height: 95px;
+        border: 16px solid rgba(47, 107, 59, .055);
+        border-radius: 50%;
+    }
+
+    .stock-summary-card .summary-icon {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border-radius: 12px;
+        background: rgba(47, 107, 59, .09);
+        color: #2f6b3b;
+        font-size: 1rem;
+    }
+
+    .stock-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .stock-summary-value {
+        margin-top: .35rem;
+        color: #263029;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+
+    .stock-toolbar {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 18px;
+        background:
+            linear-gradient(90deg, rgba(255, 255, 255, .82), rgba(235, 241, 229, .92)),
+            #edf2e8;
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .07);
+        margin-bottom: .85rem;
+        padding: .65rem;
+    }
+
+    .stock-search {
+        max-width: 380px;
+    }
+
+    .stock-search .input-group-text,
+    .stock-search .form-control,
+    .stock-filter {
+        border-color: #dce4da;
+        background-color: #fffef9;
+    }
+
+    .stock-filter {
+        min-width: 170px;
+    }
+
+    .stock-card {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 20px;
+        background:
+            linear-gradient(180deg, rgba(255, 254, 249, .96), rgba(247, 247, 240, .96));
+        box-shadow: 0 16px 38px rgba(58, 76, 61, .12);
+    }
+
+    .stock-card thead th {
+        border-bottom: 1px solid #dde5d9;
+        background:
+            linear-gradient(90deg, #e4ecdf 0%, #edf2e9 100%);
+        color: #405146;
+        font-size: .78rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+
+    .stock-row {
+        transition: background-color .15s ease;
+    }
+
+    .stock-row:nth-child(even) {
+        background: #f7f7f0;
+    }
+
+    .stock-row td {
+        border-bottom-color: #e8ebe3;
+        padding-block: .9rem;
+    }
+
+    .stock-row:hover {
+        background: #eef4e9;
+    }
+
+    .stock-menu-name {
+        color: #263029;
+        font-weight: 800;
+    }
+
+    .stock-menu-cell {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        min-width: 170px;
+    }
+
+    .stock-menu-icon {
+        display: grid;
+        width: 46px;
+        height: 46px;
+        flex: 0 0 46px;
+        place-items: center;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 14px;
+        background:
+            linear-gradient(145deg, #fff9ed 0%, #e7f0df 100%);
+        color: #8f251c;
+        font-size: 1.1rem;
+        font-weight: 850;
+        box-shadow: 0 6px 14px rgba(58, 76, 61, .08);
+        overflow: hidden;
+    }
+
+    .stock-menu-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .stock-name-copy {
+        min-width: 0;
+    }
+
+    .stock-number-input {
+        max-width: 112px;
+        border-color: #dce4da;
+        background: #fffef9;
+        text-align: center;
+        font-weight: 800;
+    }
+
+    .stock-status-select {
+        max-width: 150px;
+        border-color: #dce4da;
+        background: #fffef9;
+        font-size: .82rem;
+        font-weight: 700;
+    }
+
+    .stock-state {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border-radius: 999px;
+        padding: .32rem .58rem;
+        font-size: .72rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .stock-state.available {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .stock-state.unavailable {
+        background: #ffe9e6;
+        color: #a3392f;
+    }
+
+    .stock-low-note {
+        color: #9a790f;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .stock-save-btn {
+        min-width: 72px;
+    }
+
+    @@media (max-width: 991.98px) {
+        .stock-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .stock-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .stock-header,
+        .stock-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .stock-search,
+        .stock-filter {
+            max-width: none;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="stock-page">
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
+    }
+
+    <header class="stock-header">
+        <div>
+            <span class="stock-eyebrow">งานครัวและสินค้า</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">ตรวจสอบสต็อก</h1>
+            <p class="text-muted mb-0">อัปเดตจำนวนคงเหลือและเปิดหรือปิดสถานะขาย</p>
         </div>
+    </header>
+
+    <section class="stock-summary" aria-label="สรุปสต็อก">
+        <article class="stock-summary-card">
+            <div class="stock-summary-label">เมนูทั้งหมด</div>
+            <div class="stock-summary-value">@menus.Count</div>
+            <span class="summary-icon"><i class="bi bi-grid-1x2-fill" aria-hidden="true"></i></span>
+        </article>
+        <article class="stock-summary-card available">
+            <div class="stock-summary-label">พร้อมขาย</div>
+            <div class="stock-summary-value">@availableCount</div>
+            <span class="summary-icon"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+        </article>
+        <article class="stock-summary-card unavailable">
+            <div class="stock-summary-label">ปิดขาย</div>
+            <div class="stock-summary-value">@unavailableCount</div>
+            <span class="summary-icon"><i class="bi bi-slash-circle" aria-hidden="true"></i></span>
+        </article>
+        <article class="stock-summary-card low">
+            <div class="stock-summary-label">จำนวนต่ำกว่า 5</div>
+            <div class="stock-summary-value">@lowStockCount</div>
+            <span class="summary-icon"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i></span>
+        </article>
+    </section>
+
+    <div class="stock-toolbar">
+        <div class="input-group stock-search">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="stockSearch" type="search" class="form-control" placeholder="ค้นหาเมนูอาหาร" aria-label="ค้นหาเมนูสต็อก" />
+        </div>
+        <select id="stockStatusFilter" class="form-select stock-filter" aria-label="กรองสถานะเมนู">
+            <option value="all">ทุกสถานะ</option>
+            <option value="Available">พร้อมขาย</option>
+            <option value="Unavailable">ปิดขาย</option>
+        </select>
     </div>
+
+    @if (menus.Count == 0)
+    {
+        <div class="stock-card text-center text-muted py-5">
+            <i class="bi bi-box-seam fs-2 d-block mb-2" aria-hidden="true"></i>
+            ยังไม่มีเมนูในระบบ
+        </div>
+    }
+    else
+    {
+        <section class="stock-card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="stockTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">เมนู</th>
+                            <th>คงเหลือ</th>
+                            <th>สถานะขาย</th>
+                            <th class="text-end pe-4">บันทึก</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var menu in menus)
+                        {
+                            var isAvailable = string.Equals(menu.Status, "Available", StringComparison.OrdinalIgnoreCase);
+                            var isLowStock = menu.StockQuantity.HasValue && menu.StockQuantity.Value <= 5;
+                            <tr class="stock-row"
+                                data-name="@menu.MenuName"
+                                data-status="@menu.Status">
+                                <td class="ps-4">
+                                    <div class="stock-menu-cell">
+                                        <span class="stock-menu-icon" aria-hidden="true">
+                                            @if (!string.IsNullOrWhiteSpace(menu.ImagePath))
+                                            {
+                                                <img src="@menu.ImagePath" asp-append-version="true"
+                                                     alt="รูป @menu.MenuName" loading="lazy" />
+                                            }
+                                            else
+                                            {
+                                                @(string.IsNullOrWhiteSpace(menu.MenuName)
+                                                    ? "?"
+                                                    : menu.MenuName.Trim().Substring(0, 1).ToUpperInvariant())
+                                            }
+                                        </span>
+                                        <div class="stock-name-copy">
+                                            <span class="stock-menu-name">@menu.MenuName</span>
+                                            @if (isLowStock)
+                                            {
+                                                <span class="stock-low-note d-block mt-1">
+                                                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>จำนวนเหลือน้อย
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small d-block mt-1">สต็อกพร้อมใช้งาน</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <form asp-action="UpdateStock" method="post" id="stock-@menu.MenuId" class="d-flex align-items-center gap-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@menu.MenuId" />
+                                        <input type="number" name="stockQuantity" min="0" value="@menu.StockQuantity"
+                                               class="form-control form-control-sm stock-number-input"
+                                               placeholder="ไม่ติดตาม" aria-label="จำนวนคงเหลือ @menu.MenuName" />
+                                    </form>
+                                </td>
+                                <td>
+                                    <select name="status" form="stock-@menu.MenuId"
+                                            class="form-select form-select-sm stock-status-select"
+                                            aria-label="สถานะขาย @menu.MenuName">
+                                        <option value="Available" selected="@(menu.Status == "Available")">พร้อมขาย</option>
+                                        <option value="Unavailable" selected="@(menu.Status == "Unavailable")">ปิดขาย</option>
+                                    </select>
+                                    <span class="stock-state @(isAvailable ? "available" : "unavailable") d-block mt-1">
+                                        <i class="bi @(isAvailable ? "bi-check-circle" : "bi-x-circle")" aria-hidden="true"></i>
+                                        @(isAvailable ? "พร้อมขาย" : "ปิดขาย")
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button type="submit" form="stock-@menu.MenuId"
+                                            class="btn btn-sm btn-success stock-save-btn">
+                                        บันทึก
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const searchInput = document.getElementById('stockSearch');
+            const statusFilter = document.getElementById('stockStatusFilter');
+            const rows = Array.from(document.querySelectorAll('#stockTable tbody .stock-row'));
+
+            rows.forEach(row => {
+                const quantityInput = row.querySelector('[name="stockQuantity"]');
+                const statusSelect = row.querySelector('[name="status"]');
+                const stateBadge = row.querySelector('.stock-state');
+
+                const syncStatusForQuantity = () => {
+                    if (Number(quantityInput?.value) === 0 && statusSelect) {
+                        statusSelect.value = 'Unavailable';
+                    }
+                    if (statusSelect && stateBadge) {
+                        const available = statusSelect.value === 'Available';
+                        stateBadge.className = `stock-state ${available ? 'available' : 'unavailable'} d-block mt-1`;
+                        stateBadge.innerHTML = `<i class="bi ${available ? 'bi-check-circle' : 'bi-x-circle'}" aria-hidden="true"></i>${available ? 'พร้อมขาย' : 'ปิดขาย'}`;
+                        row.dataset.status = statusSelect.value;
+                    }
+                };
+
+                quantityInput?.addEventListener('input', syncStatusForQuantity);
+                statusSelect?.addEventListener('change', syncStatusForQuantity);
+            });
+
+            const filterStock = () => {
+                const term = (searchInput?.value ?? '').trim().toLowerCase();
+                const status = statusFilter?.value ?? 'all';
+
+                rows.forEach(row => {
+                    const matchesSearch = term === '' ||
+                        (row.dataset.name ?? '').toLowerCase().includes(term);
+                    const matchesStatus = status === 'all' ||
+                        row.dataset.status === status;
+                    row.hidden = !(matchesSearch && matchesStatus);
+                });
+            };
+
+            searchInput?.addEventListener('input', filterStock);
+            statusFilter?.addEventListener('change', filterStock);
+        })();
+    </script>
+}

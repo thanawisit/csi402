@@ -1,76 +1,440 @@
 @model IEnumerable<Menu>
 @{
     ViewData["Title"] = "จัดการเมนู";
+    var menus = Model.ToList();
+    var availableCount = menus.Count(menu =>
+        string.Equals(menu.Status, "Available", StringComparison.OrdinalIgnoreCase));
+    var unavailableCount = menus.Count(menu =>
+        string.Equals(menu.Status, "Unavailable", StringComparison.OrdinalIgnoreCase));
+    var lowStockCount = menus.Count(menu =>
+        menu.StockQuantity.HasValue && menu.StockQuantity.Value <= 5);
 }
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div>
-            <h1 class="fw-bold mb-1">จัดการเมนู</h1>
-            <p class="text-muted mb-0">เพิ่ม แก้ไข หรือปิดการขายเมนู โดยข้อมูลในออเดอร์เดิมจะยังคงอยู่</p>
-        </div>
-        <a asp-action="MenuCreate" class="btn btn-danger"><i class="bi bi-plus-lg me-1"></i>เพิ่มเมนู</a>
-    </div>
-
-    @if (TempData["AdminMessage"] != null)
-    {
-        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+<style>
+    .admin-main {
+        background:
+            radial-gradient(circle at 92% 5%, rgba(189, 49, 36, .08), transparent 22rem),
+            linear-gradient(135deg, #f4f1e8 0%, #edf2e9 100%);
     }
 
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th class="ps-4">รูป</th>
-                        <th class="ps-4">ชื่อเมนู</th>
-                        <th>ราคา</th>
-                        <th>สถานะ</th>
-                        <th class="text-end pe-4">จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var menu in Model)
-                    {
-                        <tr>
-                            <td class="ps-4">
-                                @if (!string.IsNullOrWhiteSpace(menu.ImagePath))
-                                {
-                                    <img src="@menu.ImagePath" alt="รูปเมนู @menu.MenuName"
-                                         class="rounded" style="width: 64px; height: 48px; object-fit: cover;" />
-                                }
-                                else
-                                {
-                                    <span class="text-muted">ไม่มีรูป</span>
-                                }
-                            </td>
-                            <td class="fw-semibold">@menu.MenuName</td>
-                            <td>฿@menu.Price.ToString("N2")</td>
-                            <td>
-                                @if (menu.Status == "Available")
-                                {
-                                    <span class="badge text-bg-success">พร้อมขาย</span>
-                                }
-                                else
-                                {
-                                    <span class="badge text-bg-secondary">ปิดขาย</span>
-                                }
-                            </td>
-                            <td class="text-end pe-4">
-                                <a asp-action="MenuEdit" asp-route-id="@menu.MenuId" class="btn btn-sm btn-outline-primary">แก้ไข</a>
-                                @if (menu.Status != "Unavailable")
-                                {
-                                    <form asp-action="DisableMenu" method="post" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@menu.MenuId" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">ปิดขาย</button>
-                                    </form>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+    .menu-admin-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+    }
+
+    .menu-admin-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .menu-admin-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #bd3124;
+        font-size: .78rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .menu-admin-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .menu-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .menu-summary-card {
+        position: relative;
+        min-height: 104px;
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 17px;
+        background: linear-gradient(145deg, #fffef9 0%, #edf3e8 100%);
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .08);
+        padding: 1.05rem 1.1rem;
+    }
+
+    .menu-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #91a98e;
+    }
+
+    .menu-summary-card.available::before {
+        background: #4f8757;
+    }
+
+    .menu-summary-card.unavailable {
+        background: linear-gradient(135deg, #fffdf7 0%, #fff0e9 100%);
+    }
+
+    .menu-summary-card.unavailable::before {
+        background: #bd3124;
+    }
+
+    .menu-summary-card.low {
+        background: linear-gradient(135deg, #fffdf4 0%, #fff1bd 100%);
+    }
+
+    .menu-summary-card.low::before {
+        background: #d7a91c;
+    }
+
+    .menu-summary-card::after {
+        content: "";
+        position: absolute;
+        right: -26px;
+        bottom: -36px;
+        width: 92px;
+        height: 92px;
+        border: 15px solid rgba(47, 107, 59, .055);
+        border-radius: 50%;
+    }
+
+    .menu-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .menu-summary-value {
+        margin-top: .35rem;
+        color: #263029;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+
+    .menu-toolbar {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 18px;
+        background: linear-gradient(90deg, rgba(255, 255, 255, .82), rgba(235, 241, 229, .92));
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .07);
+        margin-bottom: .85rem;
+        padding: .65rem;
+    }
+
+    .menu-search {
+        max-width: 380px;
+    }
+
+    .menu-search .input-group-text,
+    .menu-search .form-control,
+    .menu-status-filter {
+        border-color: #dce4da;
+        background: #fffef9;
+    }
+
+    .menu-status-filter {
+        min-width: 170px;
+    }
+
+    .menu-admin-card {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 20px;
+        background: #fbfaf5;
+        box-shadow: 0 14px 32px rgba(58, 76, 61, .09);
+    }
+
+    .menu-admin-card thead th {
+        border-bottom: 1px solid #dde5d9;
+        background: linear-gradient(90deg, #e4ecdf 0%, #edf2e9 100%);
+        color: #405146;
+        font-size: .78rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+
+    .menu-row {
+        transition: background-color .15s ease;
+    }
+
+    .menu-row:nth-child(even) {
+        background: #f7f7f0;
+    }
+
+    .menu-row:hover {
+        background: #eef4e9;
+    }
+
+    .menu-row td {
+        border-bottom-color: #e8ebe3;
+        padding-block: .85rem;
+    }
+
+    .menu-identity {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        min-width: 210px;
+    }
+
+    .menu-thumbnail {
+        width: 72px;
+        height: 58px;
+        flex: 0 0 72px;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 13px;
+        background: #edf1e8;
+        object-fit: cover;
+        box-shadow: 0 7px 16px rgba(58, 76, 61, .10);
+    }
+
+    .menu-thumbnail-placeholder {
+        display: grid;
+        width: 72px;
+        height: 58px;
+        flex: 0 0 72px;
+        place-items: center;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 13px;
+        background: linear-gradient(145deg, #fff9ed 0%, #e7f0df 100%);
+        color: #8f251c;
+        font-size: 1.25rem;
+    }
+
+    .menu-name {
+        color: #263029;
+        font-weight: 850;
+    }
+
+    .menu-stock-note {
+        color: #9a790f;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .menu-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border-radius: 999px;
+        padding: .34rem .62rem;
+        font-size: .72rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .menu-status-badge.available {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .menu-status-badge.unavailable {
+        background: #ffe9e6;
+        color: #a3392f;
+    }
+
+    .menu-actions {
+        min-width: 150px;
+    }
+
+    @@media (max-width: 991.98px) {
+        .menu-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .menu-admin-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .menu-admin-header,
+        .menu-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .menu-search,
+        .menu-status-filter {
+            max-width: none;
+            width: 100%;
+        }
+
+        .menu-identity {
+            min-width: 175px;
+        }
+    }
+</style>
+
+<div class="menu-admin-page">
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
+    }
+
+    <header class="menu-admin-header">
+        <div>
+            <span class="menu-admin-eyebrow">Catalog management</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">จัดการเมนู</h1>
+            <p class="text-muted mb-0">เพิ่ม แก้ไข หรือปิดการขายเมนู โดยข้อมูลออเดอร์เดิมยังคงอยู่</p>
         </div>
+        <a asp-action="MenuCreate" class="btn btn-danger rounded-3 px-3">
+            <i class="bi bi-plus-lg me-1"></i>เพิ่มเมนู
+        </a>
+    </header>
+
+    <section class="menu-summary" aria-label="สรุปเมนู">
+        <article class="menu-summary-card">
+            <div class="menu-summary-label">เมนูทั้งหมด</div>
+            <div class="menu-summary-value">@menus.Count</div>
+        </article>
+        <article class="menu-summary-card available">
+            <div class="menu-summary-label">พร้อมขาย</div>
+            <div class="menu-summary-value">@availableCount</div>
+        </article>
+        <article class="menu-summary-card unavailable">
+            <div class="menu-summary-label">ปิดขาย</div>
+            <div class="menu-summary-value">@unavailableCount</div>
+        </article>
+        <article class="menu-summary-card low">
+            <div class="menu-summary-label">สต๊อกต่ำกว่า 5</div>
+            <div class="menu-summary-value">@lowStockCount</div>
+        </article>
+    </section>
+
+    <div class="menu-toolbar">
+        <div class="input-group menu-search">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="menuSearch" type="search" class="form-control"
+                   placeholder="ค้นหาเมนูอาหาร"
+                   aria-label="ค้นหาเมนู" />
+        </div>
+        <select id="menuStatusFilter" class="form-select menu-status-filter" aria-label="กรองสถานะเมนู">
+            <option value="all">ทุกสถานะ</option>
+            <option value="Available">พร้อมขาย</option>
+            <option value="Unavailable">ปิดขาย</option>
+        </select>
     </div>
+
+    @if (menus.Count == 0)
+    {
+        <div class="menu-admin-card text-center text-muted py-5">
+            <i class="bi bi-journal-x fs-2 d-block mb-2" aria-hidden="true"></i>
+            ยังไม่มีเมนูในระบบ
+        </div>
+    }
+    else
+    {
+        <section class="menu-admin-card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="menuTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">เมนู</th>
+                            <th>ราคา</th>
+                            <th>สถานะ</th>
+                            <th class="text-end pe-4">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var menu in menus)
+                        {
+                            var isAvailable = string.Equals(menu.Status, "Available", StringComparison.OrdinalIgnoreCase);
+                            var isLowStock = menu.StockQuantity.HasValue && menu.StockQuantity.Value <= 5;
+                            <tr class="menu-row"
+                                data-name="@menu.MenuName"
+                                data-status="@menu.Status">
+                                <td class="ps-4">
+                                    <div class="menu-identity">
+                                        @if (!string.IsNullOrWhiteSpace(menu.ImagePath))
+                                        {
+                                            <img src="@menu.ImagePath" alt="รูปเมนู @menu.MenuName"
+                                                 class="menu-thumbnail" />
+                                        }
+                                        else
+                                        {
+                                            <span class="menu-thumbnail-placeholder" aria-hidden="true">
+                                                <i class="bi bi-egg-fried"></i>
+                                            </span>
+                                        }
+                                        <div>
+                                            <span class="menu-name">@menu.MenuName</span>
+                                            @if (isLowStock)
+                                            {
+                                                <span class="menu-stock-note d-block mt-1">
+                                                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+                                                    คงเหลือ @(menu.StockQuantity ?? 0)
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="fw-bold">฿@menu.Price.ToString("N2")</td>
+                                <td>
+                                    <span class="menu-status-badge @(isAvailable ? "available" : "unavailable")">
+                                        <i class="bi @(isAvailable ? "bi-check-circle" : "bi-x-circle")" aria-hidden="true"></i>
+                                        @(isAvailable ? "พร้อมขาย" : "ปิดขาย")
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4 menu-actions">
+                                    <a asp-action="MenuEdit" asp-route-id="@menu.MenuId"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil me-1"></i>แก้ไข
+                                    </a>
+                                    @if (!string.Equals(menu.Status, "Unavailable", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <form asp-action="DisableMenu" method="post" class="d-inline ms-1"
+                                              onsubmit="return confirm('ยืนยันปิดขาย @menu.MenuName ?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@menu.MenuId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-slash-circle me-1"></i>ปิดขาย
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const searchInput = document.getElementById('menuSearch');
+            const statusFilter = document.getElementById('menuStatusFilter');
+            const rows = Array.from(document.querySelectorAll('#menuTable tbody .menu-row'));
+
+            const filterMenus = () => {
+                const term = (searchInput?.value ?? '').trim().toLowerCase();
+                const status = statusFilter?.value ?? 'all';
+
+                rows.forEach(row => {
+                    const matchesSearch = term === '' ||
+                        (row.dataset.name ?? '').toLowerCase().includes(term);
+                    const matchesStatus = status === 'all' ||
+                        row.dataset.status === status;
+                    row.hidden = !(matchesSearch && matchesStatus);
+                });
+            };
+
+            searchInput?.addEventListener('input', filterMenus);
+            statusFilter?.addEventListener('change', filterMenus);
+        })();
+    </script>
+}

@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS general_promotions (
+    PromotionID INT NOT NULL AUTO_INCREMENT,
+    Code VARCHAR(50) NOT NULL,
+    Name VARCHAR(200) NOT NULL,
+    Description VARCHAR(500) NULL,
+    DiscountType VARCHAR(20) NOT NULL DEFAULT 'Percent',
+    DiscountValue DECIMAL(10,2) NOT NULL DEFAULT 0,
+    AppliesTo VARCHAR(20) NOT NULL DEFAULT 'Both',
+    BirthMonthOnly TINYINT(1) NOT NULL DEFAULT 0,
+    FirstOrderOnly TINYINT(1) NOT NULL DEFAULT 0,
+    MaxUsesPerUser INT NULL,
+    TargetMenuId INT NULL,
+    MinSubtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
+    StartDate DATE NULL,
+    EndDate DATE NULL,
+    MaxUses INT NULL,
+    UsedCount INT NOT NULL DEFAULT 0,
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+    PRIMARY KEY (PromotionID),
+    UNIQUE KEY UX_general_promotions_Code (Code)
+);

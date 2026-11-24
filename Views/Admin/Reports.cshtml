@@ -1,133 +1,440 @@
 @model SalesReportViewModel
 @{
     ViewData["Title"] = "รายงานยอดขาย";
+    var dayCount = (Model.EndDate - Model.StartDate).Days + 1;
+    var averagePerDay = dayCount > 0 ? Model.TotalSales / dayCount : 0m;
 }
 
-<div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+<style>
+    .admin-main {
+        background:
+            radial-gradient(circle at 92% 5%, rgba(189, 49, 36, .08), transparent 22rem),
+            linear-gradient(135deg, #f4f1e8 0%, #edf2e9 100%);
+    }
+
+    .sales-report-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+    }
+
+    .sales-report-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .sales-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #2f6b3b;
+        font-size: .78rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .sales-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .sales-filter {
+        border: 1px solid #dde5d9;
+        border-radius: 20px;
+        background:
+            linear-gradient(135deg, rgba(255, 254, 249, .96) 0%, rgba(237, 243, 232, .96) 100%);
+        box-shadow: 0 12px 28px rgba(58, 76, 61, .08);
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    .sales-filter .form-control {
+        min-height: 46px;
+        border-color: #dce4da;
+        background: #fffef9;
+    }
+
+    .sales-filter .btn {
+        min-height: 46px;
+    }
+
+    .sales-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .sales-summary-card {
+        position: relative;
+        min-height: 126px;
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 18px;
+        background: linear-gradient(145deg, #fffef9 0%, #edf3e8 100%);
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .08);
+        padding: 1.12rem 1.1rem;
+    }
+
+    .sales-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #91a98e;
+    }
+
+    .sales-summary-card.revenue::before {
+        background: #4f8757;
+    }
+
+    .sales-summary-card.orders::before {
+        background: #4470a1;
+    }
+
+    .sales-summary-card.average::before {
+        background: #d7a91c;
+    }
+
+    .sales-summary-card.daily {
+        background: linear-gradient(135deg, #fffdf7 0%, #fff0e9 100%);
+    }
+
+    .sales-summary-card.daily::before {
+        background: #bd3124;
+    }
+
+    .sales-summary-card::after {
+        content: "";
+        position: absolute;
+        right: -30px;
+        bottom: -40px;
+        width: 98px;
+        height: 98px;
+        border: 16px solid rgba(47, 107, 59, .055);
+        border-radius: 50%;
+    }
+
+    .sales-summary-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+    }
+
+    .sales-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .sales-summary-icon {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        place-items: center;
+        border-radius: 12px;
+        background: rgba(47, 107, 59, .09);
+        color: #2f6b3b;
+    }
+
+    .sales-summary-card.average .sales-summary-icon {
+        background: rgba(215, 169, 28, .13);
+        color: #9a790f;
+    }
+
+    .sales-summary-card.orders .sales-summary-icon {
+        background: #edf3fb;
+        color: #4470a1;
+    }
+
+    .sales-summary-card.daily .sales-summary-icon {
+        background: #fdebe8;
+        color: #bd3124;
+    }
+
+    .sales-summary-value {
+        margin-top: .58rem;
+        color: #263029;
+        font-size: 1.48rem;
+        font-weight: 850;
+        line-height: 1;
+    }
+
+    .sales-summary-detail {
+        margin-top: .42rem;
+        color: #879087;
+        font-size: .74rem;
+    }
+
+    .sales-report-card {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 20px;
+        background: #fbfaf5;
+        box-shadow: 0 14px 32px rgba(58, 76, 61, .09);
+    }
+
+    .sales-report-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        border-bottom: 1px solid #e7ebe3;
+        background: linear-gradient(90deg, #f7faf4 0%, #edf3e8 100%);
+        padding: 1rem 1.15rem;
+    }
+
+    .sales-report-card-header h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 850;
+    }
+
+    .sales-report-card thead th {
+        border-bottom: 1px solid #dde5d9;
+        background: linear-gradient(90deg, #e4ecdf 0%, #edf2e9 100%);
+        color: #405146;
+        font-size: .78rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+
+    .sales-row {
+        transition: background-color .15s ease;
+    }
+
+    .sales-row:nth-child(even) {
+        background: #f7f7f0;
+    }
+
+    .sales-row:hover {
+        background: #eef4e9;
+    }
+
+    .sales-row td {
+        border-bottom-color: #e8ebe3;
+        padding-block: .88rem;
+    }
+
+    .sales-order-id {
+        color: #263029;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    .sales-order-date {
+        color: #647066;
+        white-space: nowrap;
+    }
+
+    .sales-order-type {
+        display: inline-flex;
+        border-radius: 999px;
+        background: #f1f3ed;
+        color: #5d665f;
+        padding: .28rem .54rem;
+        font-size: .72rem;
+        font-weight: 800;
+    }
+
+    .sales-payment {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border-radius: 999px;
+        background: #e8f3eb;
+        color: #356d43;
+        padding: .34rem .62rem;
+        font-size: .72rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .sales-amount {
+        color: #263029;
+        font-size: 1rem;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    @@media (max-width: 991.98px) {
+        .sales-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .sales-report-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .sales-report-header,
+        .sales-report-card-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .sales-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+</style>
+
+<div class="sales-report-page">
+    <header class="sales-report-header">
         <div>
-            <h1 class="fw-bold mb-1">รายงานยอดขาย</h1>
-            <p class="text-muted mb-0">คำนวณจากออเดอร์ที่เสร็จแล้วและยืนยันการชำระเงินแล้ว</p>
+            <span class="sales-eyebrow">Sales analytics</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">รายงานยอดขาย</h1>
+            <p class="text-muted mb-0">คำนวณจากออเดอร์ที่ยืนยันการชำระเงินแล้ว ไม่จำเป็นต้องรอออเดอร์เปลี่ยนเป็นเสร็จสิ้น</p>
         </div>
-        <a asp-action="Menus" class="btn btn-outline-danger">
+        <a asp-action="Menus" class="btn btn-outline-danger rounded-3">
             <i class="bi bi-journal-text me-1"></i>จัดการเมนู
         </a>
-    </div>
+    </header>
 
-    <form asp-action="Reports" method="get" class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4">
-            <div class="row g-3 align-items-end">
-                <div class="col-sm-5 col-lg-4">
-                    <label for="fromDate" class="form-label">ตั้งแต่วันที่</label>
-                    <input id="fromDate" name="fromDate" type="date" class="form-control"
-                           value="@Model.StartDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
-                </div>
-                <div class="col-sm-5 col-lg-4">
-                    <label for="toDate" class="form-label">ถึงวันที่</label>
-                    <input id="toDate" name="toDate" type="date" class="form-control"
-                           value="@Model.EndDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
-                </div>
-                <div class="col-sm-2 col-lg-4">
-                    <button type="submit" class="btn btn-success w-100">
-                        <i class="bi bi-search me-1"></i>ดูรายงาน
-                    </button>
-                </div>
+    <form asp-action="Reports" method="get" class="sales-filter">
+        <div class="row g-3 align-items-end">
+            <div class="col-sm-5 col-lg-4">
+                <label for="fromDate" class="form-label fw-semibold">ตั้งแต่วันที่</label>
+                <input id="fromDate" name="fromDate" type="date" class="form-control"
+                       value="@Model.StartDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
+            </div>
+            <div class="col-sm-5 col-lg-4">
+                <label for="toDate" class="form-label fw-semibold">ถึงวันที่</label>
+                <input id="toDate" name="toDate" type="date" class="form-control"
+                       value="@Model.EndDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
+            </div>
+            <div class="col-sm-2 col-lg-4">
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="bi bi-search me-1"></i>ดูรายงาน
+                </button>
             </div>
         </div>
     </form>
 
     @if (Model.ErrorMessage != null)
     {
-        <div class="alert alert-danger">@Model.ErrorMessage</div>
+        <div class="alert alert-danger rounded-3">@Model.ErrorMessage</div>
     }
     else
     {
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4">
-                        <div class="text-muted">ยอดขายรวม</div>
-                        <div class="display-6 fw-bold text-success">฿@Model.TotalSales.ToString("N2")</div>
-                    </div>
+        <section class="sales-summary" aria-label="สรุปยอดขาย">
+            <article class="sales-summary-card revenue">
+                <div class="sales-summary-top">
+                    <span class="sales-summary-label">ยอดขายรวม</span>
+                    <span class="sales-summary-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4">
-                        <div class="text-muted">ออเดอร์ที่เสร็จแล้ว</div>
-                        <div class="display-6 fw-bold">@Model.CompletedOrderCount</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4">
-                        <div class="text-muted">ยอดเฉลี่ยต่อออเดอร์</div>
-                        <div class="display-6 fw-bold text-primary">฿@Model.AverageOrderAmount.ToString("N2")</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                <div class="sales-summary-value">฿@Model.TotalSales.ToString("N2")</div>
+                <div class="sales-summary-detail">@dayCount วันในช่วงรายงาน</div>
+            </article>
 
-        <section class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                    <h2 class="h5 fw-bold mb-0">รายการขายที่เสร็จแล้ว</h2>
+            <article class="sales-summary-card orders">
+                <div class="sales-summary-top">
+                    <span class="sales-summary-label">ออเดอร์ที่ชำระแล้ว</span>
+                    <span class="sales-summary-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+                </div>
+                <div class="sales-summary-value">@Model.CompletedOrderCount</div>
+                <div class="sales-summary-detail">รายการที่ยืนยันรับเงินแล้ว</div>
+            </article>
+
+            <article class="sales-summary-card average">
+                <div class="sales-summary-top">
+                    <span class="sales-summary-label">ยอดเฉลี่ยต่อออเดอร์</span>
+                    <span class="sales-summary-icon"><i class="bi bi-calculator" aria-hidden="true"></i></span>
+                </div>
+                <div class="sales-summary-value">฿@Model.AverageOrderAmount.ToString("N2")</div>
+                <div class="sales-summary-detail">เฉลี่ยจากออเดอร์ที่ชำระแล้ว</div>
+            </article>
+
+            <article class="sales-summary-card daily">
+                <div class="sales-summary-top">
+                    <span class="sales-summary-label">ยอดเฉลี่ยต่อวัน</span>
+                    <span class="sales-summary-icon"><i class="bi bi-calendar2-week" aria-hidden="true"></i></span>
+                </div>
+                <div class="sales-summary-value">฿@averagePerDay.ToString("N2")</div>
+                <div class="sales-summary-detail">@Model.StartDate.ToString("dd/MM/yyyy") - @Model.EndDate.ToString("dd/MM/yyyy")</div>
+            </article>
+        </section>
+
+        <section class="sales-report-card">
+            <header class="sales-report-card-header">
+                <div>
+                    <h2>รายการขายที่ชำระแล้ว</h2>
                     @if (Model.CompletedOrderCount > Model.CompletedOrders.Count)
                     {
-                        <span class="small text-muted">แสดง 50 รายการล่าสุด จาก @Model.CompletedOrderCount รายการ</span>
+                        <small class="text-muted">แสดง 50 รายการล่าสุด จาก @Model.CompletedOrderCount รายการ</small>
                     }
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>เลขออเดอร์</th>
-                                <th>วันที่</th>
-                                <th>ลูกค้า</th>
-                                <th>รูปแบบ</th>
-                                <th>การชำระเงิน</th>
-                                <th class="text-end">ยอดรวม</th>
+                <span class="badge text-bg-success-subtle text-success rounded-pill px-3 py-2">
+                    @Model.CompletedOrders.Count รายการ
+                </span>
+            </header>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">เลขออเดอร์</th>
+                            <th>วันที่</th>
+                            <th>ลูกค้า</th>
+                            <th>รูปแบบ</th>
+                            <th>การชำระเงิน</th>
+                            <th class="text-end pe-4">ยอดรวม</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model.CompletedOrders)
+                        {
+                            <tr class="sales-row">
+                                <td class="ps-4"><span class="sales-order-id">เลขที่คำสั่งซื้อ @order.DisplayNumber</span></td>
+                                <td>
+                                    <span class="sales-order-date">@order.OrderDate.ToString("dd/MM/yyyy")</span>
+                                    <small class="text-muted d-block">@order.OrderDate.ToString("HH:mm") น.</small>
+                                </td>
+                                <td>@(order.User?.Username ?? "-")</td>
+                                <td>
+                                    <span class="sales-order-type">@order.OrderType</span>
+                                    @if (order.DiningTable != null)
+                                    {
+                                        <small class="text-muted d-block mt-1">โต๊ะ @order.DiningTable.TableNumber</small>
+                                    }
+                                    else if (order.ArriveTime != "-")
+                                    {
+                                        <small class="text-muted d-block mt-1">รับเวลา @order.ArriveTime น.</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="sales-payment">
+                                        <i class="bi bi-check-circle" aria-hidden="true"></i>@order.PaymentMethod
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4"><span class="sales-amount">฿@order.TotalAmount.ToString("N2")</span></td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var order in Model.CompletedOrders)
-                            {
-                                <tr>
-                                    <td>@("#ORD" + order.OrderID.ToString("D4"))</td>
-                                    <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td>@order.User?.Username</td>
-                                    <td>
-                                        @order.OrderType
-                                        @if (order.DiningTable != null)
-                                        {
-                                            <div class="small text-muted">โต๊ะ @order.DiningTable.TableNumber</div>
-                                        }
-                                        else if (order.ArriveTime != "-")
-                                        {
-                                            <div class="small text-muted">รับเวลา @order.ArriveTime น.</div>
-                                        }
-                                        @if (order.BuffetGuestCount is int guestCount)
-                                        {
-                                            <div class="small text-muted">บุฟเฟต์ @guestCount คน</div>
-                                        }
-                                    </td>
-                                    <td>@order.PaymentMethod</td>
-                                    <td class="text-end">฿@order.TotalAmount.ToString("N2")</td>
-                                </tr>
-                            }
-                            @if (Model.CompletedOrders.Count == 0)
-                            {
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-5">
-                                        ไม่พบออเดอร์ที่เสร็จแล้วในช่วงวันที่เลือก
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                        }
+                        @if (Model.CompletedOrders.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2" aria-hidden="true"></i>
+                                    ไม่พบออเดอร์ที่เสร็จแล้วในช่วงวันที่เลือก
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </section>
     }
 </div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

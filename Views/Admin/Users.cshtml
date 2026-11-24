@@ -1,50 +1,373 @@
 @model IEnumerable<AdminUserListItemViewModel>
 @{
     ViewData["Title"] = "ดูแลพนักงาน";
+    var users = Model.ToList();
+    var staffCount = users.Count(account =>
+        account.Role == AppRoles.Staff ||
+        account.Role == "Receptionist" ||
+        account.Role == "Chef" ||
+        account.Role == "StockChecker");
+    var managerCount = users.Count(account => account.Role == AppRoles.Manager);
+    var adminCount = users.Count(account => account.Role == AppRoles.Admin);
 }
 
-<div class="container py-4">
-    <h1 class="fw-bold mb-1">@ViewData["Title"]</h1>
-    <p class="text-muted mb-4">แสดงรายชื่อและข้อมูลติดต่อของพนักงาน บทบาทบัญชีจัดการได้จากหน้าแยกสำหรับแอดมิน</p>
+<style>
+    .staff-directory-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+    }
 
+    .staff-directory-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .staff-directory-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #2f6b3b;
+        font-size: .78rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .staff-directory-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .staff-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .staff-summary-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 104px;
+        border: 1px solid #dde5d9;
+        border-radius: 17px;
+        background: linear-gradient(145deg, #fffef9 0%, #edf3e8 100%);
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .08);
+        padding: 1.05rem 1.1rem;
+    }
+
+    .staff-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #4f8757;
+    }
+
+    .staff-summary-card.manager::before {
+        background: #d7a91c;
+    }
+
+    .staff-summary-card.admin::before {
+        background: #bd3124;
+    }
+
+    .staff-summary-card::after {
+        content: "";
+        position: absolute;
+        right: -28px;
+        bottom: -38px;
+        width: 92px;
+        height: 92px;
+        border: 15px solid rgba(47, 107, 59, .055);
+        border-radius: 50%;
+    }
+
+    .staff-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .staff-summary-value {
+        margin-top: .35rem;
+        color: #263029;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+
+    .staff-directory-toolbar {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 18px;
+        background: linear-gradient(90deg, rgba(255, 255, 255, .82), rgba(235, 241, 229, .92));
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .07);
+        margin-bottom: .85rem;
+        padding: .65rem;
+    }
+
+    .staff-search {
+        max-width: 380px;
+    }
+
+    .staff-search .input-group-text,
+    .staff-search .form-control,
+    .staff-role-filter {
+        border-color: #dce4da;
+        background: #fffef9;
+    }
+
+    .staff-role-filter {
+        min-width: 170px;
+    }
+
+    .staff-directory-card {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 20px;
+        background: #fbfaf5;
+        box-shadow: 0 14px 32px rgba(58, 76, 61, .09);
+    }
+
+    .staff-directory-card thead th {
+        border-bottom: 1px solid #dde5d9;
+        background: linear-gradient(90deg, #e4ecdf 0%, #edf2e9 100%);
+        color: #405146;
+        font-size: .78rem;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+    }
+
+    .staff-row {
+        transition: background-color .15s ease;
+    }
+
+    .staff-row:nth-child(even) {
+        background: #f7f7f0;
+    }
+
+    .staff-row:hover {
+        background: #eef4e9;
+    }
+
+    .staff-row td {
+        border-bottom-color: #e8ebe3;
+        padding-block: .88rem;
+    }
+
+    .staff-identity {
+        display: flex;
+        align-items: center;
+        gap: .72rem;
+        min-width: 170px;
+    }
+
+    .staff-avatar {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        place-items: center;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 13px;
+        background: linear-gradient(145deg, #fff9ed 0%, #e7f0df 100%);
+        color: #8f251c;
+        font-weight: 850;
+        box-shadow: 0 6px 14px rgba(58, 76, 61, .08);
+    }
+
+    .staff-role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border-radius: 999px;
+        padding: .34rem .62rem;
+        font-size: .72rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .staff-role-badge.staff {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .staff-role-badge.manager {
+        background: #fff1cc;
+        color: #956800;
+    }
+
+    .staff-role-badge.admin {
+        background: #ffe9e6;
+        color: #a3392f;
+    }
+
+    @@media (max-width: 575.98px) {
+        .staff-directory-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .staff-directory-header,
+        .staff-directory-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .staff-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .staff-search,
+        .staff-role-filter {
+            max-width: none;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="staff-directory-page">
     @if (TempData["AdminMessage"] != null)
     {
-        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
     }
     @if (TempData["AdminError"] != null)
     {
-        <div class="alert alert-danger">@TempData["AdminError"]</div>
+        <div class="alert alert-danger rounded-3">@TempData["AdminError"]</div>
     }
 
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th class="ps-4">ชื่อพนักงาน</th>
-                        <th>อีเมล</th>
-                        <th>โทรศัพท์</th>
-                        <th>บทบาท</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var account in Model)
-                    {
-                        <tr>
-                            <td class="ps-4">@account.Username</td>
-                            <td>@account.Email</td>
-                            <td>@(account.PhoneNumber ?? "-")</td>
-                            <td>@(AppRoles.Labels.TryGetValue(account.Role, out var label) ? label : account.Role)</td>
-                        </tr>
-                    }
-                    @if (!Model.Any())
-                    {
-                        <tr>
-                            <td colspan="4" class="text-center text-muted py-5">ยังไม่มีข้อมูลพนักงาน</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+    <header class="staff-directory-header">
+        <div>
+            <span class="staff-directory-eyebrow">Staff directory</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">ดูแลพนักงาน</h1>
+            <p class="text-muted mb-0">รายชื่อพนักงานและข้อมูลติดต่อสำหรับการประสานงานประจำวัน</p>
         </div>
+    </header>
+
+    <section class="staff-summary" aria-label="สรุปพนักงาน">
+        <article class="staff-summary-card">
+            <div class="staff-summary-label">พนักงาน Staff</div>
+            <div class="staff-summary-value">@staffCount</div>
+        </article>
+        <article class="staff-summary-card manager">
+            <div class="staff-summary-label">ผู้จัดการ</div>
+            <div class="staff-summary-value">@managerCount</div>
+        </article>
+        <article class="staff-summary-card admin">
+            <div class="staff-summary-label">ผู้ดูแลระบบ</div>
+            <div class="staff-summary-value">@adminCount</div>
+        </article>
+    </section>
+
+    <div class="staff-directory-toolbar">
+        <div class="input-group staff-search">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="staffSearch" type="search" class="form-control"
+                   placeholder="ค้นหาชื่อพนักงานหรืออีเมล"
+                   aria-label="ค้นหาพนักงาน" />
+        </div>
+        <select id="staffRoleFilter" class="form-select staff-role-filter" aria-label="กรองบทบาทพนักงาน">
+            <option value="all">ทุกบทบาท</option>
+            <option value="Staff">พนักงาน Staff</option>
+            <option value="Manager">ผู้จัดการ</option>
+            <option value="Admin">ผู้ดูแลระบบ</option>
+        </select>
     </div>
+
+    @if (users.Count == 0)
+    {
+        <div class="staff-directory-card text-center text-muted py-5">
+            <i class="bi bi-person-x fs-2 d-block mb-2" aria-hidden="true"></i>
+            ยังไม่มีข้อมูลพนักงาน
+        </div>
+    }
+    else
+    {
+        <section class="staff-directory-card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="staffDirectoryTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ชื่อพนักงาน</th>
+                            <th>อีเมล</th>
+                            <th>โทรศัพท์</th>
+                            <th class="pe-4">บทบาท</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var account in users)
+                        {
+                            var normalizedRole = AppRoles.NormalizeRole(account.Role) ?? account.Role;
+                            var roleClass = normalizedRole switch
+                            {
+                                AppRoles.Staff => "staff",
+                                AppRoles.Manager => "manager",
+                                AppRoles.Admin => "admin",
+                                _ => "staff"
+                            };
+                            <tr class="staff-row"
+                                data-search="@account.Username @account.Email"
+                                data-role="@normalizedRole">
+                                <td class="ps-4">
+                                    <div class="staff-identity">
+                                        <span class="staff-avatar" aria-hidden="true">
+                                            @(string.IsNullOrWhiteSpace(account.Username)
+                                                ? "?"
+                                                : account.Username.Trim().Substring(0, 1).ToUpperInvariant())
+                                        </span>
+                                        <div>
+                                            <span class="fw-bold">@account.Username</span>
+                                            <span class="text-muted small d-block">พนักงานระบบ</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@account.Email</td>
+                                <td>@(account.PhoneNumber ?? "-")</td>
+                                <td class="pe-4">
+                                    <span class="staff-role-badge @roleClass">
+                                        <i class="bi bi-person-badge" aria-hidden="true"></i>
+                                        @(AppRoles.Labels.TryGetValue(normalizedRole, out var label) ? label : normalizedRole)
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const searchInput = document.getElementById('staffSearch');
+            const roleFilter = document.getElementById('staffRoleFilter');
+            const rows = Array.from(document.querySelectorAll('#staffDirectoryTable tbody .staff-row'));
+
+            const filterStaff = () => {
+                const term = (searchInput?.value ?? '').trim().toLowerCase();
+                const role = roleFilter?.value ?? 'all';
+
+                rows.forEach(row => {
+                    const matchesSearch = term === '' ||
+                        (row.dataset.search ?? '').toLowerCase().includes(term);
+                    const matchesRole = role === 'all' ||
+                        row.dataset.role === role;
+                    row.hidden = !(matchesSearch && matchesRole);
+                });
+            };
+
+            searchInput?.addEventListener('input', filterStaff);
+            roleFilter?.addEventListener('change', filterStaff);
+        })();
+    </script>
+}

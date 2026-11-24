@@ -1,74 +1,217 @@
 @{
-    ViewData["Title"] = "บุฟเฟต์";
+    ViewData["Title"] = "เลือกแพ็กเกจ - อีสาน เด้อ";
+    var buffetReturnUrl = Url.Action("ReserveTable", "Home", new { package = "buffet" });
+    var alacarteReturnUrl = Url.Action("ReserveTable", "Home", new { package = "alacarte" });
 }
 
 <style>
-    .package-card {
-        background-color: white;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 50px 40px;
+    .package-hero-header {
+        background:
+            radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.18), transparent 30%),
+            linear-gradient(135deg, #701010 0%, #991b1b 50%, #c92a2a 100%);
+        border-radius: 1.75rem;
+        padding: 2.5rem 2rem;
+        color: #ffffff;
+        box-shadow: 0 16px 36px rgba(112, 16, 16, 0.25);
+        margin-bottom: 2.5rem;
+    }
+
+    .package-plan-card {
+        background-color: #ffffff;
+        border: 2px solid var(--border);
+        border-radius: 1.5rem;
+        padding: 2.5rem 2rem;
         height: 100%;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 10px 30px rgba(60, 20, 20, 0.06);
+        position: relative;
+        transition: all 0.25s ease;
     }
-    .text-brand-red { color: var(--brand-red); }
-    .text-brand-green { color: var(--brand-green); }
-    .btn-brand-red { 
-        background-color: var(--brand-red); color: white; border: none; 
-        padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; 
+
+    .package-plan-card:hover {
+        transform: translateY(-6px);
+        border-color: var(--brand-red-vibrant);
+        box-shadow: 0 18px 40px rgba(201, 42, 42, 0.18) !important;
     }
-    .btn-brand-red:hover { background-color: var(--brand-red-dark); color: white; }
-    
-    .btn-brand-green { 
-        background-color: var(--brand-green); color: white; border: none; 
-        padding: 12px; border-radius: 8px; font-weight: bold; width: 100%; 
+
+    .package-card-featured {
+        border-color: var(--brand-red) !important;
+        border-top: 8px solid var(--brand-red) !important;
+        background: linear-gradient(180deg, #fffafa 0%, #ffffff 100%);
     }
-    .btn-brand-green:hover { background-color: var(--brand-green-dark); color: white; }
-    
-    .check-list { list-style: none; padding-left: 0; margin-top: 30px; flex-grow: 1; }
-    .check-list li { margin-bottom: 15px; color: #555; display: flex; align-items: center; }
-    .check-list li::before { content: '✓'; margin-right: 10px; color: var(--brand-green); }
+
+    .package-ribbon-tag {
+        position: absolute;
+        top: -14px;
+        right: 24px;
+        background: linear-gradient(135deg, var(--brand-red-vibrant), var(--brand-red-dark));
+        color: #fff;
+        font-family: 'Kanit', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 0.35rem 1rem;
+        border-radius: 999px;
+        box-shadow: 0 4px 12px rgba(201, 42, 42, 0.4);
+    }
+
+    .package-icon-circle {
+        width: 4rem;
+        height: 4rem;
+        border-radius: 1.25rem;
+        display: grid;
+        place-items: center;
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .icon-buffet {
+        background: var(--brand-red-soft);
+        color: var(--brand-red);
+        border: 1px solid var(--brand-red-subtle);
+    }
+
+    .icon-alacarte {
+        background: #fdf2f2;
+        color: var(--brand-red-dark);
+        border: 1px solid var(--border);
+    }
+
+    .check-list-custom {
+        list-style: none;
+        padding-left: 0;
+        margin: 1.75rem 0;
+        flex-grow: 1;
+    }
+
+    .check-list-custom li {
+        margin-bottom: 0.85rem;
+        color: #444;
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-size: 0.98rem;
+    }
+
+    .check-list-custom li i {
+        color: var(--brand-red);
+        font-size: 1.15rem;
+    }
 </style>
 
-<div class="container mt-5 pb-5">
-    <div class="section-heading mb-4">
-        <div>
-            <span class="section-kicker">อิ่มอร่อยในแบบที่ชอบ</span>
-            <h2 class="fw-bold mb-0">เลือกแพ็กเกจ</h2>
+<div class="container py-4 pb-5" style="max-width: 1080px;">
+    <!-- แบนเนอร์หัวหน้าแพ็กเกจ -->
+    <section class="package-hero-header text-center">
+        <span class="badge bg-white text-danger rounded-pill px-3 py-1 mb-2 fw-bold">
+            <i class="bi bi-basket2-fill me-1"></i> เลือกรสชาติความอร่อย
+        </span>
+        <h1 class="display-6 fw-bold mb-2">เลือกแพ็กเกจรับประทานอาหาร</h1>
+        <p class="text-white-50 fs-5 mb-0 mx-auto" style="max-width: 650px;">
+            เลือกรูปแบบการทานที่คุณต้องการ เพื่อเข้าสู่ขั้นตอนการเลือกโต๊ะที่นั่ง
+        </p>
+    </section>
+
+    @if (ViewBag.CurrentBuffetPromotion is IsanDer.Models.BuffetChildPromotion promotion)
+    {
+        <div class="alert alert-danger border-danger border-opacity-25 bg-danger bg-opacity-10 rounded-4 d-flex flex-wrap justify-content-between align-items-center gap-3 p-4 mb-4 shadow-sm">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-danger text-white rounded-circle d-grid place-items-center" style="width: 48px; height: 48px; font-size: 1.5rem;">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-danger mb-1">
+                        สิทธิพิเศษเด็กอายุไม่เกิน @promotion.MaxChildAge ปี
+                        สูงไม่เกิน @promotion.MaxChildHeightCm ซม.
+                    </h5>
+                    <div class="text-muted small">
+                        เด็กสูงสุด @promotion.MaxFreeChildren คนต่อโต๊ะ พนักงานตรวจสิทธิ์ที่ร้าน
+                    </div>
+                </div>
+            </div>
+            <div class="text-md-end">
+                <span class="small text-muted d-block mb-1">รหัสส่วนลดใช้ได้ถึง @promotion.EndDate?.ToString("dd/MM/yyyy")</span>
+                <span class="px-3 py-1 bg-white border border-danger text-danger rounded-pill fw-bold fs-5">
+                    <code>@promotion.Code</code>
+                </span>
+            </div>
         </div>
-    </div>
+    }
 
     <div class="row g-4">
-        <!-- แพ็กเกจบุฟเฟต์ 299 -->
+        <!-- 1. แพ็กเกจบุฟเฟต์ 299 -->
         <div class="col-md-6">
-            <div class="package-card package-card-red shadow-sm">
-                <span class="package-icon"><i class="bi bi-fire"></i></span>
-                <span class="section-kicker">คุ้มครบ จบในราคาเดียว</span>
-                <h3 class="fw-bold text-brand-red mb-3">บุฟเฟต์ 299 บาท / คน</h3>
-                <ul class="check-list">
-                    <li>ส้มตำ ลาบ น้ำตก ย่าง ต้มแซ่บ</li>
-                    <li>รับประทานตามเวลาที่ร้านกำหนด</li>
-                    <li>เลือกจำนวนคนและชำระรวมในขั้นตอนเดียว</li>
-                </ul>
-                <div class="mt-5">
-                    <a asp-controller="Home" asp-action="ReserveTable" asp-route-package="buffet" class="btn-brand-red text-center text-decoration-none d-block">เลือกแพ็กเกจ</a>
+            <div class="package-plan-card package-card-featured">
+                <span class="package-ribbon-tag">🔥 ยอดนิยมอันดับ 1</span>
+                <div>
+                    <div class="package-icon-circle icon-buffet">
+                        <i class="bi bi-fire"></i>
+                    </div>
+                    <span class="text-danger fw-bold text-uppercase small letter-spacing-1">อิ่มไม่อั้น คุ้มจุใจ</span>
+                    <h3 class="fw-bold text-dark mt-1 mb-2">บุฟเฟต์อาหารอีสาน</h3>
+                    <div class="d-flex align-items-baseline gap-1 my-3">
+                        <span class="display-5 fw-bold text-danger">฿299</span>
+                        <span class="text-muted fw-semibold">/ คน (ทานได้ไม่อั้น)</span>
+                    </div>
+
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    @if (User.IsInRole(AppRoles.Customer))
+                    {
+                        <a asp-controller="Home" asp-action="ReserveTable" asp-route-package="buffet"
+                           class="btn btn-brand w-100 py-3 rounded-pill fw-bold fs-5 shadow text-decoration-none d-block text-center">
+                            <i class="bi bi-fire me-1"></i> เลือกแพ็กเกจบุฟเฟต์
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@buffetReturnUrl"
+                           class="btn btn-brand w-100 py-3 rounded-pill fw-bold fs-5 shadow text-decoration-none d-block text-center">
+                            <i class="bi bi-fire me-1"></i> เข้าสู่ระบบเพื่อเลือกแพ็กเกจ
+                        </a>
+                    }
                 </div>
             </div>
         </div>
 
-        <!-- แพ็กเกจอาลาคาสต์ -->
+        <!-- 2. แพ็กเกจอาลาคาสต์ -->
         <div class="col-md-6">
-            <div class="package-card shadow-sm">
-                <span class="package-icon"><i class="bi bi-journal-richtext"></i></span>
-                <span class="section-kicker">เลือกได้ตามใจ</span>
-                <h3 class="fw-bold text-brand-green mb-3">อาลาคาสต์</h3>
-                <ul class="check-list">
-                    <li>เลือกสั่งอาหารเป็นจานจากเมนู</li>
-                    <li>คิดราคาตามรายการอาหารที่สั่ง</li>
-                </ul>
-                <div class="mt-5">
-                    <a asp-controller="Home" asp-action="ReserveTable" asp-route-package="alacarte" class="btn-brand-green text-center text-decoration-none d-block">เลือกแพ็กเกจ</a>
+            <div class="package-plan-card">
+                <div>
+                    <div class="package-icon-circle icon-alacarte">
+                        <i class="bi bi-journal-richtext"></i>
+                    </div>
+                    <span class="text-muted fw-bold text-uppercase small">สั่งตามใจ</span>
+                    <h3 class="fw-bold text-dark mt-1 mb-2">อาลาคาสต์ (สั่งแยกจาน)</h3>
+                    <div class="d-flex align-items-baseline gap-1 my-3">
+                        <span class="display-5 fw-bold text-dark">ตามเมนู</span>
+                        <span class="text-muted fw-semibold">/ คิดราคาตามจานที่สั่ง</span>
+                    </div>
+
+                    <ul class="check-list-custom">
+                        <li><i class="bi bi-check-circle-fill"></i> เลือกสั่งอาหารได้อิสระจากเมนูกว่า 30+ รายการ</li>
+                        <li><i class="bi bi-check-circle-fill"></i> เหมาะสำหรับมื้อเบาๆ หรือสั่งจานโปรดเฉพาะจาน</li>
+                        <li><i class="bi bi-check-circle-fill"></i> ชำระเงินเฉพาะรายการอาหารที่สั่งจริง</li>
+                        <li><i class="bi bi-check-circle-fill"></i> มีบริการทั้งทานที่ร้านและสั่งล่วงหน้ารับกลับ</li>
+                    </ul>
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    @if (User.IsInRole(AppRoles.Customer))
+                    {
+                        <a asp-controller="Home" asp-action="ReserveTable" asp-route-package="alacarte"
+                           class="btn btn-outline-danger w-100 py-3 rounded-pill fw-bold fs-5 shadow-sm text-decoration-none d-block text-center">
+                            เลือกแพ็กเกจอาลาคาสต์
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@alacarteReturnUrl"
+                           class="btn btn-outline-danger w-100 py-3 rounded-pill fw-bold fs-5 shadow-sm text-decoration-none d-block text-center">
+                            เข้าสู่ระบบเพื่อเลือกแพ็กเกจ
+                        </a>
+                    }
                 </div>
             </div>
         </div>

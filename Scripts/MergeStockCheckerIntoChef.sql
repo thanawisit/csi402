@@ -1,0 +1,1 @@
+-- Legacy script: use Scripts/MergeStaffRoles.sql for the single Staff role.

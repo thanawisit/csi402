@@ -14,6 +14,7 @@ public sealed class AdminDashboardViewModel
     public decimal TodayOrderTotal { get; set; }
     public decimal TodayPaidTotal { get; set; }
     public int PendingPaymentCount { get; set; }
+    public int PendingReservationCount { get; set; }
     public IReadOnlyList<Order> RecentOrders { get; set; } = Array.Empty<Order>();
 }
 
@@ -29,6 +30,10 @@ public sealed class MenuInputViewModel
     [Range(typeof(decimal), "0.01", "100000", ErrorMessage = "ราคาต้องมากกว่า 0")]
     [Display(Name = "ราคา")]
     public decimal Price { get; set; }
+
+    [StringLength(500, ErrorMessage = "รายละเอียดต้องไม่เกิน 500 ตัวอักษร")]
+    [Display(Name = "รายละเอียดและวัตถุดิบ")]
+    public string? Description { get; set; }
 
     [Required]
     [Display(Name = "สถานะ")]
@@ -55,6 +60,15 @@ public sealed class StockMenuViewModel
     public string MenuName { get; set; } = string.Empty;
     public int? StockQuantity { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string? ImagePath { get; set; }
+}
+
+public sealed class ThemePromotionApprovalViewModel
+{
+    public int OrderId { get; set; }
+    public string PromotionCode { get; set; } = string.Empty;
+    public string PromotionName { get; set; } = string.Empty;
+    public string ThemeApprovalStatus { get; set; } = "รออนุมัติ";
 }
 
 public sealed class SalesReportViewModel

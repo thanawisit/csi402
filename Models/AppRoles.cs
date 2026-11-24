@@ -3,23 +3,41 @@ namespace IsanDer.Models;
 public static class AppRoles
 {
     public const string Customer = "Customer";
-    public const string Receptionist = "Receptionist";
-    public const string Chef = "Chef";
+    public const string Staff = "Staff";
+    public const string Accountant = "Accountant";
     public const string Manager = "Manager";
-    public const string StockChecker = "StockChecker";
     public const string Admin = "Admin";
 
     public static readonly IReadOnlyDictionary<string, string> Labels =
         new Dictionary<string, string>
         {
             [Customer] = "ลูกค้า",
-            [Receptionist] = "พนักงานต้อนรับ",
-            [Chef] = "พ่อครัว",
+            [Staff] = "พนักงาน",
+            [Accountant] = "พนักงานบัญชี",
             [Manager] = "Manager",
-            [StockChecker] = "คนเช็คสต๊อก",
             [Admin] = "แอดมิน"
         };
 
-    public static bool IsValid(string? role) =>
-        role is not null && Labels.ContainsKey(role);
+    public static readonly IReadOnlyDictionary<string, string> AssignableLabels =
+        new Dictionary<string, string>
+        {
+            [Customer] = Labels[Customer],
+            [Staff] = Labels[Staff],
+            [Accountant] = Labels[Accountant],
+            [Manager] = Labels[Manager],
+            [Admin] = Labels[Admin]
+        };
+
+    public static string? NormalizeRole(string? role) =>
+        role switch
+        {
+            "Receptionist" or "Chef" or "StockChecker" => Staff,
+            _ => role
+        };
+
+    public static bool IsValid(string? role)
+    {
+        var normalizedRole = NormalizeRole(role);
+        return normalizedRole is not null && Labels.ContainsKey(normalizedRole);
+    }
 }

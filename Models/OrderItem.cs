@@ -13,4 +13,6 @@ public partial class OrderItem
     public int Quantity { get; set; }
     public decimal Price { get; set; }
     public bool StockDeducted { get; set; }
+    [StringLength(500)]
+    public string? SpecialRequest { get; set; }
 }

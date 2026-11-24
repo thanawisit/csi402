@@ -1,71 +1,170 @@
 @model IsanDer.Models.OrderDetailViewModel
 
 @{
-    ViewData["Title"] = "รายละเอียดออเดอร์";
+    ViewData["Title"] = "รายละเอียดคำสั่งซื้อ " + Model.Order.DisplayNumber;
     var statusClass = Model.Order.OrderStatus == "ยกเลิก"
-        ? "text-bg-danger"
+        ? "bg-danger text-white"
         : Model.Order.OrderStatus == "เสร็จแล้ว" || Model.Order.OrderStatus == "สำเร็จ"
-            ? "text-bg-success"
-            : "text-bg-warning";
+            ? "bg-success text-white"
+            : "bg-warning text-dark";
 }
 
-<div class="container mt-5 pb-5" style="max-width: 1100px;">
+<style>
+    .review-score-btn {
+        min-width: 58px;
+        border: 1.5px solid #f6c453;
+        background: #fff;
+        color: #c47d00;
+        border-radius: 999px;
+        padding: 0.45rem 0.75rem;
+        font-weight: 800;
+        transition: all 0.15s ease;
+    }
+
+    .review-score-btn:hover,
+    .review-score-btn.active {
+        border-color: #f59e0b;
+        background: #f59e0b;
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 12px rgba(245, 158, 11, 0.24);
+    }
+</style>
+
+<div class="container py-4 pb-5" style="max-width: 1100px;">
     @if (TempData["PaymentMessage"] != null)
     {
-        <div class="alert alert-success" role="status">@TempData["PaymentMessage"]</div>
+        <div class="alert alert-success rounded-4 p-3 shadow-sm mb-4" role="status">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["PaymentMessage"]
+        </div>
     }
     @if (TempData["PaymentError"] != null)
     {
-        <div class="alert alert-danger" role="alert">@TempData["PaymentError"]</div>
+        <div class="alert alert-danger rounded-4 p-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["PaymentError"]
+        </div>
     }
+
     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
         <div>
-            <span class="section-kicker">คำสั่งซื้อ #ORD@(Model.Order.OrderID.ToString("D4"))</span>
-            <h1 class="h2 fw-bold mb-0">รายละเอียดออเดอร์</h1>
+            <span class="badge bg-danger rounded-pill px-3 py-1 mb-2 fw-bold">
+                <i class="bi bi-receipt me-1"></i> คำสั่งซื้อ @Model.Order.DisplayNumber
+            </span>
+            <h1 class="display-6 fw-bold mb-0 text-dark">รายละเอียดคำสั่งซื้อ</h1>
         </div>
-        <a asp-controller="Home" asp-action="OrderHistory" class="btn btn-outline-success">
-            <i class="bi bi-arrow-left me-1"></i>กลับไปประวัติการสั่งซื้อ
+        <a asp-controller="Home" asp-action="OrderHistory" class="btn btn-outline-danger rounded-pill px-4 py-2 fw-bold">
+            <i class="bi bi-arrow-left me-1"></i> กลับไปประวัติการสั่งซื้อ
         </a>
     </div>
 
+    @if (ViewBag.CanReview == true)
+    {
+        var existingReview = ViewBag.ExistingReview as IsanDer.Models.OrderReview;
+        <section class="card border rounded-4 shadow-sm p-4 bg-white mb-4">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                <div>
+                    <h2 class="h5 fw-bold mb-1 text-dark">รีวิวคำสั่งซื้อ</h2>
+                    <p class="text-muted small mb-0">
+                        @(existingReview == null ? "ให้คะแนนและความคิดเห็นหลังการรับบริการ" : "แก้ไขคะแนนและความคิดเห็นของคุณ")
+                    </p>
+                </div>
+                @if (existingReview != null)
+                {
+                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">รีวิวแล้ว</span>
+                }
+            </div>
+            <form id="reviewForm" asp-controller="Home" asp-action="SaveReview" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Order.OrderID" />
+                <fieldset class="mb-3">
+                    <legend class="form-label fw-bold text-dark">คะแนน</legend>
+                    <div class="d-flex flex-wrap gap-2">
+                        @for (var score = 1; score <= 5; score++)
+                        {
+                            var isChecked = existingReview != null && existingReview.Rating == score;
+                            <button type="button"
+                                    class="review-score-btn @(isChecked ? "active" : "")"
+                                    data-rating="@score"
+                                    onclick="selectReviewRating(this, @score)"
+                                    aria-pressed="@(isChecked ? "true" : "false")">
+                                @score ดาว
+                            </button>
+                        }
+                    </div>
+                    <input type="hidden" id="ratingValue" name="rating"
+                           value="@(existingReview?.Rating ?? 0)" />
+                    <div id="reviewRatingError" class="text-danger small mt-2 d-none">
+                        กรุณาเลือกคะแนนก่อนบันทึกรีวิว
+                    </div>
+                </fieldset>
+                <div class="mb-3">
+                    <label for="reviewComment" class="form-label fw-bold text-dark">ความคิดเห็น</label>
+                    <textarea id="reviewComment" name="comment" class="form-control" rows="3"
+                              maxlength="1000"
+                              placeholder="บอกประสบการณ์และสิ่งที่ควรปรับปรุง">@existingReview?.Comment</textarea>
+                </div>
+                <button type="submit" class="btn btn-brand rounded-pill px-4">
+                    <i class="bi bi-star-fill me-1"></i>
+                    @(existingReview == null ? "บันทึกรีวิว" : "บันทึกการแก้ไข")
+                </button>
+            </form>
+        </section>
+    }
+
     <div class="row g-4">
+        <!-- ฝั่งซ้าย: รายการอาหารหรือบุฟเฟต์ -->
         <div class="col-lg-8">
-            <section class="card border-0 shadow-sm rounded-4 p-3 p-md-4">
-                <h2 class="h5 fw-bold mb-3">@(Model.Order.BuffetGuestCount.HasValue ? "แพ็กเกจบุฟเฟต์" : "รายการอาหาร")</h2>
+            <section class="card border rounded-4 shadow-sm p-4 bg-white">
+                <h3 class="h5 fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-basket2-fill text-danger"></i>
+                    @(Model.Order.BuffetGuestCount.HasValue ? "แพ็กเกจบุฟเฟต์" : "รายการอาหารที่สั่ง")
+                </h3>
+
                 @if (Model.Order.BuffetGuestCount is int buffetGuests)
                 {
-                    <div class="d-flex justify-content-between">
-                        <span>บุฟเฟต์ 299 บาท × @buffetGuests คน</span>
-                        <span class="fw-semibold">฿@((Model.Order.TotalAmount + Model.Order.DiscountAmount).ToString("N2"))</span>
-                    </div>
-                    @if (Model.Order.DiscountAmount > 0m)
-                    {
-                        <div class="d-flex justify-content-between text-success mt-2">
-                            <span>ส่วนลดเด็กกินฟรี (@Model.Order.BuffetFreeChildCount คน) · โค้ด @Model.Order.PromoCode</span>
-                            <span>-฿@Model.Order.DiscountAmount.ToString("N2")</span>
+                    <div class="p-3 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-danger fs-6">บุฟเฟต์อาหารอีสาน 299 บาท × @buffetGuests คน</span>
+                            <span class="fw-bold fs-5 text-dark">฿@((Model.Order.TotalAmount + Model.Order.DiscountAmount).ToString("N2"))</span>
                         </div>
-                    }
+                        @if (Model.Order.DiscountAmount > 0m)
+                        {
+                            <div class="d-flex justify-content-between text-danger small mt-2 fw-semibold">
+                                <span><i class="bi bi-gift-fill me-1"></i> ส่วนลดเด็กกินฟรี (@Model.Order.BuffetFreeChildCount คน) · โค้ด @Model.Order.PromoCode</span>
+                                <span>-฿@Model.Order.DiscountAmount.ToString("N2")</span>
+                            </div>
+                        }
+                    </div>
                 }
-                else if (Model.Items.Count > 0)
+
+                @if (Model.Items.Count > 0)
                 {
                     <div class="table-responsive">
                         <table class="table align-middle mb-0">
-                            <thead>
+                            <thead class="bg-light">
                                 <tr>
-                                    <th scope="col">เมนู</th>
-                                    <th scope="col" class="text-center">จำนวน</th>
-                                    <th scope="col" class="text-end">ราคาต่อหน่วย</th>
-                                    <th scope="col" class="text-end">รวม</th>
+                                    <th scope="col" class="py-3 text-dark">เมนูอาหาร</th>
+                                    <th scope="col" class="py-3 text-center text-dark">จำนวน</th>
+                                    <th scope="col" class="py-3 text-end text-dark">ราคาต่อจาน</th>
+                                    <th scope="col" class="py-3 text-end text-dark">รวม</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var item in Model.Items)
                                 {
                                     <tr>
-                                        <td class="fw-semibold">@item.MenuName</td>
-                                        <td class="text-center">@item.Quantity</td>
-                                        <td class="text-end">฿@item.UnitPrice.ToString("N2")</td>
-                                        <td class="text-end fw-semibold">฿@item.LineTotal.ToString("N2")</td>
+                                        <td class="py-3">
+                                            <span class="fw-bold text-dark d-block">@item.MenuName</span>
+                                            @if (!string.IsNullOrWhiteSpace(item.SpecialRequest))
+                                            {
+                                                <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 mt-1 small">
+                                                    <i class="bi bi-chat-left-dots-fill me-1"></i>@item.SpecialRequest
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="text-center py-3 fw-bold">@item.Quantity</td>
+                                        <td class="text-end py-3 text-muted">฿@item.UnitPrice.ToString("N2")</td>
+                                        <td class="text-end py-3 fw-bold text-danger">฿@item.LineTotal.ToString("N2")</td>
                                     </tr>
                                 }
                             </tbody>
@@ -74,81 +173,128 @@
                 }
                 else
                 {
-                    <p class="text-muted mb-0">ไม่พบรายการอาหารในออเดอร์นี้</p>
+                    <p class="text-muted mb-0 py-3 text-center">ไม่พบรายการอาหารในออเดอร์นี้</p>
                 }
             </section>
         </div>
 
+        <!-- ฝั่งขวา: สรุปคำสั่งซื้อ และ ข้อมูลการชำระเงิน -->
         <div class="col-lg-4">
-            <section class="card border-0 shadow-sm rounded-4 p-4">
-                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                    <h2 class="h5 fw-bold mb-0">สรุปออเดอร์</h2>
-                    <span class="badge rounded-pill @statusClass">@OrderStatusLabels.Display(Model.Order.OrderStatus)</span>
+            <section class="card border rounded-4 shadow-sm p-4 bg-white" style="border-top: 5px solid var(--brand-red) !important;">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <h3 class="h5 fw-bold mb-0 text-dark">สรุปออเดอร์</h3>
+                    <span class="badge rounded-pill px-3 py-2 fw-bold @statusClass">@OrderStatusLabels.Display(Model.Order.OrderStatus)</span>
                 </div>
 
                 <dl class="mb-0">
-                    <dt class="text-muted small">วันที่สั่ง</dt>
-                    <dd class="mb-3">@Model.Order.OrderDate.ToString("dd MMM yyyy HH:mm")</dd>
+                    <dt class="text-muted small">วันที่และเวลาสั่ง</dt>
+                    <dd class="fw-semibold text-dark mb-3">@Model.Order.OrderDate.ToString("dd MMM yyyy · HH:mm น.")</dd>
 
-                    <dt class="text-muted small">รูปแบบ</dt>
-                    <dd class="mb-3">@Model.Order.OrderType</dd>
+                    <dt class="text-muted small">รูปแบบการสั่ง</dt>
+                    <dd class="fw-semibold text-dark mb-3">@Model.Order.OrderType</dd>
 
                     @if (Model.Order.OrderType == "สั่งล่วงหน้า รับที่ร้าน")
                     {
                         <dt class="text-muted small">เวลารับอาหาร</dt>
-                        <dd class="mb-3">@Model.Order.ArriveTime น.</dd>
+                        <dd class="fw-bold text-danger mb-3">@Model.Order.ArriveTime น.</dd>
                     }
 
                     @if (Model.Order.DiningTable != null)
                     {
-                        <dt class="text-muted small">โต๊ะ</dt>
-                        <dd class="mb-3">@Model.Order.DiningTable.TableNumber</dd>
+                        <dt class="text-muted small">โต๊ะที่นั่ง</dt>
+                        <dd class="fw-bold text-danger mb-3">โต๊ะ @Model.Order.DiningTable.TableNumber</dd>
                     }
                     @if (Model.Order.BuffetGuestCount is int guestCount)
                     {
-                        <dt class="text-muted small">จำนวนผู้ใช้บุฟเฟต์</dt>
-                        <dd class="mb-3">@guestCount คน</dd>
-                    }
-                    @if (Model.Order.BuffetFreeChildCount > 0)
-                    {
-                        <dt class="text-muted small">จำนวนเด็กที่ใช้สิทธิ์</dt>
-                        <dd class="mb-3">@Model.Order.BuffetFreeChildCount คน · โค้ด @Model.Order.PromoCode</dd>
+                        <dt class="text-muted small">จำนวนผู้ทานบุฟเฟต์</dt>
+                        <dd class="fw-semibold text-dark mb-3">@guestCount คน</dd>
                     }
 
-                    <dt class="text-muted small">วิธีชำระเงิน</dt>
-                    <dd class="mb-3">@Model.Order.PaymentMethod</dd>
+                    <dt class="text-muted small">วิธีการชำระเงิน</dt>
+                    <dd class="fw-semibold text-dark mb-3">@Model.Order.PaymentMethod</dd>
 
-                    <dt class="text-muted small">สถานะชำระเงิน</dt>
-                    <dd class="mb-3">@Model.Order.PaymentStatus</dd>
+                    <dt class="text-muted small">สถานะการชำระเงิน</dt>
+                    <dd class="fw-bold text-dark mb-3">@Model.Order.PaymentStatus</dd>
                 </dl>
 
                 @if (Model.Order.PaymentMethod == "PromptPay" &&
                      Model.Order.PaymentStatus == PaymentStatuses.NeedsResubmission &&
                      Model.Order.OrderStatus != "ยกเลิก")
                 {
-                    <form asp-controller="Home" asp-action="ResubmitPaymentProof" method="post" enctype="multipart/form-data">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.Order.OrderID" />
-                        <label for="paymentProof" class="form-label fw-bold">ส่งสลิปใหม่ (PNG/JPEG ไม่เกิน 5 MB)</label>
-                        <input type="file" id="paymentProof" name="paymentProof" class="form-control mb-3"
-                               accept=".png,.jpg,.jpeg,image/png,image/jpeg" required />
-                        <button type="submit" class="btn btn-outline-success w-100">ส่งสลิปใหม่ให้ตรวจสอบ</button>
-                    </form>
+                    <div class="p-3 rounded-3 bg-danger bg-opacity-10 border border-danger my-3">
+                        <form asp-controller="Home" asp-action="ResubmitPaymentProof" method="post" enctype="multipart/form-data">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Order.OrderID" />
+                            <label for="paymentProof" class="form-label fw-bold text-danger small">ส่งสลิปใหม่ให้ตรวจสอบ</label>
+                            <input type="file" id="paymentProof" name="paymentProof" class="form-control mb-2"
+                                   accept=".png,.jpg,.jpeg,image/png,image/jpeg" required />
+                            <button type="submit" class="btn btn-brand btn-sm w-100 rounded-pill">ส่งสลิปใหม่</button>
+                        </form>
+                    </div>
                 }
 
-                <hr />
+                @if (ViewBag.CustomerCanCancel == true)
+                {
+                    <div class="p-3 bg-light rounded-3 my-3">
+                        <small class="text-muted d-block mb-2">สั่งล่วงหน้าต้องยกเลิกก่อนเวลารับอย่างน้อย 30 นาที</small>
+                        <form asp-controller="Home" asp-action="CancelOrder" method="post"
+                              onsubmit="return confirm('ยืนยันการยกเลิกออเดอร์นี้?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Order.OrderID" />
+                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill w-100">
+                                <i class="bi bi-x-circle me-1"></i> ยกเลิกออเดอร์
+                            </button>
+                        </form>
+                    </div>
+                }
+
+                <hr class="my-3" />
                 @if (Model.Order.DiscountAmount > 0m)
                 {
-                    <div class="d-flex justify-content-between align-items-center mb-2 text-success">
+                    <div class="d-flex justify-content-between align-items-center mb-2 text-danger fw-bold">
                         <span>ส่วนลด</span>
                         <span>-฿@Model.Order.DiscountAmount.ToString("N2")</span>
                     </div>
                 }
                 <div class="d-flex justify-content-between align-items-center">
-                    <span class="fw-bold">ยอดรวม</span>
-                    <span class="fs-4 fw-bold text-brand">฿@Model.Order.TotalAmount.ToString("N2")</span>
+                    <span class="fw-bold text-dark fs-5">ยอดรวมสุทธิ</span>
+                    <span class="fs-3 fw-bold text-danger" style="font-family: 'Kanit', sans-serif;">
+                        ฿@Model.Order.TotalAmount.ToString("N2")
+                    </span>
                 </div>
             </section>
         </div>
     </div>
+
+    @section Scripts {
+        <script>
+            function selectReviewRating(button, rating) {
+                document.querySelectorAll('.review-score-btn').forEach(item => {
+                    item.classList.remove('active');
+                    item.setAttribute('aria-pressed', 'false');
+                });
+                button.classList.add('active');
+                button.setAttribute('aria-pressed', 'true');
+                const ratingInput = document.getElementById('ratingValue');
+                if (ratingInput) ratingInput.value = String(rating);
+                document.getElementById('reviewRatingError')?.classList.add('d-none');
+            }
+
+            (() => {
+                const form = document.getElementById('reviewForm');
+                const ratingInput = document.getElementById('ratingValue');
+                const ratingError = document.getElementById('reviewRatingError');
+                const scoreButtons = [...document.querySelectorAll('.review-score-btn')];
+                if (!form || !ratingInput || scoreButtons.length === 0) return;
+
+                form.addEventListener('submit', event => {
+                    const selectedRating = Number(ratingInput.value);
+                    if (!Number.isInteger(selectedRating) || selectedRating < 1 || selectedRating > 5) {
+                        event.preventDefault();
+                        ratingError?.classList.remove('d-none');
+                    }
+                });
+            })();
+        </script>
+    }
 </div>

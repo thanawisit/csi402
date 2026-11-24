@@ -1,15 +1,15 @@
 @{
-    ViewData["Title"] = "สาธิตการสแกน QR";
+    ViewData["Title"] = "สแกนสั่งอาหาร";
 }
 
 <style>
     .qr-card {
         background-color: white;
         border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 60px;
+        border-radius: 20px;
+        padding: 48px;
         width: 100%;
-        max-width: 350px;
+        max-width: 360px;
         margin: 0 auto;
         display: flex;
         justify-content: center;
@@ -26,33 +26,27 @@
 </style>
 
 <div class="container mt-5 pb-5 text-center">
-    <h3 class="fw-bold mb-4">สาธิตการสแกน QR Code</h3>
+    <span class="section-kicker">สแกนจากโต๊ะของคุณ</span>
+    <h3 class="fw-bold mb-4">สแกนสั่งอาหาร</h3>
 
     <div class="qr-card shadow-sm mb-4">
         <div>
             <i class="bi bi-grid-3x3-gap-fill qr-icon" aria-hidden="true"></i>
-            <div class="small text-muted mt-3">QR จำลองสำหรับโปรเจกต์</div>
+            <div class="small text-muted mt-3">เลือกรายการและสั่งอาหารสำหรับโต๊ะนี้</div>
         </div>
     </div>
 
     <h4 class="fw-bold text-brand mb-2">
         @(ViewBag.TableNumber == null ? "ยังไม่ได้เลือกโต๊ะ" : $"โต๊ะ {ViewBag.TableNumber}")
     </h4>
-    <p class="text-muted">หน้านี้จำลองการสแกนเท่านั้น เลือกจำนวนผู้ใช้บุฟเฟต์เพื่อไปชำระเงิน</p>
+    <p class="text-muted">กดสแกนสั่งอาหารเพื่อเปิดเมนูอาหารสำหรับโต๊ะนี้</p>
 
     @if (ViewBag.TableId != null)
     {
-        <form asp-controller="Home" asp-action="BuffetCheckout" method="get" class="mx-auto mt-3" style="max-width: 320px;">
+        <form asp-controller="Home" asp-action="Menu" method="get" class="mx-auto mt-3" style="max-width: 320px;">
             <input type="hidden" name="tableId" value="@ViewBag.TableId" />
-            <label for="guestCount" class="form-label fw-bold">จำนวนผู้ใช้บุฟเฟต์</label>
-            <div class="input-group">
-                <input type="number" id="guestCount" name="guestCount" class="form-control"
-                       value="1" min="1" max="@ViewBag.TableCapacity" required />
-                <span class="input-group-text">คน</span>
-            </div>
-            <div class="small text-muted mt-1">โต๊ะนี้รองรับไม่เกิน @ViewBag.TableCapacity คน</div>
             <button type="submit" class="btn btn-success px-4 py-2 mt-3">
-                จำลองสแกนแล้ว ไปชำระค่าบุฟเฟต์
+                สแกนสั่งอาหาร
             </button>
         </form>
     }

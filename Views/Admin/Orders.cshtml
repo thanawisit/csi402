@@ -3,190 +3,682 @@
     ViewData["Title"] = "จัดการออเดอร์";
     var allowedStatuses = (string[])ViewBag.AllowedOrderStatuses;
     var canReviewPayments = (bool)ViewBag.CanReviewPayments;
-    var isChef = (bool)ViewBag.IsChef;
+    var canConfirmCashPayments = (bool)ViewBag.CanConfirmCashPayments;
+    var canConfirmPromptPayments = (bool)ViewBag.CanConfirmPromptPayments;
+    var canRejectPromptPayments = (bool)ViewBag.CanRejectPromptPayments;
+    var isStaff = (bool)ViewBag.IsChef;
     var canEditOrders = (bool)ViewBag.CanEditOrders;
     var orderLinesById = (Dictionary<int, List<OrderListItemViewModel>>)ViewBag.OrderLines;
+    var themeApprovals = (Dictionary<int, ThemePromotionApprovalViewModel>)ViewBag.ThemeApprovals;
+    var orders = Model.ToList();
+    var pendingCount = orders.Count(order => order.OrderStatus == "รอดำเนินการ");
+    var confirmedCount = orders.Count(order => order.OrderStatus == "ยืนยันแล้ว");
+    var preparingCount = orders.Count(order => order.OrderStatus == "กำลังเตรียม");
+    var readyCount = orders.Count(order => order.OrderStatus == "พร้อมรับ");
+    var completedCount = orders.Count(order => order.OrderStatus == "เสร็จแล้ว");
+    var pendingPaymentCount = orders.Count(order =>
+        order.PaymentStatus == PaymentStatuses.PendingReview ||
+        order.PaymentStatus == PaymentStatuses.NeedsResubmission);
 }
 
-<div class="container py-4">
-    <h1 class="fw-bold mb-1">จัดการออเดอร์</h1>
-    <p class="text-muted mb-4">เปลี่ยนสถานะตามหน้าที่ของแต่ละบทบาท</p>
+<style>
+    .admin-main {
+        background:
+            radial-gradient(circle at 88% 8%, rgba(189, 49, 36, .08), transparent 20rem),
+            linear-gradient(135deg, #f4f1e8 0%, #edf2e9 100%);
+    }
 
+    .admin-content {
+        background: transparent;
+    }
+
+    .orders-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+    }
+
+    .orders-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .orders-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        color: #2f6b3b;
+        font-size: .78rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .orders-eyebrow::before {
+        content: "";
+        width: 28px;
+        height: 3px;
+        border-radius: 99px;
+        background: #bd3124;
+    }
+
+    .orders-summary {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: .75rem;
+        margin-bottom: 1rem;
+    }
+
+    .orders-summary-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 104px;
+        border: 1px solid #e7ebe7;
+        border-radius: 16px;
+        background: rgba(255, 254, 249, .92);
+        box-shadow: 0 10px 24px rgba(58, 76, 61, .09);
+        padding: 1rem 1.05rem;
+    }
+
+    .orders-summary-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: #91a98e;
+    }
+
+    .orders-summary-card.highlight {
+        border-color: #e4a49a;
+        background: linear-gradient(135deg, #fff8f5 0%, #fce9e4 100%);
+    }
+
+    .orders-summary-card.highlight::before {
+        background: #bd3124;
+    }
+
+    .orders-summary-card.pending-payment {
+        border-color: #dec66d;
+        background: linear-gradient(135deg, #fffdf4 0%, #fff1bd 100%);
+    }
+
+    .orders-summary-card.pending-payment::before {
+        background: #d7a91c;
+    }
+
+    .orders-summary-card.confirmed::before {
+        background: #4f8757;
+    }
+
+    .orders-summary-card.preparing::before {
+        background: #4f718e;
+    }
+
+    .orders-summary-card.ready {
+        background: linear-gradient(135deg, #fafdff 0%, #e5edf4 100%);
+    }
+
+    .orders-summary-card.ready::before {
+        background: #356d43;
+    }
+
+    .orders-summary-card.completed {
+        background: linear-gradient(135deg, #fafdff 0%, #e5edf4 100%);
+    }
+
+    .orders-summary-card.completed::before {
+        background: #4f718e;
+    }
+
+    .orders-summary-card.cancelled {
+        background: linear-gradient(135deg, #fffdf7 0%, #fff0e9 100%);
+    }
+
+    .orders-summary-card.cancelled::before {
+        background: #bd3124;
+    }
+
+    .orders-summary-label {
+        color: #7c847f;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .orders-summary-value {
+        margin-top: .25rem;
+        color: #263029;
+        font-size: 1.55rem;
+        font-weight: 850;
+    }
+
+    .orders-summary-card.highlight .orders-summary-value {
+        color: #bd3124;
+    }
+
+    .orders-toolbar {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        border: 1px solid rgba(47, 107, 59, .10);
+        border-radius: 16px;
+        background: rgba(225, 234, 220, .72);
+        box-shadow: 0 8px 20px rgba(58, 76, 61, .055);
+        margin-bottom: .85rem;
+        padding: .65rem;
+    }
+
+    .orders-search {
+        max-width: 360px;
+    }
+
+    .orders-search .input-group-text,
+    .orders-search .form-control,
+    .orders-filter {
+        border-color: #dce4da;
+        background-color: #fffef9;
+    }
+
+    .orders-filter {
+        min-width: 190px;
+    }
+
+    .orders-card {
+        overflow: hidden;
+        border: 1px solid #dde5d9;
+        border-radius: 18px;
+        background: #fbfaf5;
+        box-shadow: 0 14px 32px rgba(58, 76, 61, .09);
+    }
+
+    .orders-card thead th {
+        border-bottom: 1px solid #dde5d9;
+        background: #e8eee5;
+        color: #566159;
+        font-size: .78rem;
+        letter-spacing: .02em;
+    }
+
+    .order-row {
+        transition: background-color .15s ease;
+    }
+
+    .order-row:nth-child(even) {
+        background: #f7f7f0;
+    }
+
+    .order-row:hover {
+        background: #eef4e9;
+    }
+
+    .order-id {
+        color: #263029;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    .order-lines {
+        min-width: 180px;
+    }
+
+    .order-line {
+        display: flex;
+        justify-content: space-between;
+        gap: .5rem;
+        font-size: .84rem;
+    }
+
+    .order-line + .order-line {
+        margin-top: .2rem;
+    }
+
+    .order-status-badge,
+    .payment-status-badge,
+    .order-type-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: .34rem .62rem;
+        font-size: .72rem;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .order-status-badge {
+        background: #eef3ef;
+        color: #617066;
+    }
+
+    .order-status-badge.pending {
+        background: #fff1cc;
+        color: #956800;
+    }
+
+    .order-status-badge.preparing {
+        background: #e8f1ff;
+        color: #35699c;
+    }
+
+    .order-status-badge.ready {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .order-status-badge.confirmed,
+    .order-status-badge.completed {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .order-status-badge.cancelled {
+        background: #ffe9e6;
+        color: #a3392f;
+    }
+
+    .payment-status-badge {
+        background: #f1f3f1;
+        color: #69716b;
+    }
+
+    .payment-status-badge.paid {
+        background: #e8f3eb;
+        color: #356d43;
+    }
+
+    .payment-status-badge.refunded {
+        background: #fff1cc;
+        color: #956800;
+    }
+
+    .payment-status-badge.review,
+    .payment-status-badge.resubmit {
+        background: #fff1cc;
+        color: #956800;
+    }
+
+    .order-type-badge {
+        background: #f4f6f4;
+        color: #58625b;
+        margin-bottom: .2rem;
+    }
+
+    .order-actions {
+        min-width: 155px;
+    }
+
+    .order-status-form {
+        display: flex;
+        gap: .35rem;
+    }
+
+    .order-status-form select {
+        min-width: 118px;
+        font-size: .78rem;
+    }
+
+    .order-status-form .btn,
+    .order-payment-actions .btn,
+    .order-edit-link {
+        white-space: nowrap;
+    }
+
+    .order-payment-actions {
+        margin-top: .45rem;
+    }
+
+    .orders-empty {
+        border: 1px dashed #dfe5df;
+        border-radius: 18px;
+        background: #fff;
+    }
+
+    @@media (max-width: 991.98px) {
+        .orders-summary {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .orders-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .orders-header,
+        .orders-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .orders-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .orders-search,
+        .orders-filter {
+            max-width: none;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="orders-page">
     @if (TempData["AdminMessage"] != null)
     {
-        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
     }
     @if (TempData["AdminError"] != null)
     {
-        <div class="alert alert-danger">@TempData["AdminError"]</div>
+        <div class="alert alert-danger rounded-3">@TempData["AdminError"]</div>
     }
 
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th class="ps-4">ออเดอร์</th>
-                        <th>รายการอาหาร</th>
-                        <th>ลูกค้า</th>
-                        <th>รับอาหาร</th>
-                        <th>วัน / เวลา</th>
-                        <th>ยอดรวม</th>
-                        <th>การชำระเงิน</th>
-                        <th>สถานะ</th>
-                        @if (canEditOrders)
-                        {
-                            <th>จัดการ</th>
-                        }
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var order in Model)
-                    {
-                        var rowAllowedStatuses = allowedStatuses;
-                        if (isChef)
-                        {
-                            rowAllowedStatuses = (order.OrderStatus == "รอดำเนินการ" || order.OrderStatus == "ยืนยันแล้ว")
-                                ? ["กำลังเตรียม"]
-                                : order.OrderStatus == "กำลังเตรียม"
-                                    ? ["พร้อมรับ"]
-                                    : [];
-                        }
+    <header class="orders-header">
+        <div>
+            <span class="orders-eyebrow">งานปฏิบัติร้าน</span>
+            <h1 class="h2 fw-bold mt-2 mb-1">จัดการออเดอร์</h1>
+            <p class="text-muted mb-0">ติดตามออเดอร์ อัปเดตสถานะ และตรวจสอบการชำระเงิน</p>
+        </div>
+    </header>
 
+    <section class="orders-summary" aria-label="สรุปออเดอร์">
+        <article class="orders-summary-card highlight">
+            <div class="orders-summary-label">รอร้านยืนยัน</div>
+            <div class="orders-summary-value">@pendingCount</div>
+        </article>
+        <article class="orders-summary-card confirmed">
+            <div class="orders-summary-label">ยืนยันแล้ว</div>
+            <div class="orders-summary-value">@confirmedCount</div>
+        </article>
+        <article class="orders-summary-card preparing">
+            <div class="orders-summary-label">กำลังเตรียม</div>
+            <div class="orders-summary-value">@preparingCount</div>
+        </article>
+        <article class="orders-summary-card ready">
+            <div class="orders-summary-label">พร้อมรับ</div>
+            <div class="orders-summary-value">@readyCount</div>
+        </article>
+        <article class="orders-summary-card completed">
+            <div class="orders-summary-label">เสร็จสิ้น</div>
+            <div class="orders-summary-value">@completedCount</div>
+        </article>
+    </section>
+
+    <div class="orders-toolbar">
+        <div class="input-group orders-search">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="orderSearch" type="search" class="form-control" placeholder="ค้นหาเลขออเดอร์ ลูกค้า หรือโต๊ะ" aria-label="ค้นหาออเดอร์" />
+        </div>
+        <select id="orderStatusFilter" class="form-select orders-filter" aria-label="กรองสถานะออเดอร์">
+            <option value="all">สถานะทั้งหมด</option>
+            <option value="รอดำเนินการ">รอร้านยืนยัน</option>
+            <option value="ยืนยันแล้ว">ยืนยันแล้ว</option>
+            <option value="กำลังเตรียม">กำลังเตรียม</option>
+            <option value="พร้อมรับ">พร้อมรับ</option>
+            <option value="เสร็จแล้ว">เสร็จสิ้น</option>
+            <option value="ยกเลิก">ยกเลิก</option>
+        </select>
+    </div>
+
+    @if (orders.Count == 0)
+    {
+        <div class="orders-empty text-center text-muted py-5">
+            <i class="bi bi-inbox fs-2 d-block mb-2" aria-hidden="true"></i>
+            ยังไม่มีออเดอร์ในระบบ
+        </div>
+    }
+    else
+    {
+        <section class="orders-card">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="ordersTable">
+                    <thead class="table-light">
                         <tr>
-                            <td class="ps-4">@("#ORD" + order.OrderID.ToString("D4"))</td>
-                            <td>
-                                @if (orderLinesById.TryGetValue(order.OrderID, out var orderLines))
-                                {
-                                    @foreach (var line in orderLines)
-                                    {
-                                        <div>@line.MenuName <span class="text-muted">× @line.Quantity</span></div>
-                                    }
-                                }
-                                else if (order.BuffetGuestCount is int buffetCount)
-                                {
-                                    <span>บุฟเฟต์ @buffetCount คน</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">-</span>
-                                }
-                            </td>
-                            <td>
-                                @order.User?.Username
-                                <div class="small text-muted">@order.User?.PhoneNumber</div>
-                            </td>
-                            <td>
-                                @order.OrderType
-                                @if (order.DiningTable != null)
-                                {
-                                    <div class="small text-muted">โต๊ะ @order.DiningTable.TableNumber</div>
-                                }
-                                else if (order.ArriveTime != "-")
-                                {
-                                    <div class="small text-muted">รับเวลา @order.ArriveTime น.</div>
-                                }
-                                @if (order.BuffetGuestCount is int guestCount)
-                                {
-                                    <div class="small text-muted">บุฟเฟต์ @guestCount คน</div>
-                                    @if (order.BuffetFreeChildCount > 0)
-                                    {
-                                        <div class="small text-success">
-                                            เด็กฟรี @order.BuffetFreeChildCount คน · โค้ด @order.PromoCode
-                                        </div>
-                                    }
-                                }
-                            </td>
-                            <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>
-                                ฿@order.TotalAmount.ToString("N2")
-                                @if (order.DiscountAmount > 0m)
-                                {
-                                    <div class="small text-success">ส่วนลด ฿@order.DiscountAmount.ToString("N2")</div>
-                                }
-                            </td>
-                            <td>
-                                <span>@order.PaymentStatus</span>
-                                @if (order.PaymentMethod == "PromptPay")
-                                {
-                                    <div class="small text-muted">PromptPay</div>
-                                    @if (canReviewPayments && order.PaymentStatus == PaymentStatuses.PendingReview)
-                                    {
-                                        <a asp-action="PaymentProof" asp-route-id="@order.OrderID" target="_blank" rel="noopener">ดูสลิป</a>
-                                    }
-                                }
-                                @if (canReviewPayments && order.OrderStatus != "ยกเลิก" && order.PaymentStatus != PaymentStatuses.Paid)
-                                {
-                                    @if (order.PaymentMethod == "เงินสด (ชำระที่หน้าร้าน)" && order.PaymentStatus == PaymentStatuses.Unpaid)
-                                    {
-                                        <form asp-action="ConfirmPayment" method="post" class="mt-1">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@order.OrderID" />
-                                            <button type="submit" class="btn btn-sm btn-success">ยืนยันรับเงิน</button>
-                                        </form>
-                                    }
-                                    else if (order.PaymentMethod == "PromptPay" && order.PaymentStatus == PaymentStatuses.PendingReview)
-                                    {
-                                        <div class="d-flex flex-wrap gap-1 mt-1">
-                                            <form asp-action="ConfirmPayment" method="post">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@order.OrderID" />
-                                                <button type="submit" class="btn btn-sm btn-success">ยืนยัน</button>
-                                            </form>
-                                            <form asp-action="RejectPayment" method="post">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@order.OrderID" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">ขอสลิปใหม่</button>
-                                            </form>
-                                        </div>
-                                    }
-                                }
-                            </td>
-                            <td>
-                                @if (rowAllowedStatuses.Length == 0)
-                                {
-                                    <span>@OrderStatusLabels.Display(order.OrderStatus)</span>
-                                }
-                                else
-                                {
-                                    <form asp-action="UpdateOrderStatus" method="post" class="d-flex gap-2">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@order.OrderID" />
-                                        <select name="status" class="form-select form-select-sm" aria-label="สถานะออเดอร์">
-                                            @if (!rowAllowedStatuses.Contains(order.OrderStatus))
-                                            {
-                                                <option value="@order.OrderStatus" selected>@OrderStatusLabels.Display(order.OrderStatus)</option>
-                                            }
-                                            @foreach (var status in rowAllowedStatuses)
-                                            {
-                                                <option value="@status" selected="@(status == order.OrderStatus)">@OrderStatusLabels.Display(status)</option>
-                                            }
-                                        </select>
-                                        <button type="submit" class="btn btn-sm btn-outline-success">บันทึก</button>
-                                    </form>
-                                }
-                            </td>
+                            <th class="ps-4">ออเดอร์</th>
+                            <th>รายการอาหาร</th>
+                            <th>ลูกค้า</th>
+                            <th>รับอาหาร</th>
+                            <th>วัน / เวลา</th>
+                            @if (canReviewPayments)
+                            {
+                                <th>ยอดรวม</th>
+                                <th>การชำระเงิน</th>
+                            }
+                            <th>สถานะ</th>
                             @if (canEditOrders)
                             {
-                                <td>
-                                    @if (order.BuffetGuestCount is null &&
-                                         order.PaymentStatus != PaymentStatuses.Paid &&
-                                         (order.OrderStatus == "รอดำเนินการ" || order.OrderStatus == "ยืนยันแล้ว"))
-                                    {
-                                        <a asp-action="EditOrder" asp-route-id="@order.OrderID" class="btn btn-sm btn-outline-primary">
-                                            แก้ไข
-                                        </a>
-                                    }
-                                </td>
+                                <th class="pe-4">จัดการ</th>
                             }
                         </tr>
-                    }
-                    @if (!Model.Any())
-                    {
-                        <tr><td colspan="@(canEditOrders ? 9 : 8)" class="text-center text-muted py-5">ยังไม่มีออเดอร์</td></tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in orders)
+                        {
+                            var rowAllowedStatuses = allowedStatuses;
+                            if (isStaff)
+                            {
+                                rowAllowedStatuses = order.OrderStatus == "รอดำเนินการ" || order.OrderStatus == "ยืนยันแล้ว"
+                                    ? ["กำลังเตรียม", "ยกเลิก"]
+                                    : order.OrderStatus == "กำลังเตรียม"
+                                        ? ["พร้อมรับ", "ยกเลิก"]
+                                        : order.OrderStatus == "พร้อมรับ"
+                                            ? ["เสร็จแล้ว", "ยกเลิก"]
+                                            : [];
+                            }
+
+                            var statusBadgeClass = order.OrderStatus switch
+                            {
+                                "รอดำเนินการ" => "pending",
+                                "ยืนยันแล้ว" => "confirmed",
+                                "กำลังเตรียม" => "preparing",
+                                "พร้อมรับ" => "ready",
+                                "เสร็จแล้ว" => "completed",
+                                "ยกเลิก" => "cancelled",
+                                _ => ""
+                            };
+                            var paymentBadgeClass = order.PaymentStatus switch
+                            {
+                                PaymentStatuses.Paid => "paid",
+                                PaymentStatuses.Refunded => "refunded",
+                                PaymentStatuses.PendingReview => "review",
+                                PaymentStatuses.NeedsResubmission => "resubmit",
+                                _ => ""
+                            };
+                            var searchText = $"{order.DisplayNumber} {order.User?.Username} {order.DiningTable?.TableNumber}";
+
+                            <tr class="order-row"
+                                data-status="@order.OrderStatus"
+                                data-search="@searchText">
+                                <td class="ps-4">
+                                    <span class="order-id">@order.DisplayNumber</span>
+                                </td>
+                                <td>
+                                    <div class="order-lines">
+                                        @if (orderLinesById.TryGetValue(order.OrderID, out var orderLines) && orderLines.Count > 0)
+                                        {
+                                            @foreach (var line in orderLines)
+                                            {
+                                                <div class="order-line">
+                                                    <span>@line.MenuName</span>
+                                                    <strong class="text-muted">×@line.Quantity</strong>
+                                                </div>
+                                                @if (!string.IsNullOrWhiteSpace(line.SpecialRequest))
+                                                {
+                                                    <div class="small text-danger mt-1">
+                                                        <i class="bi bi-chat-square-text me-1"></i>@line.SpecialRequest
+                                                    </div>
+                                                }
+                                            }
+                                        }
+                                        else if (order.BuffetGuestCount is int buffetCount)
+                                        {
+                                            <span class="fw-semibold">บุฟเฟต์ @buffetCount คน</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold">@order.User?.Username</span>
+                                    @if (!string.IsNullOrWhiteSpace(order.User?.PhoneNumber))
+                                    {
+                                        <span class="small text-muted d-block">@order.User.PhoneNumber</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="order-type-badge">@order.OrderType</span>
+                                    @if (order.DiningTable != null)
+                                    {
+                                        <span class="small text-muted d-block">โต๊ะ @order.DiningTable.TableNumber</span>
+                                    }
+                                    else if (order.ArriveTime != "-")
+                                    {
+                                        <span class="small text-muted d-block">รับเวลา @order.ArriveTime น.</span>
+                                    }
+                                    @if (order.BuffetGuestCount is int guestCount)
+                                    {
+                                        <span class="small text-muted d-block">บุฟเฟต์ @guestCount คน</span>
+                                        @if (order.BuffetFreeChildCount > 0)
+                                        {
+                                            <span class="small text-success d-block">
+                                                เด็กฟรี @order.BuffetFreeChildCount คน
+                                            </span>
+                                        }
+                                    }
+                                </td>
+                                <td class="text-nowrap">
+                                    <span class="fw-semibold">@order.OrderDate.ToString("dd/MM/yyyy")</span>
+                                    <span class="small text-muted d-block">@order.OrderDate.ToString("HH:mm") น.</span>
+                                </td>
+                                @if (canReviewPayments)
+                                {
+                                    <td>
+                                        <span class="fw-bold">฿@order.TotalAmount.ToString("N2")</span>
+                                        @if (order.DiscountAmount > 0m)
+                                        {
+                                            <span class="small text-success d-block">ลด ฿@order.DiscountAmount.ToString("N2")</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="payment-status-badge @paymentBadgeClass">@order.PaymentStatus</span>
+                                        @if (order.PaymentMethod == "PromptPay")
+                                        {
+                                            <span class="small text-muted d-block mt-1">PromptPay</span>
+                                            @if (canConfirmPromptPayments &&
+                                                order.PaymentStatus == PaymentStatuses.PendingReview)
+                                            {
+                                                <a asp-action="PaymentProof" asp-route-id="@order.OrderID"
+                                                   target="_blank" rel="noopener"
+                                                   class="small d-inline-block mt-1">ดูสลิป</a>
+                                            }
+                                        }
+                                        @if (order.OrderStatus != "ยกเลิก" && order.PaymentStatus != PaymentStatuses.Paid)
+                                        {
+                                            @if (canConfirmCashPayments &&
+                                                order.PaymentMethod == "เงินสด (ชำระที่หน้าร้าน)" &&
+                                                order.PaymentStatus == PaymentStatuses.Unpaid)
+                                            {
+                                                <form asp-action="ConfirmPayment" method="post" class="order-payment-actions">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@order.OrderID" />
+                                                    <button type="submit" class="btn btn-sm btn-success">ยืนยันรับเงิน</button>
+                                                </form>
+                                            }
+                                            else if (canConfirmPromptPayments &&
+                                                     order.PaymentMethod == "PromptPay" &&
+                                                     order.PaymentStatus == PaymentStatuses.PendingReview)
+                                            {
+                                                <div class="d-flex flex-wrap gap-1 order-payment-actions">
+                                                    <form asp-action="ConfirmPayment" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@order.OrderID" />
+                                                        <button type="submit" class="btn btn-sm btn-success">ยืนยัน</button>
+                                                    </form>
+                                                    @if (canRejectPromptPayments)
+                                                    {
+                                                        <form asp-action="RejectPayment" method="post">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@order.OrderID" />
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger">ขอสลิปใหม่</button>
+                                                        </form>
+                                                    }
+                                                </div>
+                                            }
+                                        }
+                                    </td>
+                                }
+                                <td>
+                                    @if (rowAllowedStatuses.Length == 0)
+                                    {
+                                        <span class="order-status-badge @statusBadgeClass">@OrderStatusLabels.Display(order.OrderStatus)</span>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="UpdateOrderStatus" method="post" class="order-status-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@order.OrderID" />
+                                            <select name="status" class="form-select form-select-sm" aria-label="สถานะออเดอร์">
+                                                @if (!rowAllowedStatuses.Contains(order.OrderStatus))
+                                                {
+                                                    <option value="@order.OrderStatus" selected>@OrderStatusLabels.Display(order.OrderStatus)</option>
+                                                }
+                                                @foreach (var status in rowAllowedStatuses)
+                                                {
+                                                    <option value="@status" selected="@(status == order.OrderStatus)">@OrderStatusLabels.Display(status)</option>
+                                                }
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-outline-success">บันทึก</button>
+                                        </form>
+                                    }
+                                </td>
+                                @if (canEditOrders)
+                                {
+                                    <td class="pe-4">
+                                        @if (order.BuffetGuestCount is null &&
+                                             order.PaymentStatus != PaymentStatuses.Paid &&
+                                             (order.OrderStatus == "รอดำเนินการ" || order.OrderStatus == "ยืนยันแล้ว"))
+                                        {
+                                            <a asp-action="EditOrder" asp-route-id="@order.OrderID"
+                                               class="btn btn-sm btn-outline-primary order-edit-link">
+                                                แก้ไข
+                                            </a>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const searchInput = document.getElementById('orderSearch');
+            const statusFilter = document.getElementById('orderStatusFilter');
+            const rows = Array.from(document.querySelectorAll('#ordersTable tbody .order-row'));
+
+            const filterOrders = () => {
+                const term = (searchInput?.value ?? '').trim().toLowerCase();
+                const status = statusFilter?.value ?? 'all';
+
+                rows.forEach(row => {
+                    const matchesSearch = term === '' ||
+                        (row.dataset.search ?? '').toLowerCase().includes(term);
+                    const matchesStatus = status === 'all' ||
+                        row.dataset.status === status;
+                    row.hidden = !(matchesSearch && matchesStatus);
+                });
+            };
+
+            searchInput?.addEventListener('input', filterOrders);
+            statusFilter?.addEventListener('change', filterOrders);
+        })();
+    </script>
+}

@@ -16,4 +16,6 @@ public class OrderDetailItemViewModel
     public decimal UnitPrice { get; set; }
 
     public decimal LineTotal => UnitPrice * Quantity;
+
+    public string? SpecialRequest { get; set; }
 }

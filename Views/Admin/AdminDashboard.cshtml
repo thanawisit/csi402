@@ -3,127 +3,493 @@
     ViewData["Title"] = "ศูนย์ควบคุมแอดมิน";
 }
 
-<div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div>
-            <span class="badge rounded-pill bg-danger-subtle text-danger mb-2">ADMIN CONTROL CENTER</span>
-            <h1 class="fw-bold mb-1">ศูนย์ควบคุมแอดมิน</h1>
-            <p class="text-muted mb-0">สวัสดี @User.Identity?.Name · ภาพรวมบัญชีและการดูแลระบบ</p>
-        </div>
-        <a asp-controller="Accounts" asp-action="Index" class="btn btn-danger rounded-3 px-4 py-2">
-            <i class="bi bi-shield-lock me-2"></i>จัดการบัญชีและสิทธิ์
-        </a>
-    </div>
+<style>
+    .admin-dashboard-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 1.75rem 1.25rem 3rem;
+    }
 
+    .admin-dashboard-hero {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        min-height: 176px;
+        border: 1px solid rgba(255, 255, 255, .14);
+        border-radius: 22px;
+        background:
+            radial-gradient(circle at 88% 15%, rgba(240, 161, 61, .22), transparent 12rem),
+            linear-gradient(135deg, #173d2c 0%, #2f6b3b 58%, #5e7d50 100%);
+        color: #fff;
+        box-shadow: 0 18px 44px rgba(23, 61, 44, .16);
+        padding: 1.65rem 1.75rem;
+    }
+
+    .admin-dashboard-hero::after {
+        content: "";
+        position: absolute;
+        right: -58px;
+        bottom: -96px;
+        width: 230px;
+        height: 230px;
+        border: 30px solid rgba(255, 255, 255, .06);
+        border-radius: 50%;
+    }
+
+    .admin-dashboard-hero-copy {
+        position: relative;
+        z-index: 1;
+    }
+
+    .admin-dashboard-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .09);
+        color: #ffe2aa;
+        padding: .32rem .68rem;
+        font-size: .72rem;
+        font-weight: 850;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .admin-dashboard-hero h1 {
+        margin: .7rem 0 .35rem;
+        color: #fff;
+        font-size: clamp(1.65rem, 4vw, 2.35rem);
+        font-weight: 850;
+        letter-spacing: -.02em;
+    }
+
+    .admin-dashboard-hero p {
+        margin: 0;
+        color: rgba(255, 255, 255, .72);
+    }
+
+    .admin-dashboard-user {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        min-width: 210px;
+        border: 1px solid rgba(255, 255, 255, .13);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, .09);
+        backdrop-filter: blur(8px);
+        padding: .75rem;
+    }
+
+    .admin-dashboard-user-icon {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        place-items: center;
+        border-radius: 13px;
+        background: #bd3124;
+        color: #fff;
+        font-size: 1.05rem;
+    }
+
+    .admin-dashboard-user-copy {
+        display: grid;
+        min-width: 0;
+    }
+
+    .admin-dashboard-user-copy strong,
+    .admin-dashboard-user-copy span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .admin-dashboard-user-copy strong {
+        font-size: .9rem;
+    }
+
+    .admin-dashboard-user-copy span {
+        color: rgba(255, 255, 255, .65);
+        font-size: .72rem;
+    }
+
+    .admin-dashboard-section {
+        margin-top: 1.25rem;
+    }
+
+    .admin-dashboard-section-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: .75rem;
+    }
+
+    .admin-dashboard-section-heading h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 850;
+    }
+
+    .admin-dashboard-section-heading span {
+        color: #879087;
+        font-size: .78rem;
+    }
+
+    .admin-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .8rem;
+    }
+
+    .admin-stat-card {
+        position: relative;
+        grid-column: span 3;
+        min-height: 132px;
+        overflow: hidden;
+        border: 1px solid #e4e8df;
+        border-radius: 18px;
+        background: #fffef9;
+        box-shadow: 0 10px 26px rgba(58, 76, 61, .07);
+        padding: 1.15rem;
+    }
+
+    .admin-stat-card.wide {
+        grid-column: span 6;
+    }
+
+    .admin-stat-card::after {
+        content: "";
+        position: absolute;
+        right: -34px;
+        bottom: -48px;
+        width: 112px;
+        height: 112px;
+        border: 16px solid rgba(47, 107, 59, .055);
+        border-radius: 50%;
+    }
+
+    .admin-stat-card.alert {
+        border-color: #edcf72;
+        background: linear-gradient(135deg, #fffdf5 0%, #fff1bd 100%);
+    }
+
+    .admin-stat-card.alert::after {
+        border-color: rgba(215, 169, 28, .10);
+    }
+
+    .admin-stat-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+    }
+
+    .admin-stat-label {
+        color: #79827a;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+
+    .admin-stat-icon {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        place-items: center;
+        border-radius: 12px;
+        background: #edf4ed;
+        color: #2f6b3b;
+    }
+
+    .admin-stat-card.alert .admin-stat-icon {
+        background: rgba(215, 169, 28, .13);
+        color: #9a790f;
+    }
+
+    .admin-stat-value {
+        margin-top: .65rem;
+        color: #263029;
+        font-size: 1.85rem;
+        font-weight: 850;
+        line-height: 1;
+    }
+
+    .admin-stat-value.money {
+        font-size: 1.55rem;
+    }
+
+    .admin-stat-detail {
+        margin-top: .48rem;
+        color: #879087;
+        font-size: .76rem;
+    }
+
+    .admin-tools-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .8rem;
+    }
+
+    .admin-tool-card {
+        display: flex;
+        min-height: 92px;
+        align-items: center;
+        gap: .85rem;
+        border: 1px solid #e4e8df;
+        border-radius: 16px;
+        background: #fffef9;
+        box-shadow: 0 8px 22px rgba(58, 76, 61, .06);
+        color: #29322b;
+        padding: .9rem;
+        text-decoration: none;
+        transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .admin-tool-card:hover {
+        transform: translateY(-3px);
+        border-color: rgba(47, 107, 59, .28);
+        box-shadow: 0 14px 28px rgba(58, 76, 61, .11);
+        color: #29322b;
+    }
+
+    .admin-tool-icon {
+        display: grid;
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        place-items: center;
+        border-radius: 14px;
+        background: #edf4ed;
+        color: #2f6b3b;
+        font-size: 1.1rem;
+    }
+
+    .admin-tool-card.red .admin-tool-icon {
+        background: #fdebe8;
+        color: #bd3124;
+    }
+
+    .admin-tool-card.blue .admin-tool-icon {
+        background: #edf3fb;
+        color: #4470a1;
+    }
+
+    .admin-tool-card.yellow .admin-tool-icon {
+        background: #fff4ce;
+        color: #9a790f;
+    }
+
+    .admin-tool-copy {
+        display: grid;
+        min-width: 0;
+    }
+
+    .admin-tool-copy strong {
+        font-size: .92rem;
+    }
+
+    .admin-tool-copy small {
+        margin-top: .18rem;
+        color: #879087;
+    }
+
+    .admin-tool-arrow {
+        margin-left: auto;
+        color: #adb5ae;
+    }
+
+    @@media (max-width: 991.98px) {
+        .admin-stat-card,
+        .admin-stat-card.wide {
+            grid-column: span 6;
+        }
+
+        .admin-tools-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .admin-dashboard-page {
+            padding: 1.25rem .75rem 2rem;
+        }
+
+        .admin-dashboard-hero {
+            align-items: flex-start;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .admin-dashboard-user {
+            width: 100%;
+        }
+
+        .admin-stat-card,
+        .admin-stat-card.wide {
+            grid-column: span 12;
+        }
+
+        .admin-tools-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="admin-dashboard-page">
     @if (TempData["AdminMessage"] != null)
     {
-        <div class="alert alert-success">@TempData["AdminMessage"]</div>
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
     }
     @if (TempData["AdminError"] != null)
     {
-        <div class="alert alert-danger">@TempData["AdminError"]</div>
+        <div class="alert alert-danger rounded-3">@TempData["AdminError"]</div>
     }
 
-    <section class="mb-4">
-        <h2 class="h5 fw-bold mb-3">ภาพรวมบัญชี</h2>
-        <div class="row g-3">
-            <div class="col-sm-6 col-xl-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="text-muted">บัญชีทั้งหมด</div>
-                                <div class="display-6 fw-bold">@Model.UserCount</div>
-                            </div>
-                            <i class="bi bi-people fs-3 text-primary"></i>
-                        </div>
-                        <a asp-controller="Accounts" asp-action="Index" class="btn btn-sm btn-outline-primary mt-3">ดูบัญชีทั้งหมด</a>
-                    </div>
+    <header class="admin-dashboard-hero">
+        <div class="admin-dashboard-hero-copy">
+            <span class="admin-dashboard-eyebrow">
+                <i class="bi bi-shield-check" aria-hidden="true"></i> Admin control center
+            </span>
+            <h1>ศูนย์ควบคุมแอดมิน</h1>
+            <p>ภาพรวมบัญชี ร้านอาหาร และงานรอดำเนินการวันนี้</p>
+        </div>
+        <div class="admin-dashboard-user">
+            <span class="admin-dashboard-user-icon"><i class="bi bi-person-fill" aria-hidden="true"></i></span>
+            <span class="admin-dashboard-user-copy">
+                <strong>@User.Identity?.Name</strong>
+                <span>ผู้ดูแลระบบ</span>
+            </span>
+        </div>
+    </header>
+
+    <section class="admin-dashboard-section">
+        <div class="admin-dashboard-section-heading">
+            <h2>ภาพรวมบัญชี</h2>
+            <span>ข้อมูลอัปเดตล่าสุด</span>
+        </div>
+        <div class="admin-stat-grid">
+            <article class="admin-stat-card">
+                <div class="admin-stat-top">
+                    <span class="admin-stat-label">บัญชีทั้งหมด</span>
+                    <span class="admin-stat-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
                 </div>
-            </div>
-            <div class="col-sm-6 col-xl-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="text-muted">พนักงาน</div>
-                                <div class="display-6 fw-bold text-success">@Model.StaffCount</div>
-                            </div>
-                            <i class="bi bi-person-badge fs-3 text-success"></i>
-                        </div>
-                        <a asp-controller="Accounts" asp-action="Index" class="btn btn-sm btn-outline-success mt-3">จัดการบทบาทพนักงาน</a>
-                    </div>
+                <div class="admin-stat-value">@Model.UserCount</div>
+                <div class="admin-stat-detail">ลูกค้าและพนักงานในระบบ</div>
+            </article>
+
+            <article class="admin-stat-card">
+                <div class="admin-stat-top">
+                    <span class="admin-stat-label">พนักงาน</span>
+                    <span class="admin-stat-icon"><i class="bi bi-person-badge" aria-hidden="true"></i></span>
                 </div>
-            </div>
-            <div class="col-sm-6 col-xl-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="text-muted">ลูกค้า</div>
-                                <div class="display-6 fw-bold text-info">@Model.CustomerCount</div>
-                            </div>
-                            <i class="bi bi-person-heart fs-3 text-info"></i>
-                        </div>
-                        <a asp-controller="Accounts" asp-action="Index" class="btn btn-sm btn-outline-info mt-3">ตรวจสอบบัญชีลูกค้า</a>
-                    </div>
+                <div class="admin-stat-value">@Model.StaffCount</div>
+                <div class="admin-stat-detail">พร้อมเข้าสู่ระบบและรับงาน</div>
+            </article>
+
+            <article class="admin-stat-card">
+                <div class="admin-stat-top">
+                    <span class="admin-stat-label">ลูกค้า</span>
+                    <span class="admin-stat-icon"><i class="bi bi-person-heart" aria-hidden="true"></i></span>
                 </div>
-            </div>
+                <div class="admin-stat-value">@Model.CustomerCount</div>
+                <div class="admin-stat-detail">บัญชีลูกค้าที่ลงทะเบียน</div>
+            </article>
+
+            <article class="admin-stat-card alert">
+                <div class="admin-stat-top">
+                    <span class="admin-stat-label">สลิป/ชำระรอตรวจ</span>
+                    <span class="admin-stat-icon"><i class="bi bi-wallet2" aria-hidden="true"></i></span>
+                </div>
+                <div class="admin-stat-value">@Model.PendingPaymentCount</div>
+                <div class="admin-stat-detail">รายการต้องตรวจสอบ</div>
+            </article>
+
+            <article class="admin-stat-card wide">
+                <div class="admin-stat-top">
+                    <span class="admin-stat-label">ยอดรับชำระที่ยืนยันวันนี้</span>
+                    <span class="admin-stat-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span>
+                </div>
+                <div class="admin-stat-value money">฿@Model.TodayPaidTotal.ToString("N2")</div>
+                <div class="admin-stat-detail">ออเดอร์วันนี้ @Model.TodayOrderCount รายการ · ยอดรวม ฿@Model.TodayOrderTotal.ToString("N2")</div>
+            </article>
+
+            <article class="admin-stat-card alert wide">
+                <div class="admin-stat-top">
+                    <span class="admin-stat-label">งานรอจัดการ</span>
+                    <span class="admin-stat-icon"><i class="bi bi-calendar2-check" aria-hidden="true"></i></span>
+                </div>
+                <div class="admin-stat-value">@Model.PendingReservationCount</div>
+                <div class="admin-stat-detail">การจองรอยืนยัน · ออเดอร์รอร้าน @Model.PendingOrderCount รายการ</div>
+            </article>
         </div>
     </section>
 
-    <section class="row g-3 mb-4">
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <div class="text-muted">ยอดรับชำระที่ยืนยันแล้ววันนี้</div>
-                    <div class="display-6 fw-bold text-success">฿@Model.TodayPaidTotal.ToString("N2")</div>
-                </div>
-            </div>
+    <section class="admin-dashboard-section">
+        <div class="admin-dashboard-section-heading">
+            <h2>เครื่องมือดูแลระบบ</h2>
+            <span>งานที่ใช้บ่อยในศูนย์ควบคุม</span>
         </div>
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <div class="text-muted">สลิปรอตรวจสอบ/ส่งใหม่</div>
-                    <div class="display-6 fw-bold text-warning">@Model.PendingPaymentCount</div>
-                    <a asp-action="Orders" class="btn btn-sm btn-outline-success mt-2">ตรวจสอบการชำระเงิน</a>
-                </div>
-            </div>
-        </div>
-    </section>
+        <div class="admin-tools-grid">
+            <a asp-controller="Accounts" asp-action="Index" class="admin-tool-card blue">
+                <span class="admin-tool-icon"><i class="bi bi-person-gear" aria-hidden="true"></i></span>
+                <span class="admin-tool-copy">
+                    <strong>บัญชีและบทบาทผู้ใช้</strong>
+                    <small>ดูบัญชีและจัดการสิทธิ์พนักงาน</small>
+                </span>
+                <i class="bi bi-chevron-right admin-tool-arrow" aria-hidden="true"></i>
+            </a>
 
-    <section class="card border-0 shadow-sm rounded-4">
-        <div class="card-body p-4">
-            <div class="mb-3">
-                <h2 class="h5 fw-bold mb-1">เครื่องมือดูแลระบบ</h2>
-                <p class="text-muted mb-0">จัดการสิทธิ์และตรวจสอบส่วนสำคัญของระบบร้าน</p>
-            </div>
-            <div class="row g-3">
-                <div class="col-sm-6 col-xl-3">
-                    <a asp-controller="Accounts" asp-action="Index" class="btn btn-outline-primary w-100 h-100 py-3 rounded-3">
-                        <i class="bi bi-person-gear fs-4 d-block mb-2"></i>
-                        บัญชีและบทบาทผู้ใช้
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a asp-action="Stock" class="btn btn-outline-success w-100 h-100 py-3 rounded-3">
-                        <i class="bi bi-box-seam fs-4 d-block mb-2"></i>
-                        ตรวจสอบสต๊อก
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a asp-action="Reports" class="btn btn-outline-warning w-100 h-100 py-3 rounded-3">
-                        <i class="bi bi-graph-up-arrow fs-4 d-block mb-2"></i>
-                        รายงานยอดขาย
-                    </a>
-                </div>
-                <div class="col-sm-6 col-xl-3">
-                    <a asp-action="Orders" class="btn btn-outline-secondary w-100 h-100 py-3 rounded-3">
-                        <i class="bi bi-receipt fs-4 d-block mb-2"></i>
-                        ตรวจสอบออเดอร์
-                    </a>
-                </div>
-            </div>
+            <a asp-controller="Admin" asp-action="Menus" class="admin-tool-card red">
+                <span class="admin-tool-icon"><i class="bi bi-journal-richtext" aria-hidden="true"></i></span>
+                <span class="admin-tool-copy">
+                    <strong>จัดการเมนู</strong>
+                    <small>เพิ่ม แก้ไข และปิดขายเมนู</small>
+                </span>
+                <i class="bi bi-chevron-right admin-tool-arrow" aria-hidden="true"></i>
+            </a>
+
+            <a asp-controller="Admin" asp-action="Promotions" class="admin-tool-card blue">
+                <span class="admin-tool-icon"><i class="bi bi-megaphone" aria-hidden="true"></i></span>
+                <span class="admin-tool-copy">
+                    <strong>จัดการโปรโมชั่น</strong>
+                    <small>ตั้งแบนเนอร์และโค้ดส่วนลด</small>
+                </span>
+                <i class="bi bi-chevron-right admin-tool-arrow" aria-hidden="true"></i>
+            </a>
+
+            <a asp-action="Stock" class="admin-tool-card">
+                <span class="admin-tool-icon"><i class="bi bi-box-seam" aria-hidden="true"></i></span>
+                <span class="admin-tool-copy">
+                    <strong>ตรวจสอบสต๊อก</strong>
+                    <small>อัปเดตคงเหลือและสถานะขาย</small>
+                </span>
+                <i class="bi bi-chevron-right admin-tool-arrow" aria-hidden="true"></i>
+            </a>
+
+            <a asp-action="Reports" class="admin-tool-card yellow">
+                <span class="admin-tool-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span>
+                <span class="admin-tool-copy">
+                    <strong>รายงานยอดขาย</strong>
+                    <small>ดูยอดและออเดอร์ที่เสร็จสิ้น</small>
+                </span>
+                <i class="bi bi-chevron-right admin-tool-arrow" aria-hidden="true"></i>
+            </a>
+
+            <a asp-action="Orders" class="admin-tool-card red">
+                <span class="admin-tool-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+                <span class="admin-tool-copy">
+                    <strong>ตรวจสอบออเดอร์</strong>
+                    <small>สถานะงานและการชำระเงิน</small>
+                </span>
+                <i class="bi bi-chevron-right admin-tool-arrow" aria-hidden="true"></i>
+            </a>
         </div>
     </section>
 </div>

@@ -1,157 +1,311 @@
 @model IEnumerable<IsanDer.Models.Menu>
 
 @{
-    ViewData["Title"] = "เมนูอาหาร";
+    ViewData["Title"] = "เมนูอาหาร - อีสาน เด้อ";
     var searchTerm = ViewBag.SearchTerm as string;
     var selectedCategory = ViewBag.MenuCategory as string;
+    var isTableOrder = ViewBag.IsTableOrder == true;
+    var isBuffet = ViewBag.IsBuffet == true;
 }
 
 <style>
-    /* สไตล์ปุ่มหมวดหมู่ */
+    /* แบนเนอร์หัวหน้าเมนูอาหาร */
+    .menu-hero-header {
+        background:
+            radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.18), transparent 30%),
+            linear-gradient(135deg, #701010 0%, #991b1b 50%, #c92a2a 100%);
+        border-radius: 1.75rem;
+        padding: 2.5rem 2rem;
+        color: #ffffff;
+        box-shadow: 0 16px 36px rgba(112, 16, 16, 0.25);
+        margin-bottom: 2rem;
+    }
+
+    /* ปุ่มหมวดหมู่อาหาร (Red & White Theme) */
+    .category-scroll-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-bottom: 2.5rem;
+    }
+
     .category-btn {
         display: inline-flex;
         align-items: center;
-        background-color: #377d33;
-        color: white;
-        border: none;
-        padding: 10px 24px;
-        border-radius: 8px;
-        font-weight: bold;
-        margin-right: 12px;
-        margin-bottom: 12px;
-        transition: 0.2s;
+        gap: 0.4rem;
+        background-color: #ffffff;
+        color: #333333;
+        border: 1.5px solid #eae3dc;
+        padding: 0.55rem 1.35rem;
+        border-radius: 999px;
+        font-family: 'Kanit', sans-serif;
+        font-weight: 600;
+        font-size: 0.95rem;
         text-decoration: none;
-    }
-    .category-btn:hover {
-        background-color: #2b6127;
-        color: white;
-    }
-    /* ปุ่มหมวดหมู่ที่ถูกเลือก (สีแดง) */
-    .category-btn.active {
-        background-color: #bd3124;
-    }
-    .category-btn.active:hover {
-        background-color: #9c271c;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* สไตล์การ์ดเมนูอาหาร */
-    .menu-card {
-        background-color: white;
-        border: 1px solid var(--border);
-        border-radius: 16px;
+    .category-btn:hover {
+        border-color: var(--brand-red);
+        color: var(--brand-red);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(201, 42, 42, 0.15);
     }
-    .text-brand {
+
+    .category-btn.active {
+        background: linear-gradient(135deg, var(--brand-red-vibrant), var(--brand-red-dark)) !important;
+        border-color: var(--brand-red) !important;
+        color: #ffffff !important;
+        box-shadow: 0 6px 18px rgba(201, 42, 42, 0.35);
+        transform: translateY(-2px);
+    }
+
+    /* การ์ดเมนูอาหาร (Red & White) */
+    .menu-card {
+        background-color: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 1.35rem;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        box-shadow: 0 6px 20px rgba(60, 20, 20, 0.06);
+        transition: all 0.25s ease;
+    }
+
+    .menu-card:hover {
+        transform: translateY(-6px);
+        border-color: var(--brand-red-subtle);
+        box-shadow: 0 16px 36px rgba(201, 42, 42, 0.16) !important;
+    }
+
+    .menu-card-img-wrap {
+        height: 210px;
+        position: relative;
+        overflow: hidden;
+        background-color: #faf6f6;
+    }
+
+    .menu-card-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+
+    .menu-card:hover .menu-card-img {
+        transform: scale(1.08);
+    }
+
+    .menu-card-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 2;
+        background: linear-gradient(135deg, var(--brand-red-vibrant), var(--brand-red-dark));
+        color: #fff;
+        font-family: 'Kanit', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        box-shadow: 0 4px 10px rgba(201, 42, 42, 0.35);
+    }
+
+    .menu-price {
+        font-family: 'Kanit', sans-serif;
+        font-size: 1.45rem;
+        font-weight: 800;
         color: var(--brand-red);
     }
-    .btn-brand {
-        background-color: var(--brand-red);
-        color: white;
+
+    .btn-menu-add {
+        background: linear-gradient(135deg, var(--brand-red-vibrant), var(--brand-red-dark));
+        color: #ffffff !important;
+        font-family: 'Kanit', sans-serif;
+        font-weight: 700;
+        font-size: 0.92rem;
         border: none;
-        transition: 0.3s;
+        border-radius: 999px;
+        padding: 0.45rem 1.15rem;
+        box-shadow: 0 4px 12px rgba(201, 42, 42, 0.25);
+        transition: all 0.2s ease;
     }
-    .btn-brand:hover {
-        background-color: var(--brand-red-dark);
-        color: white;
-    }
-    .menu-search-form {
-        max-width: 760px;
+
+    .btn-menu-add:hover {
+        background: linear-gradient(135deg, #f03e3e, #8f1d1d);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(201, 42, 42, 0.4);
     }
 </style>
 
-<div class="container mt-5 pb-5">
-    <h2 class="fw-bold mb-4">เมนูอาหาร</h2>
-    @if (ViewBag.OrderSuccess != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="status">
-            @ViewBag.OrderSuccess
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="ปิด"></button>
+<div class="container py-4 pb-5">
+    <!-- แบนเนอร์หัวหน้าเมนูอาหาร -->
+    <section class="menu-hero-header">
+        <div class="row align-items-center g-3">
+            <div class="col-lg-8">
+                <span class="badge bg-white text-danger rounded-pill px-3 py-1 mb-2 fw-bold">
+                    <i class="bi bi-fire me-1"></i> เมนูอาหารอีสานแท้
+                </span>
+                <h1 class="display-6 fw-bold mb-2">เลือกเมนูความแซ่บที่คุณชอบ</h1>
+                @if (ViewBag.TableNumber != null)
+                {
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-20 mt-1">
+                        <i class="bi bi-geo-alt-fill text-warning"></i>
+                        <span>กำลังสั่งอาหารสำหรับ <strong>โต๊ะ @ViewBag.TableNumber</strong></span>
+                        @if (isBuffet)
+                        {
+                            <span class="badge bg-warning text-dark ms-1">บุฟเฟต์ @ViewBag.BuffetGuestCount คน</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-white-50 mb-0">สั่งล่วงหน้าแล้วมารับที่ร้าน · สด สะอาด ทำสดใหม่ทุกจาน</p>
+                }
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a asp-controller="Home" asp-action="Cart" asp-route-tableId="@ViewBag.TableId" class="btn btn-light rounded-pill px-4 py-2 fw-bold text-danger shadow">
+                    <i class="bi bi-cart3 me-1"></i> ไปยังตะกร้าอาหาร
+                </a>
+            </div>
         </div>
-    }
-    @if (ViewBag.OrderError != null)
-    {
-        <div class="alert alert-warning" role="alert">@ViewBag.OrderError</div>
-    }
-    @if (ViewBag.TableNumber != null)
-    {
-        <p class="text-muted">กำลังสั่งอาหารสำหรับโต๊ะ <strong>@ViewBag.TableNumber</strong></p>
-    }
-    else
-    {
-        <p class="text-muted">สั่งล่วงหน้าและมารับที่ร้าน · ระบุเวลารับอาหารได้ในตะกร้า</p>
-    }
+    </section>
 
-    <form asp-controller="Home" asp-action="Menu" method="get" class="menu-search-form mb-4">
-        <div class="input-group">
-            <input type="search" name="q" value="@searchTerm" class="form-control form-control-lg" placeholder="ค้นหาจากชื่อเมนู เช่น ส้มตำ ลาบ คอหมูย่าง" aria-label="ค้นหาเมนูอาหาร">
-            @if (ViewBag.TableId != null)
-            {
-                <input type="hidden" name="tableId" value="@ViewBag.TableId">
-            }
-            @if (selectedCategory != null)
-            {
-                <input type="hidden" name="category" value="@selectedCategory">
-            }
-            <button type="submit" class="btn btn-success px-4">
-                <i class="bi bi-search me-1"></i> ค้นหา
-            </button>
+    <!-- กล่องค้นหาเมนูอาหาร -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-8">
+            <form asp-controller="Home" asp-action="Menu" method="get">
+                <div class="input-group shadow-sm rounded-pill overflow-hidden bg-white p-1 border">
+                    <span class="input-group-text bg-transparent border-0 ps-3">
+                        <i class="bi bi-search text-danger fs-5"></i>
+                    </span>
+                    <input type="search" name="q" value="@searchTerm" class="form-control border-0 shadow-none ps-2"
+                           placeholder="ค้นหาเมนู เช่น ส้มตำ ลาบ คอหมูย่าง ไก่ย่าง..." aria-label="ค้นหาเมนูอาหาร">
+                    @if (ViewBag.TableId != null)
+                    {
+                        <input type="hidden" name="tableId" value="@ViewBag.TableId">
+                    }
+                    @if (selectedCategory != null)
+                    {
+                        <input type="hidden" name="category" value="@selectedCategory">
+                    }
+                    <button type="submit" class="btn btn-brand px-4 rounded-pill">ค้นหา</button>
+                </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     @if (!string.IsNullOrWhiteSpace(searchTerm))
     {
-        <p class="text-muted">ผลการค้นหาสำหรับ “@searchTerm”</p>
+        <div class="d-flex align-items-center justify-content-between mb-3 px-2">
+            <span class="text-muted">ผลการค้นหาสำหรับ <strong class="text-danger">“@searchTerm”</strong></span>
+            <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" class="text-danger small fw-bold">ล้างการค้นหา</a>
+        </div>
     }
 
-    <!-- แถบหมวดหมู่ -->
-    <div class="d-flex flex-wrap mb-5">
-        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" class="category-btn @(selectedCategory == null ? "active" : "")">ทั้งหมด</a>
-        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="somtum" class="category-btn @(selectedCategory == "somtum" ? "active" : "")">ส้มตำ</a>
-        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="larb" class="category-btn @(selectedCategory == "larb" ? "active" : "")">ลาบ / น้ำตก</a>
-        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="soup" class="category-btn @(selectedCategory == "soup" ? "active" : "")">ต้ม / แกง</a>
-        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="grilled" class="category-btn @(selectedCategory == "grilled" ? "active" : "")">ย่าง</a>
-        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="drinks" class="category-btn @(selectedCategory == "drinks" ? "active" : "")">เครื่องดื่ม</a>
+    <!-- แถบหมวดหมู่ (Red & White Pills) -->
+    <div class="category-scroll-wrapper">
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm"
+           class="category-btn @(selectedCategory == null ? "active" : "")">
+            <i class="bi bi-grid-fill"></i> ทั้งหมด
+        </a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="somtum"
+           class="category-btn @(selectedCategory == "somtum" ? "active" : "")">
+            ส้มตำ
+        </a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="larb"
+           class="category-btn @(selectedCategory == "larb" ? "active" : "")">
+            ลาบ / น้ำตก
+        </a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="soup"
+           class="category-btn @(selectedCategory == "soup" ? "active" : "")">
+            ต้ม / แกง
+        </a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="grilled"
+           class="category-btn @(selectedCategory == "grilled" ? "active" : "")">
+            ของย่าง / ทอด
+        </a>
+        <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" asp-route-q="@searchTerm" asp-route-category="drinks"
+           class="category-btn @(selectedCategory == "drinks" ? "active" : "")">
+            เครื่องดื่ม / ขนม
+        </a>
     </div>
 
-    <!-- รายการเมนูอาหาร (ดึงข้อมูลจาก Database) -->
+    <!-- รายการเมนูอาหาร -->
     <div class="row g-4">
-        
         @if (Model != null && Model.Any())
         {
+            var itemIndex = 0;
             foreach (var item in Model)
             {
-                <div class="col-md-4">
-                    <div class="menu-card shadow-sm h-100 pb-2">
-                        @if (!string.IsNullOrWhiteSpace(item.ImagePath))
-                        {
-                            <img src="@item.ImagePath" alt="รูปเมนู @item.MenuName"
-                                 class="w-100" style="height: 220px; object-fit: cover;" />
-                        }
-                        else
-                        {
-                            <div class="img-placeholder menu-food-art" aria-hidden="true">
-                                <span class="menu-food-art-plate"><i class="bi bi-egg-fried"></i></span>
-                                <span class="menu-food-art-label">อีสานแซ่บ</span>
+                var ribbonTag = itemIndex % 4 == 0 ? "ยอดฮิต" : (itemIndex % 4 == 1 ? "แซ่บนัว" : "แนะนำ");
+                itemIndex++;
+
+                <div class="col-sm-6 col-lg-4">
+                    <div class="menu-card">
+                        <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@item.MenuId"
+                           asp-route-tableId="@ViewBag.TableId" asp-route-returnToMenu="true"
+                           class="menu-card-img-wrap d-block text-decoration-none">
+                            <span class="menu-card-badge">@ribbonTag</span>
+                            @if (!string.IsNullOrWhiteSpace(item.ImagePath))
+                            {
+                                <img src="@item.ImagePath" alt="รูปเมนู @item.MenuName" class="menu-card-img" />
+                            }
+                            else
+                            {
+                                <div class="w-100 h-100 d-grid place-items-center text-danger opacity-50 fs-1">
+                                    <i class="bi bi-egg-fried"></i>
+                                </div>
+                            }
+                        </a>
+
+                        <div class="p-4 d-flex flex-column justify-content-between flex-grow-1">
+                            <div>
+                                <h5 class="fw-bold mb-1">
+                                    <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@item.MenuId"
+                                       asp-route-tableId="@ViewBag.TableId" asp-route-returnToMenu="true"
+                                       class="text-dark text-decoration-none">
+                                        @item.MenuName
+                                    </a>
+                                </h5>
+                                <div class="d-flex align-items-center gap-1 text-warning small mb-3">
+                                    <i class="bi bi-star-fill"></i>
+                                    @{
+                                        var reviewStats = ViewBag.ReviewStats as Dictionary<int, (double Average, int Count)>
+                                            ?? new Dictionary<int, (double Average, int Count)>();
+                                        var hasStats = reviewStats.TryGetValue(item.MenuId, out var menuStats);
+                                    }
+                                    <span class="text-dark fw-bold">@(hasStats ? menuStats.Average.ToString("0.0") : "-")</span>
+                                    <span class="text-muted ms-1">(@(hasStats ? menuStats.Count : 0) รีวิว)</span>
+                                </div>
                             </div>
-                        }
-                        <div class="card-body p-4">
-                            <!-- ดึงชื่อเมนูจากฐานข้อมูล -->
-                            <h5 class="fw-bold mb-1">@item.MenuName</h5>
-                            <p class="text-muted small mb-3">⭐ 4.8 · อาหารอีสาน</p>
-                            <div class="d-flex justify-content-between align-items-center mt-4">
-                                <!-- ดึงราคาจากฐานข้อมูล -->
-                                <span class="text-brand fs-4 fw-bold">฿@item.Price</span>
-                                
+
+                            <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-auto">
+                                <div>
+                                    <small class="text-muted d-block lh-1">ราคา</small>
+                                    @if (isBuffet)
+                                    {
+                                        <span class="menu-price fs-5">รวมในบุฟเฟต์</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="menu-price">฿@item.Price.ToString("0.##")</span>
+                                    }
+                                </div>
+
                                 @if (!string.Equals(item.Status, "Available", StringComparison.OrdinalIgnoreCase) || item.StockQuantity == 0)
                                 {
-                                    <span class="badge text-bg-secondary">ปิดขาย / สินค้าหมด</span>
-                                }
-                                else if (User.Identity != null && User.Identity.IsAuthenticated)
-                                {
-                                    <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@item.MenuId" asp-route-tableId="@ViewBag.TableId" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                    <span class="badge bg-secondary rounded-pill px-3 py-2">สินค้าหมด</span>
                                 }
                                 else
                                 {
-                                    <a asp-controller="Account" asp-action="Login" class="btn btn-brand px-4 py-2 rounded-pill fw-bold text-decoration-none">+ เพิ่ม</a>
+                                    <a asp-controller="Home" asp-action="FoodDetail" asp-route-id="@item.MenuId"
+                                       asp-route-tableId="@ViewBag.TableId" asp-route-returnToMenu="true"
+                                       class="btn-menu-add text-decoration-none">
+                                        <i class="bi bi-plus-lg me-1"></i>@(isTableOrder ? "เลือกสั่ง" : "สั่งเลย")
+                                    </a>
                                 }
                             </div>
                         </div>
@@ -159,23 +313,18 @@
                 </div>
             }
         }
-        else if (!string.IsNullOrWhiteSpace(searchTerm) || selectedCategory != null)
-        {
-            <div class="col-12 text-center text-muted mt-5">
-                <i class="bi bi-search fs-2"></i>
-                <h5 class="mt-3">ไม่พบเมนูที่ตรงกับตัวกรองนี้</h5>
-                <p>ลองเลือกหมวดหมู่อื่นหรือค้นหาด้วยคำอื่น</p>
-                <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" class="btn btn-outline-success">ล้างตัวกรอง</a>
-            </div>
-        }
         else
         {
-            <!-- แสดงข้อความหากยังไม่มีข้อมูลในฐานข้อมูล -->
-            <div class="col-12 text-center text-muted mt-5">
-                <h5>ยังไม่มีรายการอาหารในระบบ</h5>
-                <p>โปรดเพิ่มข้อมูลเมนูอาหารในตาราง Menus ของฐานข้อมูล isanderdb</p>
+            <div class="col-12">
+                <div class="text-center py-5 bg-white rounded-4 border shadow-sm my-4">
+                    <i class="bi bi-search fs-1 text-danger d-block mb-3"></i>
+                    <h4 class="fw-bold text-dark">ไม่พบเมนูอาหารที่คุณค้นหา</h4>
+                    <p class="text-muted">ลองเลือกหมวดหมู่อื่น หรือพิมพ์คำค้นหาใหม่อีกครั้ง</p>
+                    <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" class="btn btn-brand rounded-pill px-4 mt-2">
+                        ดูเมนูทั้งหมด
+                    </a>
+                </div>
             </div>
         }
-
     </div>
 </div>

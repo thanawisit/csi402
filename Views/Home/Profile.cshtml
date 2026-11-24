@@ -2,71 +2,355 @@
 
 @{
     ViewData["Title"] = "โปรไฟล์ของฉัน";
-        var initial = string.IsNullOrWhiteSpace(Model.Username)
-            ? "?"
-            : Model.Username.Substring(0, 1).ToUpperInvariant();
+    var initial = string.IsNullOrWhiteSpace(Model.Username)
+        ? "?"
+        : Model.Username.Substring(0, 1).ToUpperInvariant();
 }
 
-    <style>
-        .profile-page { max-width: 900px; }
-        .profile-header {
-            background: linear-gradient(120deg, #bd3124, #8f251c);
-            color: white;
-            padding: 36px;
+<style>
+    .profile-shell {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 3rem 1rem 4rem;
+    }
+
+    .profile-hero {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        border-radius: 22px;
+        background:
+            radial-gradient(circle at 92% 18%, rgba(255, 255, 255, .2), transparent 14rem),
+            radial-gradient(circle at 10% 80%, rgba(245, 158, 11, .2), transparent 12rem),
+            linear-gradient(135deg, #a61e1e 0%, #c92a2a 58%, #e03131 100%);
+        color: #ffffff;
+        box-shadow: 0 18px 40px rgba(166, 30, 30, .22);
+        padding: 2.25rem 2.5rem;
+    }
+
+    .profile-hero::after {
+        content: "";
+        position: absolute;
+        right: -55px;
+        bottom: -95px;
+        width: 220px;
+        height: 220px;
+        border: 28px solid rgba(255, 255, 255, .08);
+        border-radius: 50%;
+    }
+
+    .profile-avatar {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        width: 92px;
+        height: 92px;
+        flex: 0 0 92px;
+        place-items: center;
+        border: 3.5px solid #ffffff;
+        border-radius: 50%;
+        background: #ffffff;
+        color: #c92a2a;
+        box-shadow: 0 10px 24px rgba(0, 0, 0, .2);
+        font-family: 'Kanit', sans-serif;
+        font-size: 2.35rem;
+        font-weight: 800;
+    }
+
+    .profile-identity {
+        position: relative;
+        z-index: 1;
+        min-width: 0;
+    }
+
+    .profile-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        border: 1px solid rgba(255, 255, 255, .3);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .15);
+        backdrop-filter: blur(4px);
+        padding: .3rem .75rem;
+        font-size: .75rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: #ffffff;
+    }
+
+    .profile-name {
+        margin: .55rem 0 .2rem;
+        font-family: 'Kanit', sans-serif;
+        font-size: clamp(1.65rem, 4vw, 2.35rem);
+        font-weight: 800;
+        color: #ffffff;
+    }
+
+    .profile-email {
+        max-width: 520px;
+        overflow: hidden;
+        color: rgba(255, 255, 255, .88);
+        text-overflow: ellipsis;
+        font-size: .95rem;
+    }
+
+    .profile-content-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+        gap: 1.25rem;
+        margin-top: 1.5rem;
+    }
+
+    .profile-panel {
+        border: 1px solid #f0ebe6;
+        border-radius: 20px;
+        background: #ffffff;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, .04);
+        padding: 1.75rem;
+    }
+
+    .profile-panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+        padding-bottom: .85rem;
+        border-bottom: 2px solid #fff5f5;
+    }
+
+    .profile-panel-heading h2 {
+        margin: 0;
+        font-family: 'Kanit', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #1f1d1d;
+    }
+
+    .profile-info-row {
+        display: grid;
+        grid-template-columns: 145px minmax(0, 1fr);
+        align-items: center;
+        gap: 1rem;
+        min-height: 58px;
+        border-top: 1px solid #faf5f3;
+    }
+
+    .profile-info-row:first-of-type {
+        border-top: 0;
+    }
+
+    .profile-info-label {
+        color: #8c827a;
+        font-size: .88rem;
+        font-weight: 600;
+    }
+
+    .profile-info-value {
+        overflow-wrap: anywhere;
+        color: #1f1d1d;
+        font-weight: 700;
+        font-size: .95rem;
+    }
+
+    .profile-actions {
+        display: grid;
+        gap: .85rem;
+    }
+
+    .profile-action-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-height: 76px;
+        border: 1.5px solid #f0ebe6;
+        border-radius: 16px;
+        background: #ffffff;
+        color: #1f1d1d;
+        padding: 1rem 1.15rem;
+        text-decoration: none;
+        transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .profile-action-card:hover {
+        transform: translateY(-2px);
+        border-color: #c92a2a;
+        box-shadow: 0 10px 24px rgba(201, 42, 42, .12);
+        color: #c92a2a;
+    }
+
+    .profile-action-icon {
+        display: grid;
+        width: 46px;
+        height: 46px;
+        flex: 0 0 46px;
+        place-items: center;
+        border-radius: 14px;
+        background: #fff5f5;
+        color: #c92a2a;
+        font-size: 1.2rem;
+        border: 1px solid #ffe3e3;
+        transition: background .18s ease, color .18s ease;
+    }
+
+    .profile-action-card:hover .profile-action-icon {
+        background: #c92a2a;
+        color: #ffffff;
+    }
+
+    .profile-action-copy {
+        display: grid;
+        min-width: 0;
+    }
+
+    .profile-action-copy strong {
+        font-family: 'Kanit', sans-serif;
+        font-size: .98rem;
+        color: #1f1d1d;
+        font-weight: 700;
+    }
+
+    .profile-action-copy small {
+        margin-top: .15rem;
+        color: #8c827a;
+        font-size: .8rem;
+    }
+
+    .profile-action-arrow {
+        margin-left: auto;
+        color: #c92a2a;
+        font-size: 1rem;
+        opacity: .6;
+        transition: transform .18s ease, opacity .18s ease;
+    }
+
+    .profile-action-card:hover .profile-action-arrow {
+        transform: translateX(3px);
+        opacity: 1;
+    }
+
+    .profile-logout {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        min-height: 48px;
+        border: 1.5px solid #ffe3e3;
+        border-radius: 14px;
+        background: #fff5f5;
+        color: #c92a2a;
+        font-family: 'Kanit', sans-serif;
+        font-size: .95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all .2s ease;
+    }
+
+    .profile-logout:hover {
+        background: #c92a2a;
+        border-color: #c92a2a;
+        color: #ffffff;
+        box-shadow: 0 8px 20px rgba(201, 42, 42, .2);
+    }
+
+    @@media (max-width: 767.98px) {
+        .profile-shell {
+            padding: 1.25rem .75rem 3rem;
         }
+
+        .profile-hero {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 1.5rem;
+        }
+
         .profile-avatar {
-            width: 88px;
-            height: 88px;
-            border-radius: 50%;
-            background: rgba(255,255,255,.18);
-            border: 2px solid rgba(255,255,255,.55);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
+            width: 76px;
+            height: 76px;
+            flex-basis: 76px;
+            font-size: 1.95rem;
         }
-        .profile-info-row { padding: 16px 0; border-bottom: 1px solid #eee; }
-        .profile-info-row:last-child { border-bottom: 0; }
-        .text-brand { color: #bd3124; }
-    </style>
 
-    <div class="container profile-page mt-5 pb-5">
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <div class="profile-header d-flex flex-column flex-sm-row align-items-center gap-4">
-                <div class="profile-avatar" aria-hidden="true">@initial</div>
-                <div class="text-center text-sm-start">
-                    <h2 class="fw-bold mb-1">@Model.Username</h2>
-                    <p class="mb-0 opacity-75">@Model.Email</p>
-                </div>
-            </div>
+        .profile-content-grid {
+            grid-template-columns: 1fr;
+        }
 
-            <div class="card-body p-4 p-md-5">
-                <h4 class="fw-bold mb-3">ข้อมูลบัญชี</h4>
-                <div class="profile-info-row row">
-                    <div class="col-sm-4 text-muted">ชื่อผู้ใช้</div>
-                    <div class="col-sm-8 fw-semibold">@Model.Username</div>
-                </div>
-                <div class="profile-info-row row">
-                    <div class="col-sm-4 text-muted">อีเมล</div>
-                    <div class="col-sm-8 fw-semibold">@Model.Email</div>
-                </div>
-                <div class="profile-info-row row">
-                    <div class="col-sm-4 text-muted">เบอร์โทรศัพท์</div>
-                    <div class="col-sm-8 fw-semibold">@(Model.PhoneNumber ?? "ยังไม่ได้ระบุ")</div>
-                </div>
-                <div class="profile-info-row row">
-                    <div class="col-sm-4 text-muted">วันเกิด</div>
-                    <div class="col-sm-8 fw-semibold">@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "ยังไม่ได้ระบุ")</div>
-                </div>
-                <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
-                    <a asp-controller="Home" asp-action="OrderHistory" class="btn btn-danger fw-bold">ประวัติการสั่งซื้อ</a>
-                    <a asp-controller="Home" asp-action="Menu" class="btn btn-outline-danger fw-bold">เลือกอาหาร</a>
-                    <form asp-controller="Account" asp-action="Logout" method="post" class="ms-sm-auto">
-                        <button type="submit" class="btn btn-outline-secondary fw-bold w-100">ออกจากระบบ</button>
-                    </form>
-                </div>
-            </div>
+        .profile-info-row {
+            grid-template-columns: 115px minmax(0, 1fr);
+        }
+    }
+</style>
+
+<div class="profile-shell">
+    <section class="profile-hero" aria-label="ข้อมูลผู้ใช้งาน">
+        <div class="profile-avatar" aria-hidden="true">@initial</div>
+        <div class="profile-identity">
+            <span class="profile-kicker"><i class="bi bi-shield-check"></i> บัญชีลูกค้าสมาชิก</span>
+            <h1 class="profile-name">@Model.Username</h1>
+            <div class="profile-email">@Model.Email</div>
         </div>
+    </section>
+
+    <div class="profile-content-grid">
+        <section class="profile-panel" aria-labelledby="profileInformationHeading">
+            <div class="profile-panel-heading">
+                <h2 id="profileInformationHeading"><i class="bi bi-person-badge text-danger me-2"></i>ข้อมูลบัญชี</h2>
+                <span class="badge rounded-pill bg-danger-subtle text-danger px-3 py-2 fw-semibold">
+                    <i class="bi bi-patch-check-fill me-1"></i> ยืนยันแล้ว
+                </span>
+            </div>
+
+            <div class="profile-info-row">
+                <div class="profile-info-label">ชื่อผู้ใช้</div>
+                <div class="profile-info-value">@Model.Username</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">อีเมล</div>
+                <div class="profile-info-value">@Model.Email</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">เบอร์โทรศัพท์</div>
+                <div class="profile-info-value">@(Model.PhoneNumber ?? "ยังไม่ได้ระบุ")</div>
+            </div>
+            <div class="profile-info-row">
+                <div class="profile-info-label">วันเกิด</div>
+                <div class="profile-info-value">@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "ยังไม่ได้ระบุ")</div>
+            </div>
+        </section>
+
+        <aside class="profile-panel" aria-label="เมนูบัญชี">
+            <div class="profile-panel-heading">
+                <h2><i class="bi bi-grid-fill text-danger me-2"></i>เมนูของคุณ</h2>
+            </div>
+            <div class="profile-actions">
+                <a asp-controller="Home" asp-action="OrderHistory" class="profile-action-card">
+                    <span class="profile-action-icon"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span>
+                    <span class="profile-action-copy">
+                        <strong>ประวัติการสั่งซื้อ</strong>
+                        <small>ดูสถานะและรายการอาหารที่สั่ง</small>
+                    </span>
+                    <i class="bi bi-chevron-right profile-action-arrow" aria-hidden="true"></i>
+                </a>
+
+                <a asp-controller="Home" asp-action="ReservationHistory" class="profile-action-card">
+                    <span class="profile-action-icon"><i class="bi bi-calendar2-check" aria-hidden="true"></i></span>
+                    <span class="profile-action-copy">
+                        <strong>ประวัติการจองโต๊ะ</strong>
+                        <small>ดูวันเวลาและสถานะโต๊ะที่จอง</small>
+                    </span>
+                    <i class="bi bi-chevron-right profile-action-arrow" aria-hidden="true"></i>
+                </a>
+
+                <form asp-controller="Account" asp-action="Logout" method="post" class="mt-2">
+                    <button type="submit" class="profile-logout">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i> ออกจากระบบ
+                    </button>
+                </form>
+            </div>
+        </aside>
     </div>
 </div>

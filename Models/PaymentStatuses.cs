@@ -6,4 +6,5 @@ public static class PaymentStatuses
     public const string PendingReview = "รอตรวจสอบ";
     public const string NeedsResubmission = "กรุณาส่งสลิปใหม่";
     public const string Paid = "ชำระแล้ว";
+    public const string Refunded = "คืนเงินแล้ว";
 }

@@ -1,60 +1,268 @@
 @model IsanDer.Models.Menu
 
 @{
-    ViewData["Title"] = Model.MenuName;
+    ViewData["Title"] = Model.MenuName + " - รายละเอียดเมนู";
+    var maxQuantity = Model.StockQuantity?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var isViewOnly = ViewBag.IsViewOnly == true;
+    var isBuffet = ViewBag.IsBuffet == true;
 }
 
-<div class="container mt-5 pb-5">
-    <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" class="text-danger text-decoration-none mb-4 d-inline-block">← กลับไปเมนูอาหาร</a>
+<style>
+    .food-detail-shell {
+        max-width: 1080px;
+        margin: 0 auto;
+    }
 
-    <div class="row g-4">
-        <div class="col-md-6">
-            @if (!string.IsNullOrWhiteSpace(Model.ImagePath))
-            {
-                <img src="@Model.ImagePath" alt="รูปเมนู @Model.MenuName"
-                     style="width: 100%; height: 400px; object-fit: cover; border-radius: 16px; border: 1px solid var(--brand-red);" />
-            }
-            else
-            {
-                <div style="background-color: var(--brand-green-soft); height: 400px; border-radius: 16px; border: 1px solid var(--brand-red);"></div>
-            }
+    .food-img-container {
+        width: 100%;
+        height: 420px;
+        border-radius: 1.5rem;
+        overflow: hidden;
+        border: 2px solid var(--border);
+        box-shadow: 0 10px 30px rgba(60, 20, 20, 0.08);
+        background-color: #faf6f6;
+    }
+
+    .food-img-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .food-detail-card {
+        background-color: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 1.5rem;
+        padding: 2.25rem;
+        box-shadow: 0 10px 30px rgba(60, 20, 20, 0.06);
+    }
+
+    .food-price-badge {
+        font-family: 'Kanit', sans-serif;
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: var(--brand-red);
+    }
+
+    .qty-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--brand-red);
+        background-color: #ffffff;
+        color: var(--brand-red);
+        font-weight: 800;
+        font-size: 1.2rem;
+        transition: all 0.2s ease;
+    }
+
+    .qty-btn:hover:not(:disabled) {
+        background-color: var(--brand-red);
+        color: #ffffff;
+        transform: scale(1.05);
+    }
+
+    .qty-btn:disabled {
+        border-color: #e2e8f0;
+        color: #cbd5e1;
+        cursor: not-allowed;
+    }
+
+    .qty-input-box {
+        font-family: 'Kanit', sans-serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+        width: 70px;
+        text-align: center;
+        border: 2px solid var(--border);
+        border-radius: 0.75rem;
+    }
+</style>
+
+<div class="container py-4 pb-5 food-detail-shell">
+    <!-- ปุ่มย้อนกลับ -->
+    <div class="mb-4">
+        @if (isViewOnly && ViewBag.ReturnToMenu != true)
+        {
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i> กลับไปหน้าแรก
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Home" asp-action="Menu" asp-route-tableId="@ViewBag.TableId" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i> กลับไปเมนูอาหาร
+            </a>
+        }
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <!-- ฝั่งซ้าย: รูปภาพอาหาร -->
+        <div class="col-lg-6">
+            <div class="food-img-container position-relative">
+                <span class="badge bg-danger rounded-pill px-3 py-2 position-absolute top-0 start-0 m-3 shadow">
+                    <i class="bi bi-fire me-1"></i> เมนูแนะนำยอดนิยม
+                </span>
+                @if (!string.IsNullOrWhiteSpace(Model.ImagePath))
+                {
+                    <img src="@Model.ImagePath" alt="รูปเมนู @Model.MenuName" />
+                }
+                else
+                {
+                    <div class="w-100 h-100 d-grid place-items-center text-danger opacity-50 fs-1">
+                        <i class="bi bi-egg-fried" style="font-size: 6rem;"></i>
+                    </div>
+                }
+            </div>
         </div>
         
-        <div class="col-md-6">
-            <div class="p-4 bg-white shadow-sm rounded-4 border border-light h-100">
-                <!-- ดึงชื่อและราคาจากฐานข้อมูล -->
-                <h2 class="fw-bold mb-2">@Model.MenuName</h2>
+        <!-- ฝั่งขวา: รายละเอียดและแบบฟอร์มการสั่ง -->
+        <div class="col-lg-6">
+            <div class="food-detail-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h2 class="fw-bold mb-0 text-dark">@Model.MenuName</h2>
+                </div>
+
                 @if (ViewBag.TableId != null)
                 {
-                    <p class="text-muted">โต๊ะ @ViewBag.TableNumber</p>
+                    <span class="badge bg-light text-danger border border-danger border-opacity-25 rounded-pill px-3 py-1 mb-3">
+                        <i class="bi bi-geo-alt-fill me-1"></i> สำหรับโต๊ะ @ViewBag.TableNumber
+                    </span>
                 }
-                <p class="text-muted mb-4">⭐ 4.8 · 120 รีวิว</p>
-                
-                <h3 class="fw-bold text-danger mb-4">฿@Model.Price</h3>
+
+                <div class="d-flex align-items-center gap-1 text-warning mb-3">
+                    <i class="bi bi-star-fill"></i>
+                    <span class="text-dark fw-bold ms-1">
+                        @(((double)(ViewBag.MenuReviewAverage ?? 0d)).ToString("0.0"))
+                    </span>
+                    <span class="text-muted small ms-2">
+                        (@(ViewBag.MenuReviewCount ?? 0) รีวิว)
+                    </span>
+                </div>
+
+                <!-- ราคาอาหาร -->
+                <div class="mb-4 pb-3 border-bottom">
+                    <small class="text-muted d-block">ราคาต่อจาน</small>
+                    <div class="food-price-badge">
+                        @(isBuffet ? "รวมในแพ็กเกจบุฟเฟต์" : $"฿{Model.Price:0.##}")
+                    </div>
+                </div>
+
+                <!-- รายละเอียดวัตถุดิบ -->
+                <div class="mb-4">
+                    <h6 class="fw-bold text-dark mb-2">
+                        <i class="bi bi-info-circle-fill text-danger me-1"></i> รายละเอียดเมนู & วัตถุดิบ
+                    </h6>
+                    <p class="text-muted mb-0 lh-base" style="white-space: pre-line;">
+                        @(string.IsNullOrWhiteSpace(Model.Description)
+                            ? "คัดสรรวัตถุดิบสดใหม่ ปรุงจานต่อจานตามสูตรต้นตำรับอีสานแท้ รับประกันความแซ่บนัวถึงใจทุกคำ"
+                            : Model.Description)
+                    </p>
+                </div>
                 
                 @if (!string.Equals(Model.Status, "Available", StringComparison.OrdinalIgnoreCase) || Model.StockQuantity == 0)
                 {
-                    <div class="alert alert-secondary mb-0">เมนูนี้ปิดขายหรือสินค้าหมดแล้ว</div>
+                    <div class="alert alert-secondary rounded-3 text-center mb-0">
+                        <i class="bi bi-exclamation-circle me-1"></i> เมนูนี้ปิดขายชั่วคราวหรือสินค้าหมด
+                    </div>
+                }
+                else if (isViewOnly)
+                {
+                    <p class="text-muted mb-0">หน้านี้สำหรับดูรายละเอียดเมนูเท่านั้น</p>
                 }
                 else
                 {
                     <form asp-controller="Home" asp-action="AddToCart" method="post">
                         <input type="hidden" name="menuId" value="@Model.MenuId" />
                         <input type="hidden" name="tableId" value="@ViewBag.TableId" />
-                        
+
+                        <!-- หมายเหตุพิเศษ -->
                         <div class="mb-4">
-                            <label class="fw-bold mb-2">จำนวน</label>
-                            <div class="d-flex align-items-center">
-                                <input type="number" name="qty" value="1" min="1" max="@Model.StockQuantity" class="form-control text-center me-3" style="width: 100px;" />
+                            <label for="specialRequest" class="form-label fw-bold text-dark">
+                                <i class="bi bi-chat-text-fill text-danger me-1"></i> ระบุระดับความเผ็ด / หมายเหตุพิเศษ
+                            </label>
+                            <textarea id="specialRequest" name="specialRequest" class="form-control" rows="2"
+                                      maxlength="500"
+                                      placeholder="เช่น เผ็ดน้อย, ไม่ใส่ถั่ว, ปลาร้าเข้มๆ, ไม่ใส่ชูรส"></textarea>
+                            <div class="form-text small">แจ้งความต้องการเพื่อรสชาติที่ถูกใจที่สุด</div>
+                        </div>
+                        
+                        <!-- ปรับจำนวน -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark d-block">จำนวนจาน</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <button type="button" id="decreaseQty" class="qty-btn" aria-label="ลดจำนวน" disabled>-</button>
+                                <input type="number" id="qty" name="qty" value="1" min="1" max="@maxQuantity"
+                                       class="form-control qty-input-box" required />
+                                <button type="button" id="increaseQty" class="qty-btn" aria-label="เพิ่มจำนวน">+</button>
+                                <span class="text-muted small">จาน</span>
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-danger w-100 py-3 rounded-3 fw-bold fs-5">
-                            เพิ่มลงรายการอาหาร
+                        <!-- ปุ่มสั่งอาหาร -->
+                        <button type="submit" class="btn btn-brand w-100 py-3 rounded-pill fw-bold fs-5 shadow">
+                            <i class="bi bi-basket2-fill me-2"></i> เพิ่มลงรายการอาหาร
                         </button>
                     </form>
                 }
             </div>
         </div>
     </div>
+
+    @{
+        var menuReviews = ViewBag.MenuReviews as IReadOnlyList<IsanDer.Models.OrderReview>
+            ?? Array.Empty<IsanDer.Models.OrderReview>();
+    }
+    @if (menuReviews.Count > 0)
+    {
+        <section class="card border rounded-4 shadow-sm p-4 bg-white mt-4">
+            <h3 class="h5 fw-bold mb-3">รีวิวจากลูกค้า</h3>
+            <div class="d-grid gap-3">
+                @foreach (var review in menuReviews)
+                {
+                    <article class="border-bottom pb-3">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <strong>@review.User?.Username</strong>
+                            <span class="text-warning fw-bold">@review.Rating/5</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(review.Comment))
+                        {
+                            <p class="text-muted mb-1 mt-2">@review.Comment</p>
+                        }
+                        <small class="text-muted">@review.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                    </article>
+                }
+            </div>
+        </section>
+    }
 </div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const quantityInput = document.getElementById('qty');
+            const decreaseButton = document.getElementById('decreaseQty');
+            const increaseButton = document.getElementById('increaseQty');
+            if (!quantityInput || !decreaseButton || !increaseButton) return;
+
+            const minimum = Number(quantityInput.min);
+            const maximum = quantityInput.max === '' ? Number.POSITIVE_INFINITY : Number(quantityInput.max);
+
+            const normalizeQuantity = (change = 0) => {
+                const current = Number.parseInt(quantityInput.value, 10);
+                const quantity = Number.isNaN(current) ? minimum : current;
+                const next = Math.min(maximum, Math.max(minimum, quantity + change));
+                quantityInput.value = String(next);
+                decreaseButton.disabled = next <= minimum;
+                increaseButton.disabled = next >= maximum;
+            };
+
+            decreaseButton.addEventListener('click', () => normalizeQuantity(-1));
+            increaseButton.addEventListener('click', () => normalizeQuantity(1));
+            quantityInput.addEventListener('change', () => normalizeQuantity());
+            normalizeQuantity();
+        })();
+    </script>
+}

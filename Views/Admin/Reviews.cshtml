@@ -1,0 +1,77 @@
+@model IReadOnlyList<IsanDer.Models.OrderReview>
+@{
+    ViewData["Title"] = "รีวิวลูกค้า";
+}
+
+<div class="container py-4 pb-5" style="max-width: 1180px;">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+        <div>
+            <span class="text-danger fw-bold small text-uppercase">Customer reviews</span>
+            <h1 class="h2 fw-bold mb-1">รีวิวลูกค้า</h1>
+            <p class="text-muted mb-0">ดูและซ่อนรีวิวที่ไม่เหมาะสม</p>
+        </div>
+        <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+            ทั้งหมด @Model.Count รายการ
+        </span>
+    </div>
+
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-success rounded-3">@TempData["AdminMessage"]</div>
+    }
+
+    @if (Model.Count == 0)
+    {
+        <div class="card border-0 shadow-sm rounded-4 p-5 text-center text-muted">
+            ยังไม่มีรีวิวจากลูกค้า
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>คำสั่งซื้อ</th>
+                        <th>ลูกค้า</th>
+                        <th>คะแนน</th>
+                        <th>ความคิดเห็น</th>
+                        <th>วันที่</th>
+                        <th>สถานะ</th>
+                        <th class="text-end">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var review in Model)
+                    {
+                        <tr class="@(review.IsHidden ? "text-muted" : "")">
+                            <td class="fw-bold">@review.Order?.DisplayNumber</td>
+                            <td>@review.User?.Username</td>
+                            <td class="text-warning fw-bold">@review.Rating / 5</td>
+                            <td style="max-width: 320px; white-space: normal;">
+                                @(string.IsNullOrWhiteSpace(review.Comment) ? "-" : review.Comment)
+                            </td>
+                            <td class="text-nowrap">@review.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <span class="badge rounded-pill @(review.IsHidden ? "bg-secondary" : "bg-success")">
+                                    @(review.IsHidden ? "ซ่อนอยู่" : "แสดงอยู่")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <form asp-action="SetReviewVisibility" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@review.ReviewId" />
+                                    <input type="hidden" name="isHidden" value="@(!review.IsHidden)" />
+                                    <button type="submit"
+                                            class="btn btn-sm @(review.IsHidden ? "btn-outline-success" : "btn-outline-danger") rounded-pill">
+                                        @(review.IsHidden ? "แสดงรีวิว" : "ซ่อนรีวิว")
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

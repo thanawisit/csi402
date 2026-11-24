@@ -7,6 +7,8 @@ public sealed class OrderEditViewModel
     [Range(1, int.MaxValue)]
     public int OrderId { get; set; }
 
+    public string DisplayNumber { get; set; } = string.Empty;
+
     public string OrderStatus { get; set; } = string.Empty;
 
     public string PaymentStatus { get; set; } = string.Empty;
@@ -25,6 +27,10 @@ public sealed class OrderEditLineViewModel
 
     [Range(1, 99, ErrorMessage = "จำนวนต้องอยู่ระหว่าง 1 ถึง 99")]
     public int Quantity { get; set; }
+
+    [StringLength(500, ErrorMessage = "หมายเหตุต้องไม่เกิน 500 ตัวอักษร")]
+    [Display(Name = "หมายเหตุ")]
+    public string? SpecialRequest { get; set; }
 }
 
 public sealed class OrderMenuOptionViewModel
@@ -47,4 +53,6 @@ public sealed class OrderListItemViewModel
     public string MenuName { get; set; } = string.Empty;
 
     public int Quantity { get; set; }
+
+    public string? SpecialRequest { get; set; }
 }

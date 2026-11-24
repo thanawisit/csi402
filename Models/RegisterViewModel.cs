@@ -22,8 +22,9 @@ namespace IsanDer.Models
         [Display(Name = "เบอร์โทรศัพท์ (ไม่บังคับ)")]
         public string? PhoneNumber { get; set; }
 
+        [Required(ErrorMessage = "กรุณากรอกวันเกิด")]
         [DataType(DataType.Date)]
-        [Display(Name = "วันเกิด (ไม่บังคับ)")]
+        [Display(Name = "วันเกิด")]
         public DateTime? DateOfBirth { get; set; }
 
         [Required(ErrorMessage = "กรุณากรอกรหัสผ่าน")]
@@ -42,6 +43,8 @@ namespace IsanDer.Models
 
         [Display(Name = "ยินยอมรับข่าวสารและโปรโมชัน")]
         public bool MarketingConsent { get; set; }
+
+        public string? ReturnUrl { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

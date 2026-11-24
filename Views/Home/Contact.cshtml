@@ -1,91 +1,167 @@
 @using System
 @{
-    ViewData["Title"] = "ติดต่อเรา";
+    ViewData["Title"] = "ติดต่อเรา - อีสาน เด้อ";
     const string address = "123 ถนนมิตรภาพ ตำบลในเมือง อำเภอเมือง จังหวัดขอนแก่น 40000";
     var mapsUrl = $"https://www.google.com/maps/search/?api=1&query={Uri.EscapeDataString(address)}";
 }
 
-<div class="container mt-5 pb-5">
-    <section class="contact-hero hero-panel mb-4 p-4 p-md-5">
+<style>
+    .contact-hero-banner {
+        background:
+            radial-gradient(circle at 90% 20%, rgba(255, 255, 255, 0.2), transparent 30%),
+            linear-gradient(135deg, #701010 0%, #991b1b 50%, #c92a2a 100%);
+        border-radius: 1.75rem;
+        padding: 3rem 2.5rem;
+        color: #ffffff;
+        box-shadow: 0 16px 36px rgba(112, 16, 16, 0.25);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+    }
+
+    .contact-hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        padding: 0.35rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .contact-hero-icon-box {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 4px solid rgba(255, 255, 255, 0.35);
+        display: grid;
+        place-items: center;
+        font-size: 3.5rem;
+        color: #ffffff;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .contact-box-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 1.35rem;
+        padding: 1.75rem;
+        box-shadow: 0 8px 24px rgba(60, 20, 20, 0.05);
+        height: 100%;
+        transition: all 0.25s ease;
+    }
+
+    .contact-box-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--brand-red-subtle);
+        box-shadow: 0 14px 32px rgba(201, 42, 42, 0.12);
+    }
+
+    .contact-icon-bubble {
+        width: 3.25rem;
+        height: 3.25rem;
+        border-radius: 1rem;
+        display: grid;
+        place-items: center;
+        background: var(--brand-red-soft);
+        color: var(--brand-red);
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+    }
+</style>
+
+<div class="container py-4 pb-5" style="max-width: 1080px;">
+    <!-- แบนเนอร์หัวหน้าติดต่อเรา -->
+    <section class="contact-hero-banner mb-4">
         <div>
-            <span class="hero-kicker"><i class="bi bi-chat-dots-fill"></i> ติดต่อเรา</span>
-            <h1 class="hero-title fw-bold">ยินดีต้อนรับ<br><span>มาหาเราได้ทุกวัน</span></h1>
-            <p class="text-muted fs-5 mb-0">สอบถามข้อมูลร้านหรือเส้นทางได้ตามช่องทางด้านล่าง</p>
+            <span class="contact-hero-badge"><i class="bi bi-chat-dots-fill"></i> ช่องทางการติดต่อ</span>
+            <h1 class="display-6 fw-bold mb-2">ยินดีต้อนรับสู่ร้าน อีสาน เด้อ</h1>
+            <p class="text-white-50 fs-5 mb-0">สอบถามเส้นทาง สำรองที่นั่ง หรือสั่งอาหารล่วงหน้าได้ทุกวัน</p>
         </div>
-        <div class="contact-hero-icon" aria-hidden="true">
+        <div class="contact-hero-icon-box d-none d-md-grid">
             <i class="bi bi-geo-alt-fill"></i>
         </div>
     </section>
 
     <div class="row g-4">
+        <!-- แผนที่และที่ตั้งร้าน -->
         <div class="col-lg-7">
-            <section class="contact-card h-100">
-                <div class="contact-heading">
-                    <span class="contact-icon"><i class="bi bi-geo-alt-fill"></i></span>
-                    <div>
-                        <span class="section-kicker">แวะมาทานที่ร้าน</span>
-                        <h2 class="h4 fw-bold mb-0">ที่ตั้งร้าน</h2>
-                    </div>
+            <div class="contact-box-card">
+                <div class="contact-icon-bubble">
+                    <i class="bi bi-geo-alt-fill"></i>
                 </div>
-                <address class="contact-address mb-4">@address</address>
-                <a class="btn btn-success" href="@mapsUrl" target="_blank" rel="noopener noreferrer">
-                    <i class="bi bi-map me-2"></i>เปิดแผนที่
+                <span class="badge bg-danger rounded-pill px-3 py-1 mb-2">แวะมาแซ่บที่ร้าน</span>
+                <h3 class="h4 fw-bold mb-2 text-dark">ที่ตั้งร้าน อีสาน เด้อ</h3>
+                <address class="text-muted fs-5 mb-4 lh-base">@address</address>
+                <a class="btn btn-brand rounded-pill px-4 py-2 fw-bold text-decoration-none shadow"
+                   href="@mapsUrl" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-map-fill me-2"></i> เปิด Google Maps นำทาง
                 </a>
-            </section>
+            </div>
         </div>
 
+        <!-- รายละเอียดช่องทางติดต่อ -->
         <div class="col-lg-5">
-            <div class="row g-4">
+            <div class="row g-3">
                 <div class="col-12">
-                    <section class="contact-card">
-                        <div class="contact-heading">
-                            <span class="contact-icon contact-icon-red"><i class="bi bi-telephone-fill"></i></span>
+                    <div class="contact-box-card p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="contact-icon-bubble mb-0" style="width: 2.75rem; height: 2.75rem; font-size: 1.25rem;">
+                                <i class="bi bi-telephone-fill"></i>
+                            </div>
                             <div>
-                                <span class="section-kicker">โทรสอบถาม</span>
-                                <h2 class="h5 fw-bold mb-0">โทรศัพท์</h2>
+                                <small class="text-muted d-block">เบอร์โทรศัพท์ร้าน</small>
+                                <a href="tel:0891234567" class="fw-bold text-dark fs-5 text-decoration-none">089-123-4567</a>
                             </div>
                         </div>
-                        <a class="contact-link" href="tel:+66891234567">089-123-4567</a>
-                    </section>
+                    </div>
                 </div>
 
                 <div class="col-12">
-                    <section class="contact-card">
-                        <div class="contact-heading">
-                            <span class="contact-icon"><i class="bi bi-envelope-fill"></i></span>
+                    <div class="contact-box-card p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="contact-icon-bubble mb-0" style="width: 2.75rem; height: 2.75rem; font-size: 1.25rem;">
+                                <i class="bi bi-envelope-fill"></i>
+                            </div>
                             <div>
-                                <span class="section-kicker">ส่งอีเมลถึงเรา</span>
-                                <h2 class="h5 fw-bold mb-0">อีเมล</h2>
+                                <small class="text-muted d-block">อีเมลติดต่อ</small>
+                                <a href="mailto:support@isander.com" class="fw-bold text-dark fs-6 text-decoration-none">support@isander.com</a>
                             </div>
                         </div>
-                        <a class="contact-link" href="mailto:support@isander.com">support@isander.com</a>
-                    </section>
+                    </div>
                 </div>
 
                 <div class="col-12">
-                    <section class="contact-card">
-                        <div class="contact-heading">
-                            <span class="contact-icon"><i class="bi bi-line"></i></span>
+                    <div class="contact-box-card p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="contact-icon-bubble mb-0" style="width: 2.75rem; height: 2.75rem; font-size: 1.25rem;">
+                                <i class="bi bi-line"></i>
+                            </div>
                             <div>
-                                <span class="section-kicker">LINE Official</span>
-                                <h2 class="h5 fw-bold mb-0">พูดคุยกับเรา</h2>
+                                <small class="text-muted d-block">LINE Official</small>
+                                <a href="https://line.me" target="_blank" rel="noopener noreferrer" class="fw-bold text-dark fs-5 text-decoration-none">@@IsanDer</a>
                             </div>
                         </div>
-                        <a class="contact-link" href="https://line.me/R/ti/p/%40IsanDer" target="_blank" rel="noopener noreferrer">@@IsanDer</a>
-                    </section>
+                    </div>
                 </div>
 
                 <div class="col-12">
-                    <section class="contact-card">
-                        <div class="contact-heading">
-                            <span class="contact-icon contact-icon-red"><i class="bi bi-clock-fill"></i></span>
+                    <div class="contact-box-card p-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="contact-icon-bubble mb-0" style="width: 2.75rem; height: 2.75rem; font-size: 1.25rem;">
+                                <i class="bi bi-clock-fill"></i>
+                            </div>
                             <div>
-                                <span class="section-kicker">เปิดบริการทุกวัน</span>
-                                <h2 class="h5 fw-bold mb-0">เวลาทำการ</h2>
+                                <small class="text-muted d-block">เวลาเปิดให้บริการ</small>
+                                <span class="fw-bold text-danger fs-5">10:00 – 22:00 น. (ทุกวัน)</span>
                             </div>
                         </div>
-                        <p class="contact-link mb-0">10:00–22:00 น.</p>
-                    </section>
+                    </div>
                 </div>
             </div>
         </div>
