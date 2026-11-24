@@ -8,7 +8,7 @@ using System.Security.Claims;
 namespace IsanDer.Controllers;
 
 [Authorize(Roles = AppRoles.Admin)]
-public class AccountsController : Controller
+public class UserManagementController : Controller
 {
     private static readonly HashSet<string> StaffRoles = new(StringComparer.Ordinal)
     {
@@ -18,7 +18,7 @@ public class AccountsController : Controller
     private readonly IsanDerDbContext _context;
     private readonly IPasswordHasher<User> _passwordHasher;
 
-    public AccountsController(IsanDerDbContext context, IPasswordHasher<User> passwordHasher)
+    public UserManagementController(IsanDerDbContext context, IPasswordHasher<User> passwordHasher)
     {
         _context = context;
         _passwordHasher = passwordHasher;

@@ -1150,7 +1150,7 @@ public class AdminController : Controller
     {
         if (User.IsInRole(AppRoles.Admin))
         {
-            return RedirectToAction("Index", "Accounts");
+            return RedirectToAction("Index", "UserManagement");
         }
 
         return BackOfficeView("Users", _context.Users
